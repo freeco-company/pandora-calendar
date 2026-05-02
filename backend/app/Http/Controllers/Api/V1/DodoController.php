@@ -9,6 +9,7 @@ use App\Services\Calendar\CyclePredictor;
 use App\Services\Dodo\DodoCheckinResponder;
 use App\Services\Gamification\CalendarEventCatalog;
 use App\Services\Gamification\GamificationPublisher;
+use App\Services\Gamification\IdempotencyKey;
 use App\Services\Subscription\FeatureGate;
 use Carbon\CarbonImmutable;
 use Illuminate\Http\JsonResponse;
@@ -60,10 +61,17 @@ class DodoController extends Controller
             ],
         );
 
-        $this->gamification->publish($user, CalendarEventCatalog::DODO_CHECKIN, [
-            'mood' => $data['mood'],
-            'phase' => $rhythm->phase,
-        ]);
+        $this->gamification->publish(
+            $user,
+            CalendarEventCatalog::DODO_CHECKIN,
+            ['mood' => $data['mood'], 'phase' => $rhythm->phase],
+            IdempotencyKey::make(
+                CalendarEventCatalog::DODO_CHECKIN,
+                $user->id,
+                $checkin->id,
+                $checkedOn->toDateString(),
+            ),
+        );
 
         return response()->json([
             'data' => [

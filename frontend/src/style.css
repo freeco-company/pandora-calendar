@@ -3,21 +3,68 @@
 @tailwind utilities;
 
 :root {
-  --bg: #fbf6ee;
+  --bg: #FFF7EC;
 }
 
 html, body, #app {
-  height: 100%;
+  min-height: 100%;
   background: var(--bg);
   -webkit-font-smoothing: antialiased;
   text-rendering: optimizeLegibility;
 }
 
 body {
-  font-family: 'Noto Sans TC', system-ui, -apple-system, 'Helvetica Neue', sans-serif;
-  color: #2a2a2a;
+  font-family: 'Noto Sans TC', 'Zen Kaku Gothic New', system-ui, -apple-system, 'Helvetica Neue', sans-serif;
+  color: #4A3A2E;
+  background-image: linear-gradient(180deg, #FFF7EC 0%, #FBE9D8 100%);
+  background-attachment: fixed;
 }
 
 * {
   -webkit-tap-highlight-color: transparent;
+}
+
+/* Page transitions */
+.page-enter-active,
+.page-leave-active {
+  transition: opacity 0.28s ease, transform 0.28s ease;
+}
+.page-enter-from { opacity: 0; transform: translateY(8px); }
+.page-leave-to { opacity: 0; transform: translateY(-4px); }
+
+/* Reusable card surface */
+.surface-card {
+  background: rgba(255, 255, 255, 0.92);
+  backdrop-filter: blur(8px);
+  border-radius: 1.5rem;
+  box-shadow: 0 6px 24px -8px rgba(159, 107, 62, 0.18);
+}
+
+/* Character helpers */
+.char-stage { position: relative; display: inline-block; }
+.char-body {
+  display: block;
+  width: 100%;
+  height: auto;
+  filter: drop-shadow(0 4px 8px rgba(74, 58, 46, 0.12));
+}
+.char-mood-badge {
+  position: absolute;
+  top: -6px;
+  right: -6px;
+  width: 32%;
+  filter: drop-shadow(0 1px 2px rgba(0, 0, 0, 0.1));
+  pointer-events: none;
+}
+.char-accessory {
+  position: absolute;
+  top: -8%;
+  left: 50%;
+  transform: translateX(-50%);
+  width: 36%;
+  pointer-events: none;
+}
+.char-outfit {
+  filter: drop-shadow(0 2px 3px rgba(45, 36, 32, 0.15));
+  pointer-events: none;
 }

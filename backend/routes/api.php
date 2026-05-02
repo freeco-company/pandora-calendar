@@ -27,12 +27,31 @@ Route::middleware(['auth:sanctum'])->prefix('v1')->group(function () {
     Route::get('/me', function (Request $r) {
         $u = $r->user();
 
+        // P5.2 ADR-009：每天首次 hit /me → calendar.app_opened
+        // idempotency key 包含日期 → 同 user 同天送一次（py-service catalog daily_cap=3 還會再過濾）
+        $today = now()->toDateString();
+        $publisher = app(\App\Services\Gamification\GamificationPublisher::class);
+        $publisher->publish(
+            $u,
+            \App\Services\Gamification\CalendarEventCatalog::APP_OPENED,
+            ['date' => $today],
+            \App\Services\Gamification\IdempotencyKey::make(
+                \App\Services\Gamification\CalendarEventCatalog::APP_OPENED,
+                $u->id, 0, $today,
+            ),
+        );
+
         return response()->json(['data' => [
             'id' => $u->id,
             'name' => $u->name,
             'identity_uuid' => $u->identity_uuid,
             'linked_to_mother' => (bool) $u->mother_customer_id,
             'mother_total_orders' => (int) ($u->mother_total_orders ?? 0),
+            'total_xp' => (int) ($u->total_xp ?? 0),
+            'level' => (int) ($u->level ?? 1),
+            'outfit_state' => $u->outfit_state,
+            'pet_species' => $u->pet_species,
+            'pet_nickname' => $u->pet_nickname,
         ]]);
     });
 

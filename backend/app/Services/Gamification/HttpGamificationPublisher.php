@@ -19,21 +19,27 @@ final class HttpGamificationPublisher implements GamificationPublisher
         private readonly string $secret,
     ) {}
 
-    public function publish(User $user, string $eventKind, array $context = []): void
+    public function publish(User $user, string $eventKind, array $context = [], ?string $idempotencyKey = null): void
     {
         if (! in_array($eventKind, CalendarEventCatalog::ALL, true)) {
             throw new \InvalidArgumentException("Unknown gamification event: $eventKind");
+        }
+
+        if ($idempotencyKey && OutboxEvent::where('idempotency_key', $idempotencyKey)->exists()) {
+            return;
         }
 
         OutboxEvent::create([
             'aggregate_type' => 'user',
             'aggregate_id' => $user->id,
             'event_kind' => $eventKind,
+            'idempotency_key' => $idempotencyKey,
             'destination' => OutboxEvent::DEST_GAMIFICATION,
             'payload' => [
                 'event_kind' => $eventKind,
                 'user_uuid' => $user->identity_uuid,
-                'source_app' => config('pandora.gamification.app_id', 'pandora_calendar'),
+                'source_app' => config('gamification.app_id') ?? config('pandora.gamification.app_id', 'pandora_calendar'),
+                'idempotency_key' => $idempotencyKey,
                 'context' => $context,
             ],
             'occurred_at' => now(),

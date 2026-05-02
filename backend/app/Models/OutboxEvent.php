@@ -10,8 +10,8 @@ class OutboxEvent extends Model
     use HasFactory;
 
     protected $fillable = [
-        'aggregate_type', 'aggregate_id', 'event_kind', 'destination',
-        'payload', 'occurred_at', 'published_at', 'attempts', 'last_error',
+        'aggregate_type', 'aggregate_id', 'event_kind', 'idempotency_key',
+        'destination', 'payload', 'occurred_at', 'published_at', 'attempts', 'last_error',
     ];
 
     protected $casts = [
