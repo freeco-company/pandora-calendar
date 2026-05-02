@@ -2,6 +2,10 @@
 import { onMounted, ref } from 'vue'
 import { useRouter } from 'vue-router'
 import { PremiumApi, type PmsPattern } from '../api'
+import Card from '../components/ui/Card.vue'
+import Button from '../components/ui/Button.vue'
+import Spinner from '../components/ui/Spinner.vue'
+import EmptyState from '../components/ui/EmptyState.vue'
 
 const router = useRouter()
 const pattern = ref<PmsPattern | null>(null)
@@ -27,38 +31,55 @@ onMounted(async () => {
 </script>
 
 <template>
-  <div class="px-5 pt-8 pb-4 max-w-md mx-auto space-y-4">
-    <button @click="router.push('/me')" class="text-sm text-brand-600">← 回我的</button>
+  <div class="px-5 pt-8 pb-6 max-w-md mx-auto space-y-4">
+    <button @click="router.push('/me')" class="font-zen text-sm text-peach-500 hover:text-peach-400">
+      ← 回我的
+    </button>
 
     <header>
-      <h1 class="text-2xl font-bold text-brand-700">PMS 模式分析</h1>
-      <p class="text-sm text-stone-500">朵朵看見妳常見的經前訊號</p>
+      <p class="font-zen text-xs text-stone-500 tracking-widest uppercase">Premium</p>
+      <h1 class="font-display text-2xl font-bold text-peach-500 mt-0.5">PMS 模式分析</h1>
+      <p class="font-zen text-sm text-stone-500 mt-1">朵朵看見妳常見的經前訊號</p>
     </header>
 
-    <div v-if="loading" class="text-center py-8 text-stone-400">載入中...</div>
+    <Spinner v-if="loading" label="載入中..." />
 
-    <div v-else-if="blocked" class="bg-brand-50 rounded-3xl p-6 text-center space-y-3">
+    <Card v-else-if="blocked" tone="lavender" class="text-center space-y-3">
       <div class="text-4xl">💎</div>
-      <p>PMS 模式分析是 Premium 功能</p>
-      <button @click="router.push('/me/premium')" class="px-5 py-2 bg-brand-600 text-white rounded-full">看看 Premium</button>
-    </div>
+      <p class="font-zen text-stone-700">PMS 模式分析是 Premium 功能</p>
+      <Button variant="primary" sfx="ui_open" @click="router.push('/me/premium')">看看 Premium</Button>
+    </Card>
 
-    <div v-else-if="!pattern" class="bg-white rounded-3xl p-6 text-center text-sm text-stone-500">
-      <p>朵朵還在認識妳的週期。記錄滿 6 次以上經前症狀後就能算出 pattern 了。</p>
-    </div>
+    <EmptyState
+      v-else-if="!pattern"
+      :show-dodo="true"
+      title="朵朵還在認識妳"
+      subtitle="記錄滿 6 次以上經前症狀後就能算出妳的 pattern。"
+    />
 
     <template v-else>
-      <div class="bg-white rounded-3xl shadow-sm p-5 space-y-3">
-        <p class="text-xs text-stone-500">基於最近 {{ pattern.sample_cycles }} 個週期 · 信心度 {{ pattern.confidence === 'high' ? '高' : '低' }}</p>
-        <h3 class="font-bold text-brand-700">妳經前最常出現的訊號</h3>
-        <ul class="space-y-2">
-          <li v-for="t in pattern.top_symptoms" :key="t" class="flex justify-between items-center text-sm">
+      <Card tone="cream" class="space-y-3">
+        <p class="text-xs text-stone-500 font-zen">
+          基於最近 {{ pattern.sample_cycles }} 個週期 · 信心度
+          <span :class="pattern.confidence === 'high' ? 'text-sage-500' : 'text-peach-400'" class="font-semibold">
+            {{ pattern.confidence === 'high' ? '高' : '低' }}
+          </span>
+        </p>
+        <h3 class="font-display font-bold text-peach-500 text-base">妳經前最常出現的訊號</h3>
+        <ul class="space-y-2.5">
+          <li
+            v-for="t in pattern.top_symptoms"
+            :key="t"
+            class="flex justify-between items-center text-sm font-zen"
+          >
             <span class="text-stone-700">{{ tagLabels[t] || t }}</span>
-            <span class="text-xs bg-brand-50 text-brand-700 px-2 py-1 rounded-full">出現 {{ pattern.symptom_counts[t] }} 次</span>
+            <span class="text-[11px] bg-peach-100 text-peach-500 font-semibold px-2.5 py-1 rounded-full">
+              出現 {{ pattern.symptom_counts[t] }} 次
+            </span>
           </li>
         </ul>
-      </div>
-      <p class="text-xs text-stone-400 text-center">朵朵會在下次經前提早提醒妳照顧自己。</p>
+      </Card>
+      <p class="text-xs text-stone-400 text-center font-zen">朵朵會在下次經前提早提醒妳照顧自己。</p>
     </template>
   </div>
 </template>

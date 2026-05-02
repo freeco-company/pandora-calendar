@@ -23,6 +23,10 @@ Route::post('/webhooks/apple-asn', [AppleAsnController::class, 'handle']);
 Route::post('/webhooks/google-rtdn', [GoogleRtdnController::class, 'handle']);
 Route::post('/webhooks/ecpay-notify', [EcpayNotifyController::class, 'handle']);
 
+// P5.3 ADR-009 — py-service → calendar gamification webhook（HMAC + nonce 由 middleware 驗）
+Route::post('/v1/internal/webhooks/gamification', [\App\Http\Controllers\Api\V1\Internal\GamificationWebhookController::class, 'handle'])
+    ->middleware('gamification.webhook');
+
 Route::middleware(['auth:sanctum'])->prefix('v1')->group(function () {
     Route::get('/me', function (Request $r) {
         $u = $r->user();
@@ -86,6 +90,11 @@ Route::middleware(['auth:sanctum'])->prefix('v1')->group(function () {
 
     // 婕樂纖商品連結（P5+，gate 嚴守）
     Route::get('/commerce/product-links', [CommerceController::class, 'productLinks']);
+
+    // P5.3 / P5.4 ADR-009：朵朵 / pet / pending events
+    Route::get('/me/gamification/pending', [\App\Http\Controllers\Api\V1\MeGamificationController::class, 'pending']);
+    Route::get('/me/dodo', [\App\Http\Controllers\Api\V1\MeGamificationController::class, 'dodo']);
+    Route::get('/me/pet', [\App\Http\Controllers\Api\V1\MeGamificationController::class, 'pet']);
 });
 
 // Phase 0 demo helper（dev / testing only）

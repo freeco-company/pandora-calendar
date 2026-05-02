@@ -1,19 +1,32 @@
 <script setup lang="ts">
 import { computed, onMounted, ref } from 'vue'
 import { CalendarApi, type CyclePrediction, type BodyRhythm, type CycleRecord } from '../api'
+import Card from '../components/ui/Card.vue'
+import Spinner from '../components/ui/Spinner.vue'
+import EmptyState from '../components/ui/EmptyState.vue'
+import Character from '../components/Character.vue'
+import { getPet, moodForPhase } from '../lib/character'
 
 const cycles = ref<CycleRecord[]>([])
 const prediction = ref<CyclePrediction | null>(null)
 const rhythm = ref<BodyRhythm | null>(null)
 const loading = ref(true)
+const error = ref<string | null>(null)
+const pet = ref(getPet())
 
 async function load() {
   loading.value = true
-  const res = await CalendarApi.cycles()
-  cycles.value = res.data.data
-  prediction.value = res.data.prediction
-  rhythm.value = res.data.body_rhythm
-  loading.value = false
+  error.value = null
+  try {
+    const res = await CalendarApi.cycles()
+    cycles.value = res.data.data
+    prediction.value = res.data.prediction
+    rhythm.value = res.data.body_rhythm
+  } catch (e: any) {
+    error.value = e?.response?.data?.message ?? '載入失敗，朵朵稍後再試試。'
+  } finally {
+    loading.value = false
+  }
 }
 
 onMounted(load)
@@ -75,59 +88,97 @@ const phaseLabels: Record<string, string> = {
 }
 
 const monthTitle = computed(() => `${today.getFullYear()} 年 ${today.getMonth() + 1} 月`)
+const todayMood = computed(() => moodForPhase(rhythm.value?.phase))
 </script>
 
 <template>
-  <div class="px-5 pt-8 pb-4 max-w-md mx-auto">
-    <header class="mb-5">
-      <h1 class="text-2xl font-bold text-brand-700">{{ monthTitle }}</h1>
-      <p v-if="rhythm" class="text-sm text-brand-600 mt-1" data-test="phase-label">
-        今天是 <span class="font-semibold">{{ phaseLabels[rhythm.phase] }}</span>
-        <template v-if="rhythm.cycle_day"> · 週期第 {{ rhythm.cycle_day }} 天</template>
-      </p>
+  <div class="px-5 pt-10 pb-6 max-w-md mx-auto">
+    <header class="flex items-start justify-between mb-5">
+      <div>
+        <p class="font-zen text-xs text-stone-500 tracking-widest uppercase">Today</p>
+        <h1 class="font-display text-2xl font-bold text-peach-500 mt-0.5">{{ monthTitle }}</h1>
+        <p
+          v-if="rhythm"
+          class="font-zen text-sm text-stone-600 mt-1"
+          data-test="phase-label"
+        >
+          今天是
+          <span class="font-semibold text-peach-500">{{ phaseLabels[rhythm.phase] }}</span>
+          <template v-if="rhythm.cycle_day"> · 週期第 {{ rhythm.cycle_day }} 天</template>
+        </p>
+      </div>
+      <!-- 角落寵物 widget -->
+      <div class="shrink-0 -mt-2">
+        <Character
+          :species="pet.species"
+          :level="pet.level"
+          :outfit="pet.outfit"
+          :mood="todayMood"
+          :size="68"
+          :show-halo="false"
+          :floaty="true"
+          :interactive="true"
+          :show-rarity="false"
+        />
+      </div>
     </header>
 
-    <div v-if="loading" class="text-center py-12 text-stone-400">朵朵在算...</div>
+    <Spinner v-if="loading" label="朵朵在算..." />
+
+    <EmptyState
+      v-else-if="error"
+      icon="🌸"
+      title="暫時讀不到資料"
+      :subtitle="error"
+    />
 
     <template v-else>
-      <div class="bg-white rounded-3xl shadow-sm p-4 mb-4">
-        <div class="grid grid-cols-7 text-xs text-center text-stone-400 mb-2">
-          <span v-for="w in ['日','一','二','三','四','五','六']" :key="w">{{ w }}</span>
+      <Card tone="plain" class="mb-4">
+        <div class="grid grid-cols-7 text-[11px] font-zen text-center text-stone-400 mb-3">
+          <span v-for="w in ['日', '一', '二', '三', '四', '五', '六']" :key="w">{{ w }}</span>
         </div>
         <div class="grid grid-cols-7 gap-1.5">
           <div
             v-for="(cell, idx) in grid"
             :key="idx"
-            class="aspect-square rounded-lg flex items-center justify-center text-sm relative"
+            class="aspect-square rounded-xl flex items-center justify-center text-sm font-zen relative transition-all"
             :class="{
-              'bg-phase-menstrual/15 text-phase-menstrual': cell.phase === 'menstrual',
-              'bg-phase-follicular/15 text-stone-700': cell.phase === 'follicular',
-              'bg-phase-ovulation/15 text-phase-ovulation': cell.phase === 'ovulation',
-              'bg-phase-luteal/15 text-phase-luteal': cell.phase === 'luteal',
-              'ring-2 ring-brand-600 font-bold': cell.isToday,
+              'bg-phase-menstrual/20 text-sakura-500': cell.phase === 'menstrual',
+              'bg-phase-follicular/30 text-peach-500': cell.phase === 'follicular',
+              'bg-phase-ovulation/25 text-sage-500': cell.phase === 'ovulation',
+              'bg-phase-luteal/20 text-lavender-500': cell.phase === 'luteal',
+              'ring-2 ring-peach-400 font-bold shadow-soft': cell.isToday,
             }"
           >
             {{ cell.day || '' }}
           </div>
         </div>
-      </div>
+      </Card>
 
-      <div class="bg-white rounded-3xl shadow-sm p-4 mb-4 text-sm space-y-2">
-        <h3 class="font-bold text-brand-700">下次經期預測</h3>
-        <p v-if="prediction?.next_period_eta" class="text-stone-700">
-          📅 約 <span class="font-semibold">{{ prediction.next_period_eta }}</span>
+      <Card tone="cream" class="mb-4">
+        <h3 class="font-display font-bold text-peach-500 text-base mb-2">下次經期預測</h3>
+        <p v-if="prediction?.next_period_eta" class="text-sm text-stone-700 leading-relaxed font-zen">
+          📅 約
+          <span class="font-bold text-peach-500">{{ prediction.next_period_eta }}</span>
           · 信心度
-          <span :class="prediction.confidence === 'high' ? 'text-green-600' : 'text-amber-500'">
-            {{ prediction.confidence === 'high' ? '高' : prediction.confidence === 'low' ? '低（資料還不夠）' : '無' }}
+          <span :class="prediction.confidence === 'high' ? 'text-sage-500' : 'text-peach-400'">
+            {{
+              prediction.confidence === 'high'
+                ? '高'
+                : prediction.confidence === 'low'
+                ? '低（資料還不夠）'
+                : '無'
+            }}
           </span>
         </p>
-        <p v-else class="text-stone-500">記錄一次經期後就會開始預測喔。</p>
-      </div>
+        <p v-else class="text-sm text-stone-500 font-zen">記錄一次經期後就會開始預測喔。</p>
+      </Card>
 
-      <div class="flex gap-2 text-xs text-stone-500 px-1">
-        <span class="flex items-center gap-1"><span class="w-2 h-2 rounded-full bg-phase-menstrual" />經期</span>
-        <span class="flex items-center gap-1"><span class="w-2 h-2 rounded-full bg-phase-ovulation" />排卵</span>
-        <span class="flex items-center gap-1"><span class="w-2 h-2 rounded-full bg-phase-luteal" />黃體</span>
+      <div class="flex gap-3 text-[11px] text-stone-500 px-2 font-zen flex-wrap">
+        <span class="flex items-center gap-1.5"><span class="w-2.5 h-2.5 rounded-full bg-phase-menstrual" />經期</span>
+        <span class="flex items-center gap-1.5"><span class="w-2.5 h-2.5 rounded-full bg-phase-follicular" />濾泡</span>
+        <span class="flex items-center gap-1.5"><span class="w-2.5 h-2.5 rounded-full bg-phase-ovulation" />排卵</span>
+        <span class="flex items-center gap-1.5"><span class="w-2.5 h-2.5 rounded-full bg-phase-luteal" />黃體</span>
       </div>
     </template>
   </div>

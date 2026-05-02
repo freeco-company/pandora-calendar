@@ -13,6 +13,11 @@ return Application::configure(basePath: dirname(__DIR__))
     )
     ->withMiddleware(function (Middleware $middleware): void {
         $middleware->statefulApi();
+
+        // P5.3 ADR-009：gamification webhook HMAC + replay 驗證
+        $middleware->alias([
+            'gamification.webhook' => \App\Http\Middleware\VerifyGamificationWebhookSignature::class,
+        ]);
     })
     ->withExceptions(function (Exceptions $exceptions): void {
         //

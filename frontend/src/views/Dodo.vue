@@ -1,22 +1,36 @@
 <script setup lang="ts">
-import { onMounted, ref } from 'vue'
+import { computed, onMounted, ref } from 'vue'
 import { useRouter } from 'vue-router'
 import { CalendarApi, type DodoCheckin } from '../api'
 import { useEntitlementsStore } from '../stores/entitlements'
+import Card from '../components/ui/Card.vue'
+import Button from '../components/ui/Button.vue'
+import EmptyState from '../components/ui/EmptyState.vue'
+import Spinner from '../components/ui/Spinner.vue'
+import Character from '../components/Character.vue'
+import { useSfx } from '../lib/sound'
+import { moodForPhase } from '../lib/character'
+import { getCurrentLevel } from '../lib/gamification'
 
 const router = useRouter()
 const ent = useEntitlementsStore()
+const sfx = useSfx()
 const todayResponse = ref<string | null>(null)
 const todayPhase = ref<string | null>(null)
 const recent = ref<DodoCheckin[]>([])
 const loading = ref(false)
+const initialLoading = ref(true)
 const error = ref<string | null>(null)
 const upgradePromptVisible = ref(false)
+const dodoLevel = ref(getCurrentLevel())
 
 async function loadRecent() {
   const res = await CalendarApi.dodoRecent()
   recent.value = res.data.data
-  if (recent.value.length && recent.value[0].checked_on === new Date().toISOString().slice(0, 10)) {
+  if (
+    recent.value.length &&
+    recent.value[0].checked_on === new Date().toISOString().slice(0, 10)
+  ) {
     todayResponse.value = recent.value[0].dodo_response
     todayPhase.value = recent.value[0].phase
   }
@@ -24,7 +38,11 @@ async function loadRecent() {
 
 onMounted(async () => {
   ent.load()
-  await loadRecent()
+  try {
+    await loadRecent()
+  } finally {
+    initialLoading.value = false
+  }
 })
 
 async function checkin(mood: 'good' | 'okay' | 'bad') {
@@ -35,13 +53,16 @@ async function checkin(mood: 'good' | 'okay' | 'bad') {
     const res = await CalendarApi.dodoCheckin(mood)
     todayResponse.value = res.data.data.dodo_response
     todayPhase.value = res.data.data.phase
+    sfx.play('correct')
     await loadRecent()
   } catch (e: any) {
     if (e?.response?.status === 402) {
       upgradePromptVisible.value = true
       error.value = e?.response?.data?.message ?? '免費版每天 1 次'
+      sfx.play('notify')
     } else {
       error.value = e?.response?.data?.message ?? '失敗'
+      sfx.play('wrong')
     }
   } finally {
     loading.value = false
@@ -49,56 +70,115 @@ async function checkin(mood: 'good' | 'okay' | 'bad') {
 }
 
 const phaseLabels: Record<string, string> = {
-  menstrual: '經期', follicular: '濾泡期', ovulation: '排卵期', luteal: '黃體期', unknown: '',
+  menstrual: '經期',
+  follicular: '濾泡期',
+  ovulation: '排卵期',
+  luteal: '黃體期',
+  unknown: '',
 }
+
+const dodoMood = computed(() => moodForPhase(todayPhase.value))
 </script>
 
 <template>
-  <div class="px-5 pt-8 pb-4 max-w-md mx-auto space-y-4">
-    <header class="text-center mb-2">
-      <div class="text-7xl">🐣</div>
-      <h1 class="text-xl font-bold text-brand-700 mt-1">朵朵</h1>
-      <p class="text-sm text-brand-600">妳今天感覺如何？</p>
+  <div class="px-5 pt-10 pb-6 max-w-md mx-auto space-y-5">
+    <!-- 朵朵 NPC 角色區 -->
+    <header class="text-center space-y-2">
+      <div class="flex justify-center">
+        <Character
+          species="dodo"
+          :level="dodoLevel"
+          :mood="dodoMood"
+          outfit="ribbon"
+          :size="160"
+          :show-rarity="true"
+          :floaty="true"
+          :interactive="true"
+        />
+      </div>
+      <h1 class="font-display text-2xl font-bold text-peach-500">朵朵 dodo</h1>
+      <p class="font-zen text-sm text-stone-600">
+        妳今天感覺如何？
+      </p>
     </header>
 
-    <div class="grid grid-cols-3 gap-3">
-      <button
-        v-for="m in [
-          { v: 'good', label: '😊 還不錯' },
-          { v: 'okay', label: '😐 普普' },
-          { v: 'bad', label: '😞 不太好' },
-        ]"
-        :key="m.v"
-        :data-test="`mood-${m.v}`"
-        :disabled="loading"
-        @click="checkin(m.v as any)"
-        class="bg-white border border-brand-100 rounded-2xl py-4 hover:bg-brand-50 disabled:opacity-50 transition text-sm"
-      >{{ m.label }}</button>
-    </div>
+    <Card tone="plain">
+      <p class="font-zen text-xs text-stone-500 text-center mb-3">點一下，告訴朵朵</p>
+      <div class="grid grid-cols-3 gap-2.5">
+        <button
+          v-for="m in [
+            { v: 'good', e: '😊', label: '還不錯' },
+            { v: 'okay', e: '😐', label: '普普' },
+            { v: 'bad', e: '😞', label: '不太好' },
+          ]"
+          :key="m.v"
+          :data-test="`mood-${m.v}`"
+          :disabled="loading"
+          @click="checkin(m.v as any)"
+          class="bg-cream-50 hover:bg-peach-50 active:scale-95 disabled:opacity-50 border border-cream-200 rounded-2xl py-4 transition-all flex flex-col items-center gap-1"
+        >
+          <span class="text-3xl">{{ m.e }}</span>
+          <span class="text-xs font-zen text-stone-600">{{ m.label }}</span>
+        </button>
+      </div>
+    </Card>
 
-    <div v-if="todayResponse" data-test="dodo-response" class="bg-brand-50 rounded-3xl p-5 text-stone-700 leading-relaxed">
-      <p class="text-xs text-brand-600 mb-1">朵朵說 · {{ todayPhase ? phaseLabels[todayPhase] : '' }}</p>
-      <p>{{ todayResponse }}</p>
-    </div>
+    <Spinner v-if="loading && !todayResponse" label="朵朵正在想..." />
 
-    <div v-if="upgradePromptVisible" data-test="upgrade-prompt" class="bg-brand-100 rounded-3xl p-5 text-center space-y-2">
-      <p class="text-sm text-stone-700">{{ error }}</p>
-      <button @click="router.push('/me/premium')" class="px-5 py-2 bg-brand-600 text-white text-sm rounded-full">
+    <Card
+      v-if="todayResponse"
+      tone="cream"
+      data-test="dodo-response"
+      class="animate-pop"
+    >
+      <p class="font-zen text-xs text-peach-500 mb-2 flex items-center gap-1.5">
+        <span class="w-1.5 h-1.5 rounded-full bg-peach-400 animate-sparkle" />
+        朵朵說<span v-if="todayPhase"> · {{ phaseLabels[todayPhase] }}</span>
+      </p>
+      <p class="text-stone-700 leading-relaxed font-zen">{{ todayResponse }}</p>
+    </Card>
+
+    <Card
+      v-if="upgradePromptVisible"
+      tone="lavender"
+      data-test="upgrade-prompt"
+      class="text-center space-y-3 animate-pop"
+    >
+      <div class="text-3xl">💎</div>
+      <p class="text-sm text-stone-700 font-zen">{{ error }}</p>
+      <Button variant="primary" sfx="ui_open" @click="router.push('/me/premium')">
         升級 Premium 解鎖無限
-      </button>
-    </div>
+      </Button>
+    </Card>
 
-    <p v-else-if="error" class="text-xs text-red-500 text-center">{{ error }}</p>
+    <p
+      v-else-if="error"
+      class="text-xs text-sakura-500 text-center font-zen"
+    >
+      {{ error }}
+    </p>
 
-    <section class="bg-white rounded-3xl shadow-sm p-5">
-      <h2 class="font-bold text-brand-700 mb-2">最近 check-in</h2>
-      <ul class="text-sm divide-y divide-brand-50">
-        <li v-for="r in recent.slice(0, 7)" :key="r.checked_on" class="py-2 flex gap-3">
-          <span class="text-stone-400 w-24 shrink-0">{{ r.checked_on }}</span>
-          <span class="text-stone-700 truncate">{{ r.dodo_response }}</span>
+    <Card tone="plain">
+      <h2 class="font-display font-bold text-peach-500 text-base mb-3 flex items-center gap-2">
+        <span class="text-xl">🗓️</span> 最近 check-in
+      </h2>
+      <Spinner v-if="initialLoading" size="sm" />
+      <ul v-else-if="recent.length" class="text-sm divide-y divide-cream-200 font-zen">
+        <li
+          v-for="r in recent.slice(0, 7)"
+          :key="r.checked_on"
+          class="py-2.5 flex gap-3"
+        >
+          <span class="text-stone-400 w-24 shrink-0 text-xs">{{ r.checked_on }}</span>
+          <span class="text-stone-700 truncate flex-1">{{ r.dodo_response }}</span>
         </li>
-        <li v-if="!recent.length" class="py-3 text-stone-400 text-center">還沒 check-in 過</li>
       </ul>
-    </section>
+      <EmptyState
+        v-else
+        icon="🐣"
+        title="還沒 check-in 過"
+        subtitle="第一次點一下心情，朵朵就會回覆妳。"
+      />
+    </Card>
   </div>
 </template>

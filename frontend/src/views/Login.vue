@@ -3,7 +3,6 @@ import { ref } from 'vue'
 import { useRouter } from 'vue-router'
 import { demoLogin } from '../api'
 import Card from '../components/ui/Card.vue'
-import Button from '../components/ui/Button.vue'
 import Character from '../components/Character.vue'
 
 const router = useRouter()
