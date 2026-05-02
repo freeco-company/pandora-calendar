@@ -41,7 +41,8 @@ final class HttpGamificationPublisher implements GamificationPublisher
                 'event_kind' => $eventKind,
                 'idempotency_key' => $idempotencyKey,
                 'occurred_at' => now()->toIso8601String(),
-                'metadata' => $context,
+                // py-service 期望 metadata 是 dict；空 array 在 JSON 會變 [] 觸發 422，強制 object
+                'metadata' => empty($context) ? (object) [] : $context,
             ],
             'occurred_at' => now(),
         ]);
@@ -50,13 +51,18 @@ final class HttpGamificationPublisher implements GamificationPublisher
     public function flush(OutboxEvent $event): bool
     {
         try {
+            $body = $event->payload;
+            // metadata 從 DB JSON load 回來時，空 array 會是 [] 而非 {}，py-service 422
+            if (! isset($body['metadata']) || (is_array($body['metadata']) && empty($body['metadata']))) {
+                $body['metadata'] = (object) [];
+            }
             $res = $this->http
                 ->withHeaders([
                     'X-Internal-Secret' => $this->secret,
                     'X-Source-App' => config('pandora.gamification.app_id', 'pandora_calendar'),
                 ])
                 ->timeout(8)
-                ->post("{$this->baseUrl}/internal/gamification/events", $event->payload);
+                ->post("{$this->baseUrl}/internal/gamification/events", $body);
 
             if (! $res->successful()) {
                 $event->update([
