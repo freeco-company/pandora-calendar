@@ -9,6 +9,7 @@ export const api = axios.create({
 })
 
 const TOKEN_KEY = 'pandora_calendar_token'
+const REFRESH_KEY = 'pandora_calendar_refresh'
 const USER_KEY = 'pandora_calendar_user'
 
 export const tokenRef = ref<string | null>(localStorage.getItem(TOKEN_KEY))
@@ -23,12 +24,29 @@ export function setToken(t: string | null): void {
   else localStorage.removeItem(TOKEN_KEY)
 }
 
-export function getStoredUser(): { id: number; name: string; email: string } | null {
+export function getRefreshToken(): string | null {
+  return localStorage.getItem(REFRESH_KEY)
+}
+
+export function setRefreshToken(t: string | null): void {
+  if (t) localStorage.setItem(REFRESH_KEY, t)
+  else localStorage.removeItem(REFRESH_KEY)
+}
+
+export interface StoredUser {
+  id: number | string
+  name?: string | null
+  email?: string | null
+  display_name?: string | null
+  identity_uuid?: string | null
+}
+
+export function getStoredUser(): StoredUser | null {
   const raw = localStorage.getItem(USER_KEY)
   return raw ? JSON.parse(raw) : null
 }
 
-export function setStoredUser(u: { id: number; name: string; email: string } | null): void {
+export function setStoredUser(u: StoredUser | null): void {
   if (u) localStorage.setItem(USER_KEY, JSON.stringify(u))
   else localStorage.removeItem(USER_KEY)
 }
@@ -39,6 +57,10 @@ api.interceptors.request.use((config) => {
   return config
 })
 
+/**
+ * Phase 0 demo helper（dev/testing only — 後端 abort 在 production）。
+ * 留作 e2e + local dev seed 帳號用。
+ */
 export async function demoLogin(email: string) {
   const { data } = await api.post('/demo/login', { email })
   setToken(data.token)
@@ -46,8 +68,47 @@ export async function demoLogin(email: string) {
   return data.user
 }
 
+/**
+ * P1 ADR-007: Pandora Core 統一登入（prod 主路徑）。
+ * Calendar 端不存 password，全部 forward 給 PC。
+ */
+export async function platformLogin(email: string, password: string) {
+  const { data } = await api.post('/v1/auth/login', { email, password })
+  setToken(data.access_token)
+  setRefreshToken(data.refresh_token)
+  setStoredUser({
+    id: data.user?.id,
+    email: data.user?.email_canonical ?? email,
+    display_name: data.user?.display_name,
+  })
+  return data.user
+}
+
+export async function platformRegister(email: string, password: string, displayName?: string) {
+  const { data } = await api.post('/v1/auth/register', {
+    email,
+    password,
+    display_name: displayName,
+  })
+  return data
+}
+
+export async function platformOauthUrl(provider: 'google' | 'line' | 'apple') {
+  const { data } = await api.get(`/v1/auth/oauth/${provider}/url`)
+  return data.redirect_url as string
+}
+
 export async function logout() {
+  const refresh = getRefreshToken()
+  if (refresh) {
+    try {
+      await api.post('/v1/auth/logout', { refresh_token: refresh })
+    } catch {
+      // 失敗不擋登出本地 cleanup
+    }
+  }
   setToken(null)
+  setRefreshToken(null)
   setStoredUser(null)
 }
 
