@@ -84,7 +84,7 @@ pandora-calendar/
 | **P0 Foundation** ✅ | M1-M2 | Laravel + Vue scaffold、經期記錄 / 預測 / 月曆 UI / 朵朵 check-in / demo seed / e2e 綠 / Capacitor config | iOS Sim + Android Emu 跑完 happy path |
 | **P1 Identity + Alpha** | M3 | 接 Pandora Core IdentityClient（mock → real）、PII 不落地稽核、TestFlight / Play Internal 內測 50 人 | 50 人連用 14 天無 P0 bug |
 | **P2 訂閱上架（變現起點）** | M4-M5 | IAP（StoreKit 2 + Google Billing）、ECPay 後台、NT$99/月 + NT$899/年、freemium gating、App Store / Play 審過 | **正式上架，開始收訂閱** |
-| **P3 集團 bodyRhythm 寫入** ✅ backend | M6 | `GroupUserProfile.bodyRhythm` publisher、ADR-009 PandoraGamificationPublisher（連續記錄 3 個月解成就）、meal 讀 bodyRhythm | meal e2e 看到「黃體期妳會嗜甜」建議 |
+| **P3 集團 bodyRhythm + ADR-009 全鏈路** ✅ 2026-05-03 | M6 | `GroupUserProfile.bodyRhythm` publisher、HttpGamificationPublisher 啟用、13 event_kind 發佈點 + idempotency、Webhook + HMAC + replay nonce + user XP mirror、`/me/dodo` `/me/pet` API；前端 sound.ts (17 SFX) + Character.vue (5 species + 12 outfit + 7 mood) + XpToast / LevelUpModal / AchievementToast 全棧打通 | 73/73 Pest + 5/5 e2e + build clean |
 | **P4 AI 個人化 + 進階 paywall** | M7-M8 | py-service LLM 接通做 PMS 模式辨識 / 個人化文案、含金量問答、孕期模式 | 付費轉換率 ≥ 4% |
 | **P5 健康整合 + 留存深化 + 婕樂纖商品連結點** | M9-M10 | HealthKit / Health Connect 讀基礎體溫 / 睡眠、進度照、week report、**深層婕樂纖商品連結**（gate: 母艦消費 + 訂閱 + 連用 90d） | 30 日留存 ≥ 35% |
 | **P6 跨 App 聯動 + 加盟漏斗訊號** | M11-M12 | 潘朵拉肌膚讀 bodyRhythm、ADR-003 lifecycle 訊號 publisher（calendar_sustained_user → 母艦 lead pool，不在 App 內顯示） | ARR 站穩 NT$3M+ |
