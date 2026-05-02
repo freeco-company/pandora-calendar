@@ -1,0 +1,22 @@
+{
+  "appId": "com.jerosse.pandora.calendar",
+  "appName": "潘朵拉月曆",
+  "webDir": "dist",
+  "server": {
+    "cleartext": false,
+    "allowNavigation": [
+      "calendar-api.js-store.com.tw",
+      "pandora.js-store.com.tw",
+      "*.pandora.js-store.com.tw",
+      "*.js-store.com.tw"
+    ]
+  },
+  "ios": {
+    "contentInset": "automatic",
+    "scrollEnabled": true,
+    "backgroundColor": "#fbf6ee"
+  },
+  "android": {
+    "backgroundColor": "#fbf6ee"
+  }
+}
