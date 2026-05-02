@@ -58,8 +58,11 @@ async function doLogout() {
         👤
       </div>
       <p class="font-zen text-xs text-stone-500">{{ greeting }}，</p>
-      <h1 class="font-display text-2xl font-bold text-peach-500">{{ user?.name ?? '朋友' }}</h1>
-      <p class="text-xs text-stone-400 font-zen">{{ user?.email }}</p>
+      <h1 class="font-display text-2xl font-bold text-peach-500">{{ user?.display_name ?? user?.name ?? '朋友' }}</h1>
+      <p v-if="user?.email" class="text-xs text-stone-400 font-zen">{{ user.email }}</p>
+      <p v-else-if="user?.identity_uuid" class="text-[10px] text-stone-300 font-zen tracking-wide">
+        ID {{ user.identity_uuid.slice(0, 8) }}
+      </p>
       <span
         v-if="ent.isPremium()"
         data-test="premium-badge"

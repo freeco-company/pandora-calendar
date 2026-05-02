@@ -21,6 +21,8 @@ return Application::configure(basePath: dirname(__DIR__))
             'pandora.jwt' => \App\Http\Middleware\PandoraJwtAuth::class,
             // P1 ADR-007：JWT 優先 + sanctum fallback（dev demo login 路徑）
             'auth.platform' => \App\Http\Middleware\SanctumOrPandoraJwt::class,
+            // P1 ADR-007：PC user.upserted webhook 簽章 + nonce 驗證
+            'identity.webhook' => \App\Http\Middleware\VerifyIdentityWebhookSignature::class,
         ]);
     })
     ->withExceptions(function (Exceptions $exceptions): void {

@@ -62,4 +62,29 @@ class IdentityClient
             ],
         );
     }
+
+    /**
+     * Webhook 收到 user.upserted / user.suspended / user.merged 時觸發 mirror upsert。
+     *
+     * 嚴守 ADR-007 §2.3：只取 minimal identity 欄位，PII（email/phone/...）即使
+     * payload 帶了也忽略。
+     *
+     * @param  array<string,mixed>  $payload
+     */
+    public function syncFromPlatform(string $uuid, array $payload): User
+    {
+        $user = $this->findOrCreateMirror($uuid);
+
+        $user->fill(array_filter([
+            'display_name' => isset($payload['display_name']) ? (string) $payload['display_name'] : null,
+            'avatar_url' => isset($payload['avatar_url']) ? (string) $payload['avatar_url'] : null,
+            'subscription_tier' => isset($payload['subscription_tier']) ? (string) $payload['subscription_tier'] : null,
+            'identity_synced_at' => isset($payload['updated_at']) ? $payload['updated_at'] : now(),
+            'last_synced_at' => now(),
+        ], fn ($v) => $v !== null && $v !== ''));
+
+        $user->save();
+
+        return $user->refresh();
+    }
 }

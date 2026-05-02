@@ -41,6 +41,8 @@ return [
         'jwt_issuer' => env('PANDORA_CORE_JWT_ISSUER', 'pandora-core'),
         'jwt_audience' => env('PANDORA_CORE_JWT_AUDIENCE', 'fairy-calendar'),
         'product_code' => env('PANDORA_CORE_PRODUCT_CODE', 'fairy-calendar'),
+        'webhook_secret' => env('PANDORA_CORE_WEBHOOK_SECRET'),
+        'webhook_window_seconds' => (int) env('PANDORA_CORE_WEBHOOK_WINDOW_SECONDS', 300),
     ],
 
 ];

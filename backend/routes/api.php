@@ -28,13 +28,18 @@ Route::post('/webhooks/ecpay-notify', [EcpayNotifyController::class, 'handle']);
 Route::post('/v1/internal/webhooks/gamification', [\App\Http\Controllers\Api\V1\Internal\GamificationWebhookController::class, 'handle'])
     ->middleware('gamification.webhook');
 
+// P1 ADR-007 — PC → calendar identity webhook（user.upserted/suspended/merged）
+Route::post('/v1/internal/webhooks/identity', \App\Http\Controllers\Api\V1\Internal\IdentityWebhookController::class)
+    ->middleware('identity.webhook');
+
 // P1 ADR-007 — auth proxy 到 Pandora Core（不存 password / refresh token 在本機）
+// throttle:5,1 = 5 req/min/IP，PC 自己也擋一次但 calendar 站前面也擋（defense-in-depth）
 Route::prefix('v1/auth')->group(function () {
-    Route::post('/register', [AuthController::class, 'register']);
-    Route::post('/login', [AuthController::class, 'login']);
-    Route::post('/refresh', [AuthController::class, 'refresh']);
+    Route::post('/register', [AuthController::class, 'register'])->middleware('throttle:5,1');
+    Route::post('/login', [AuthController::class, 'login'])->middleware('throttle:5,1');
+    Route::post('/refresh', [AuthController::class, 'refresh'])->middleware('throttle:30,1');
     Route::post('/logout', [AuthController::class, 'logout']);
-    Route::get('/oauth/{provider}/url', [AuthController::class, 'oauthUrl']);
+    Route::get('/oauth/{provider}/url', [AuthController::class, 'oauthUrl'])->middleware('throttle:30,1');
 });
 
 Route::middleware(['auth.platform'])->prefix('v1')->group(function () {
@@ -58,6 +63,10 @@ Route::middleware(['auth.platform'])->prefix('v1')->group(function () {
         return response()->json(['data' => [
             'id' => $u->id,
             'name' => $u->name,
+            // P1 ADR-007: PC mirror 寫的是 display_name，name 是 sanctum demo 殘留
+            'display_name' => $u->display_name ?? $u->name,
+            'avatar_url' => $u->avatar_url,
+            'subscription_tier' => $u->subscription_tier,
             'identity_uuid' => $u->identity_uuid,
             'linked_to_mother' => (bool) $u->mother_customer_id,
             'mother_total_orders' => (int) ($u->mother_total_orders ?? 0),
