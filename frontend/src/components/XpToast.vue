@@ -31,7 +31,7 @@ onUnmounted(() => window.removeEventListener('pandora:xp', onXp))
     <div
       v-for="item in queue"
       :key="item.id"
-      class="surface-card animate-slidein px-4 py-3 flex items-center gap-3 min-w-[200px] bg-peach-gradient text-white shadow-soft-lg"
+      class="animate-slidein px-4 py-3 flex items-center gap-3 min-w-[200px] bg-peach-gradient text-white shadow-soft-lg rounded-3xl backdrop-blur-sm"
       data-test="xp-toast"
     >
       <span class="text-2xl animate-sparkle">✨</span>
