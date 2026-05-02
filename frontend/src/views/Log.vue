@@ -5,7 +5,7 @@ import Card from '../components/ui/Card.vue'
 import Button from '../components/ui/Button.vue'
 import EmptyState from '../components/ui/EmptyState.vue'
 import { useSfx } from '../lib/sound'
-import { awardXp, emitAchievement } from '../lib/gamification'
+import { awardXp, emitAchievement, consumeGamificationPending } from '../lib/gamification'
 
 const sfx = useSfx()
 const startDate = ref(new Date().toISOString().slice(0, 10))
@@ -50,10 +50,11 @@ async function saveCycle() {
     })
     message.value = '已記錄這次經期 ✓'
     sfx.play('cycle_logged')
-    // Phase 4 mock：成功儲存週期 → 5 XP toast。Track B 接通後改吃 API response 的 xp 欄位。
+    // 樂觀 +XP（對齊 py-service catalog: calendar.cycle_logged = 5 XP）
     awardXp(5, '記錄了今天的週期')
-    // 第一次記錄時觸發成就（cycle 列表 0 → 1）
     if (cycles.value.length === 0) {
+      // 本地樂觀 first_cycle 成就 toast（py-service 真正 award 透過 webhook 到 pending，
+      // consumeGamificationPending 會在後面消化；重複觸發無害，icon 一致）
       setTimeout(() => {
         emitAchievement({
           code: 'first_cycle',
@@ -64,6 +65,8 @@ async function saveCycle() {
       }, 700)
     }
     await load()
+    // 真實 level_up / achievement_unlocked 由 py-service webhook 推回 → cache → 這裡 pull
+    setTimeout(() => { void consumeGamificationPending() }, 1500)
   } catch (e: any) {
     message.value = e?.response?.data?.message ?? '存檔失敗'
     sfx.play('wrong')
@@ -90,9 +93,11 @@ async function saveSymptom() {
     })
     message.value = '已記錄今日狀態 ✓'
     sfx.play('meal_logged')
-    awardXp(2, '記錄了今天的身體狀態')
+    // 樂觀 +XP（對齊 catalog: calendar.symptom_logged = 3 XP）
+    awardXp(3, '記錄了今天的身體狀態')
     selectedTags.value = []
     await load()
+    setTimeout(() => { void consumeGamificationPending() }, 1500)
   } catch (e: any) {
     message.value = e?.response?.data?.message ?? '存檔失敗'
     sfx.play('wrong')

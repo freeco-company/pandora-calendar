@@ -10,7 +10,7 @@ import Spinner from '../components/ui/Spinner.vue'
 import Character from '../components/Character.vue'
 import { useSfx } from '../lib/sound'
 import { moodForPhase } from '../lib/character'
-import { getCurrentLevel } from '../lib/gamification'
+import { getCurrentLevel, awardXp, consumeGamificationPending } from '../lib/gamification'
 
 const router = useRouter()
 const ent = useEntitlementsStore()
@@ -54,7 +54,10 @@ async function checkin(mood: 'good' | 'okay' | 'bad') {
     todayResponse.value = res.data.data.dodo_response
     todayPhase.value = res.data.data.phase
     sfx.play('correct')
+    // 樂觀 +XP（catalog: calendar.dodo_checkin = 3 XP, daily_cap=3）
+    awardXp(3, '今天和朵朵聊了天')
     await loadRecent()
+    setTimeout(() => { void consumeGamificationPending() }, 1500)
   } catch (e: any) {
     if (e?.response?.status === 402) {
       upgradePromptVisible.value = true

@@ -5,9 +5,11 @@
 //   pandora:level_up    → 全螢幕 LevelUpModal
 //   pandora:achievement → 中央 AchievementToast
 //
-// Phase 4：先用 mock 觸發（Log.vue 在儲存週期成功後 dispatch），
-// Track B 後端接通後改從 axios response 拿真實 XP / level_up payload，
-// 不用改前端任何 listener。
+// 雙軌：
+//   - 樂觀 awardXp()：使用者動作後立刻 +XP toast（catalog 對齊的數字）
+//     LS XP 只是 UI cache；真實 source of truth 是 py-service ledger
+//   - consumePending()：呼叫 /v1/me/gamification/pending 拉 webhook 收到的
+//     level_up / achievement_unlocked / outfit_unlocked，dispatch 給同一條 bus
 
 export interface XpDetail {
   amount: number
@@ -79,4 +81,47 @@ export function getCurrentLevel(): number {
 }
 export function getCurrentXp(): number {
   return parseInt(localStorage.getItem(XP_KEY) || '0', 10) || 0
+}
+
+/**
+ * 拉 /v1/me/gamification/pending 一次（pull-then-clear）。
+ * Webhook receiver 收到 py-service level_up / achievement_awarded / outfit_unlocked
+ * 後 cache 在 server 端，前端在關鍵動作後（save / checkin）呼叫此函數消化。
+ *
+ * import 在實際呼叫處才動態載入，避免 gamification.ts ↔ api.ts 互相 import 循環。
+ */
+export async function consumeGamificationPending(): Promise<void> {
+  try {
+    const { GamificationApi } = await import('../api')
+    const { data } = await GamificationApi.pending()
+    const pending = data?.data
+    if (!pending) return
+
+    if (pending.kind === 'level_up') {
+      // 用 server 真實值校正 LS cache
+      localStorage.setItem(XP_KEY, String(pending.total_xp))
+      localStorage.setItem(LEVEL_KEY, String(pending.level))
+      emitLevelUp({
+        level: pending.level,
+        cheer: '妳又前進了一步，朵朵很開心。',
+      })
+    } else if (pending.kind === 'achievement_unlocked') {
+      emitAchievement({
+        code: pending.code,
+        title: pending.name || pending.code,
+        description: pending.tier ? `${pending.tier.toUpperCase()} 成就` : undefined,
+        icon: '🏆',
+      })
+    } else if (pending.kind === 'outfit_unlocked') {
+      // outfit unlock 用 achievement toast 呈現
+      emitAchievement({
+        code: 'outfit_' + pending.codes.join('_'),
+        title: '解鎖新裝扮',
+        description: pending.codes.join(', '),
+        icon: '🎀',
+      })
+    }
+  } catch {
+    // pending fetch 失敗 silent — 不阻斷主流程
+  }
 }

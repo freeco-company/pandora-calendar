@@ -202,3 +202,17 @@ export const PremiumApi = {
 export const CommerceApi = {
   productLinks: () => api.get<{ data: ProductLink[]; gate_passed: boolean }>('/v1/commerce/product-links'),
 }
+
+export type GamificationPending =
+  | { kind: 'level_up'; level: number; total_xp: number; outfit_state: unknown; pushed_at: string }
+  | { kind: 'achievement_unlocked'; code: string; name: string; tier: string; pushed_at: string }
+  | { kind: 'outfit_unlocked'; codes: string[]; pushed_at: string }
+  | null
+
+export const GamificationApi = {
+  pending: () => api.get<{ data: GamificationPending }>('/v1/me/gamification/pending'),
+  dodo: () =>
+    api.get<{ data: { level: number; total_xp: number; outfit_state: unknown; mood: string } }>('/v1/me/dodo'),
+  pet: () =>
+    api.get<{ data: { species: string | null; nickname: string | null; level: number } }>('/v1/me/pet'),
+}
