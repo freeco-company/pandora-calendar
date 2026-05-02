@@ -1,12 +1,17 @@
 <script setup lang="ts">
 import { onMounted, ref } from 'vue'
+import { useRouter } from 'vue-router'
 import { CalendarApi, type DodoCheckin } from '../api'
+import { useEntitlementsStore } from '../stores/entitlements'
 
+const router = useRouter()
+const ent = useEntitlementsStore()
 const todayResponse = ref<string | null>(null)
 const todayPhase = ref<string | null>(null)
 const recent = ref<DodoCheckin[]>([])
 const loading = ref(false)
 const error = ref<string | null>(null)
+const upgradePromptVisible = ref(false)
 
 async function loadRecent() {
   const res = await CalendarApi.dodoRecent()
@@ -16,18 +21,28 @@ async function loadRecent() {
     todayPhase.value = recent.value[0].phase
   }
 }
-onMounted(loadRecent)
+
+onMounted(async () => {
+  ent.load()
+  await loadRecent()
+})
 
 async function checkin(mood: 'good' | 'okay' | 'bad') {
   loading.value = true
   error.value = null
+  upgradePromptVisible.value = false
   try {
     const res = await CalendarApi.dodoCheckin(mood)
     todayResponse.value = res.data.data.dodo_response
     todayPhase.value = res.data.data.phase
     await loadRecent()
   } catch (e: any) {
-    error.value = e?.response?.data?.message ?? '失敗'
+    if (e?.response?.status === 402) {
+      upgradePromptVisible.value = true
+      error.value = e?.response?.data?.message ?? '免費版每天 1 次'
+    } else {
+      error.value = e?.response?.data?.message ?? '失敗'
+    }
   } finally {
     loading.value = false
   }
@@ -66,7 +81,14 @@ const phaseLabels: Record<string, string> = {
       <p>{{ todayResponse }}</p>
     </div>
 
-    <p v-if="error" class="text-xs text-red-500 text-center">{{ error }}</p>
+    <div v-if="upgradePromptVisible" data-test="upgrade-prompt" class="bg-brand-100 rounded-3xl p-5 text-center space-y-2">
+      <p class="text-sm text-stone-700">{{ error }}</p>
+      <button @click="router.push('/me/premium')" class="px-5 py-2 bg-brand-600 text-white text-sm rounded-full">
+        升級 Premium 解鎖無限
+      </button>
+    </div>
+
+    <p v-else-if="error" class="text-xs text-red-500 text-center">{{ error }}</p>
 
     <section class="bg-white rounded-3xl shadow-sm p-5">
       <h2 class="font-bold text-brand-700 mb-2">最近 check-in</h2>

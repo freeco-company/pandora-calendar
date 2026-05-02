@@ -8,6 +8,10 @@ const routes: RouteRecordRaw[] = [
   { path: '/log', component: () => import('./views/Log.vue') },
   { path: '/dodo', component: () => import('./views/Dodo.vue') },
   { path: '/me', component: () => import('./views/Profile.vue') },
+  { path: '/me/premium', component: () => import('./views/Paywall.vue') },
+  { path: '/me/week-report', component: () => import('./views/WeekReportView.vue') },
+  { path: '/me/pms', component: () => import('./views/PmsView.vue') },
+  { path: '/me/jerosse', component: () => import('./views/JerosseDeep.vue') },
 ]
 
 export const router = createRouter({

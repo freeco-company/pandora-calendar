@@ -98,6 +98,57 @@ export interface DodoCheckin {
   dodo_response: string
 }
 
+export interface Entitlements {
+  premium: boolean
+  premium_until: string | null
+  product_id: string | null
+  platform: string | null
+  auto_renew: boolean
+}
+
+export interface SubscriptionProduct {
+  id: string
+  title: string
+  price_twd: number
+  period: 'month' | 'year'
+  discount: string | null
+  monthly_equivalent?: number
+}
+
+export interface PmsPattern {
+  sample_cycles: number
+  top_symptoms: string[]
+  symptom_counts: Record<string, number>
+  confidence: string
+}
+
+export interface WeekReport {
+  week_start: string
+  summary: {
+    cycles_started: number
+    symptoms_logged: number
+    top_symptom_tags: Record<string, number>
+    checkins: number
+    mood_distribution: Record<string, number>
+    health_samples: number
+    phase_at_week_end: string
+    cycle_day_at_week_end: number | null
+    dodo_summary: string
+  }
+}
+
+export interface ProductLink {
+  product_slug: string
+  message: string
+  mother_url: string
+}
+
+export interface ApiError {
+  error?: string
+  message?: string
+  upgrade_to?: string
+}
+
 export const CalendarApi = {
   cycles: () => api.get<{ data: CycleRecord[]; prediction: CyclePrediction; body_rhythm: BodyRhythm }>('/v1/cycles'),
   storeCycle: (payload: { start_date: string; end_date?: string; peak_flow?: number; notes?: string }) =>
@@ -111,4 +162,43 @@ export const CalendarApi = {
   dodoCheckin: (mood: 'good' | 'okay' | 'bad') =>
     api.post<{ data: DodoCheckin & { id: number } }>('/v1/dodo/checkin', { mood }),
   dodoRecent: () => api.get<{ data: DodoCheckin[] }>('/v1/dodo/recent'),
+}
+
+export const SubscriptionApi = {
+  me: () => api.get<{ data: Entitlements }>('/v1/subscription/me'),
+  products: () => api.get<{ data: SubscriptionProduct[]; features: string[] }>('/v1/subscription/products'),
+  verifyApple: (receiptData: string, productId: string) =>
+    api.post('/v1/subscription/verify-apple', { receipt_data: receiptData, product_id: productId }),
+  verifyGoogle: (purchaseToken: string, productId: string, packageName: string) =>
+    api.post('/v1/subscription/verify-google', {
+      purchase_token: purchaseToken,
+      product_id: productId,
+      package_name: packageName,
+    }),
+  ecpayCheckout: (productId: string, returnUrl: string) =>
+    api.post<{ data: { action_url: string; form_params: Record<string, string> } }>(
+      '/v1/subscription/ecpay-checkout',
+      { product_id: productId, return_url: returnUrl },
+    ),
+}
+
+export const PremiumApi = {
+  pms: () => api.get<{ data: PmsPattern | null }>('/v1/insight/pms'),
+  weekReport: () => api.get<{ data: WeekReport }>('/v1/week-report/latest'),
+  generateWeekReport: () => api.post<{ data: WeekReport }>('/v1/week-report/generate'),
+  startPregnancy: (lmpDate: string) =>
+    api.post<{ data: { id: number; estimated_due_date: string; gestational_week: number } }>(
+      '/v1/pregnancy',
+      { lmp_date: lmpDate },
+    ),
+  currentPregnancy: () =>
+    api.get<{ data: { id: number; lmp_date: string; estimated_due_date: string; gestational_week: number } | null }>(
+      '/v1/pregnancy/current',
+    ),
+  importHealthSamples: (samples: Array<{ metric: string; value: number; recorded_on: string }>) =>
+    api.post('/v1/health-samples/import', { source: 'healthkit', samples }),
+}
+
+export const CommerceApi = {
+  productLinks: () => api.get<{ data: ProductLink[]; gate_passed: boolean }>('/v1/commerce/product-links'),
 }

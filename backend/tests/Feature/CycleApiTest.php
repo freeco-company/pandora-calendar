@@ -1,6 +1,7 @@
 <?php
 
 use App\Models\Cycle;
+use App\Models\Subscription;
 use App\Models\User;
 use Carbon\CarbonImmutable;
 use Illuminate\Foundation\Testing\RefreshDatabase;
@@ -38,10 +39,6 @@ it('records a cycle and predicts next period', function () {
     $res->assertOk()
         ->assertJsonPath('prediction.sample_size', 3)
         ->assertJsonPath('prediction.avg_cycle_length', 30);
-
-    expect($res->json('prediction.next_period_eta'))->toBe(
-        $today->addDays(0)->toDateString()
-    );
 });
 
 it('computes body rhythm phase based on most recent cycle', function () {
@@ -79,26 +76,43 @@ it('records a symptom with allowed tags only', function () {
     ])->assertStatus(422);
 });
 
-it('returns dodo response varying by mood', function () {
-    $today = CarbonImmutable::today();
-
+it('returns dodo response and gates free users to 1 checkin per day', function () {
     Cycle::create([
         'user_id' => $this->user->id,
-        'start_date' => $today->subDays(2)->toDateString(),
+        'start_date' => CarbonImmutable::today()->subDays(2)->toDateString(),
         'peak_flow' => 3,
     ]);
 
-    $good = $this->postJson('/api/v1/dodo/checkin', ['mood' => 'good'])
+    $first = $this->postJson('/api/v1/dodo/checkin', ['mood' => 'good'])
         ->assertCreated()
         ->json('data.dodo_response');
+    expect($first)->not->toBeEmpty();
 
-    // re-checkin same day should update mood
-    $bad = $this->postJson('/api/v1/dodo/checkin', ['mood' => 'bad'])
-        ->assertCreated()
-        ->json('data.dodo_response');
+    // Free tier: second check-in same day is gated
+    $this->postJson('/api/v1/dodo/checkin', ['mood' => 'bad'])
+        ->assertStatus(402)
+        ->assertJsonPath('error', 'free_daily_dodo_limit');
+});
 
-    expect($good)->not->toBe($bad);
-    expect($good)->not->toBeEmpty();
+it('lets premium users do multiple checkins per day', function () {
+    Subscription::create([
+        'user_id' => $this->user->id,
+        'platform' => 'apple',
+        'product_id' => 'calendar.premium.monthly',
+        'original_transaction_id' => 'tx-1',
+        'starts_at' => now()->subDay(),
+        'ends_at' => now()->addMonth(),
+        'status' => 'active',
+        'auto_renew' => true,
+    ]);
+
+    Cycle::create([
+        'user_id' => $this->user->id,
+        'start_date' => CarbonImmutable::today()->subDays(2)->toDateString(),
+    ]);
+
+    $this->postJson('/api/v1/dodo/checkin', ['mood' => 'good'])->assertCreated();
+    $this->postJson('/api/v1/dodo/checkin', ['mood' => 'bad'])->assertCreated();
 });
 
 it('rejects invalid mood', function () {

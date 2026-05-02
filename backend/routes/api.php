@@ -1,19 +1,40 @@
 <?php
 
 use App\Http\Controllers\Api\V1\BodyRhythmController;
+use App\Http\Controllers\Api\V1\CommerceController;
 use App\Http\Controllers\Api\V1\CycleController;
 use App\Http\Controllers\Api\V1\DodoController;
+use App\Http\Controllers\Api\V1\HealthSampleController;
+use App\Http\Controllers\Api\V1\InsightController;
+use App\Http\Controllers\Api\V1\PregnancyController;
+use App\Http\Controllers\Api\V1\SubscriptionController;
 use App\Http\Controllers\Api\V1\SymptomController;
+use App\Http\Controllers\Api\V1\WeekReportController;
+use App\Http\Controllers\Webhooks\AppleAsnController;
+use App\Http\Controllers\Webhooks\EcpayNotifyController;
+use App\Http\Controllers\Webhooks\GoogleRtdnController;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Route;
 
 Route::get('/health', fn () => response()->json(['status' => 'ok', 'app' => 'pandora-calendar']));
 
+// Webhook endpoints（不走 sanctum）
+Route::post('/webhooks/apple-asn', [AppleAsnController::class, 'handle']);
+Route::post('/webhooks/google-rtdn', [GoogleRtdnController::class, 'handle']);
+Route::post('/webhooks/ecpay-notify', [EcpayNotifyController::class, 'handle']);
+
 Route::middleware(['auth:sanctum'])->prefix('v1')->group(function () {
-    Route::get('/me', fn (Request $r) => response()->json(['data' => [
-        'id' => $r->user()->id,
-        'name' => $r->user()->name,
-    ]]));
+    Route::get('/me', function (Request $r) {
+        $u = $r->user();
+
+        return response()->json(['data' => [
+            'id' => $u->id,
+            'name' => $u->name,
+            'identity_uuid' => $u->identity_uuid,
+            'linked_to_mother' => (bool) $u->mother_customer_id,
+            'mother_total_orders' => (int) ($u->mother_total_orders ?? 0),
+        ]]);
+    });
 
     Route::get('/cycles', [CycleController::class, 'index']);
     Route::post('/cycles', [CycleController::class, 'store']);
@@ -26,10 +47,29 @@ Route::middleware(['auth:sanctum'])->prefix('v1')->group(function () {
     Route::get('/dodo/recent', [DodoController::class, 'recent']);
 
     Route::get('/body-rhythm/me', [BodyRhythmController::class, 'me']);
+
+    Route::get('/subscription/me', [SubscriptionController::class, 'me']);
+    Route::get('/subscription/products', [SubscriptionController::class, 'products']);
+    Route::post('/subscription/verify-apple', [SubscriptionController::class, 'verifyApple']);
+    Route::post('/subscription/verify-google', [SubscriptionController::class, 'verifyGoogle']);
+    Route::post('/subscription/ecpay-checkout', [SubscriptionController::class, 'ecpayCheckout']);
+
+    Route::post('/health-samples/import', [HealthSampleController::class, 'importBatch']);
+
+    Route::get('/pregnancy/current', [PregnancyController::class, 'current']);
+    Route::post('/pregnancy', [PregnancyController::class, 'start']);
+    Route::patch('/pregnancy/{pregnancy}/end', [PregnancyController::class, 'end']);
+
+    Route::get('/insight/pms', [InsightController::class, 'pms']);
+
+    Route::get('/week-report/latest', [WeekReportController::class, 'latest']);
+    Route::post('/week-report/generate', [WeekReportController::class, 'generate']);
+
+    // 婕樂纖商品連結（P5+，gate 嚴守）
+    Route::get('/commerce/product-links', [CommerceController::class, 'productLinks']);
 });
 
-// Phase 0 demo: token-less helper to mint a Sanctum token for one of the seeded demo users.
-// 上 prod 前移除（受 APP_DEBUG + APP_ENV gate）。
+// Phase 0 demo helper（dev / testing only）
 Route::post('/demo/login', function (Request $request) {
     abort_unless(app()->environment('local', 'testing'), 404);
     $request->validate(['email' => ['required', 'email']]);
@@ -41,6 +81,11 @@ Route::post('/demo/login', function (Request $request) {
 
     return response()->json([
         'token' => $token,
-        'user' => ['id' => $user->id, 'name' => $user->name, 'email' => $user->email],
+        'user' => [
+            'id' => $user->id,
+            'name' => $user->name,
+            'email' => $user->email,
+            'identity_uuid' => $user->identity_uuid,
+        ],
     ]);
 });

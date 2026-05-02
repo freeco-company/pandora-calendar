@@ -7,6 +7,9 @@ use App\Models\DodoCheckin;
 use App\Services\Calendar\BodyRhythmCalculator;
 use App\Services\Calendar\CyclePredictor;
 use App\Services\Dodo\DodoCheckinResponder;
+use App\Services\Gamification\CalendarEventCatalog;
+use App\Services\Gamification\GamificationPublisher;
+use App\Services\Subscription\FeatureGate;
 use Carbon\CarbonImmutable;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
@@ -17,6 +20,8 @@ class DodoController extends Controller
         private readonly CyclePredictor $predictor,
         private readonly BodyRhythmCalculator $rhythmCalc,
         private readonly DodoCheckinResponder $responder,
+        private readonly FeatureGate $gate,
+        private readonly GamificationPublisher $gamification,
     ) {}
 
     public function checkin(Request $request): JsonResponse
@@ -26,17 +31,27 @@ class DodoController extends Controller
             'checked_on' => ['nullable', 'date'],
         ]);
 
-        $userId = $request->user()->id;
+        $user = $request->user();
         $checkedOn = isset($data['checked_on'])
             ? CarbonImmutable::parse($data['checked_on'])
             : CarbonImmutable::today();
 
-        $prediction = $this->predictor->predict($userId, $checkedOn);
+        // Free tier gating: 1 check-in per day
+        $gate = $this->gate->canCheckinDodo($user, $checkedOn);
+        if (! $gate->allowed) {
+            return response()->json([
+                'error' => $gate->reason,
+                'message' => $gate->message,
+                'upgrade_to' => 'calendar.premium.monthly',
+            ], 402);
+        }
+
+        $prediction = $this->predictor->predict($user->id, $checkedOn);
         $rhythm = $this->rhythmCalc->compute($prediction, $checkedOn);
         $response = $this->responder->respond($data['mood'], $rhythm);
 
         $checkin = DodoCheckin::updateOrCreate(
-            ['user_id' => $userId, 'checked_on' => $checkedOn->toDateString()],
+            ['user_id' => $user->id, 'checked_on' => $checkedOn->toDateString()],
             [
                 'mood' => $data['mood'],
                 'phase_at_checkin' => $rhythm->phase,
@@ -44,6 +59,11 @@ class DodoController extends Controller
                 'dodo_response' => $response,
             ],
         );
+
+        $this->gamification->publish($user, CalendarEventCatalog::DODO_CHECKIN, [
+            'mood' => $data['mood'],
+            'phase' => $rhythm->phase,
+        ]);
 
         return response()->json([
             'data' => [
