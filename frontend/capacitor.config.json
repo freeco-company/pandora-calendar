@@ -6,6 +6,7 @@
     "cleartext": false,
     "allowNavigation": [
       "calendar-api.js-store.com.tw",
+      "id.js-store.com.tw",
       "pandora.js-store.com.tw",
       "*.pandora.js-store.com.tw",
       "*.js-store.com.tw"
@@ -14,9 +15,16 @@
   "ios": {
     "contentInset": "automatic",
     "scrollEnabled": true,
-    "backgroundColor": "#fbf6ee"
+    "backgroundColor": "#fbf6ee",
+    "scheme": "pandoracalendar"
   },
   "android": {
-    "backgroundColor": "#fbf6ee"
+    "backgroundColor": "#fbf6ee",
+    "scheme": "pandoracalendar"
+  },
+  "plugins": {
+    "App": {
+      "_comment": "Custom URL scheme pandoracalendar:// 給 OAuth callback 用 — Pandora Core /v1/auth/oauth/{provider}/callback 在 mobile 模式應 redirect 到 pandoracalendar://oauth/callback?token=...，App 用 listenForLaunchUrl 接住"
+    }
   }
 }

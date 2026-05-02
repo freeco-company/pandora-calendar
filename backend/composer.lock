@@ -4,7 +4,7 @@
         "Read more about it at https://getcomposer.org/doc/01-basic-usage.md#installing-dependencies",
         "This file is @generated automatically"
     ],
-    "content-hash": "856759a04e4dad99ef747faf39799f0a",
+    "content-hash": "7775b1eb9d85eb773f1b1d1cfe7815cc",
     "packages": [
         {
             "name": "brick/math",
@@ -661,6 +661,47 @@
                 }
             ],
             "time": "2025-03-06T22:45:56+00:00"
+        },
+        {
+            "name": "freeco/pandora-shared",
+            "version": "0.1.1",
+            "source": {
+                "type": "git",
+                "url": "https://github.com/freeco-company/pandora-shared.git",
+                "reference": "90795f37a9f282ac471227def030e5a02225d763"
+            },
+            "dist": {
+                "type": "zip",
+                "url": "https://api.github.com/repos/freeco-company/pandora-shared/zipball/90795f37a9f282ac471227def030e5a02225d763",
+                "reference": "90795f37a9f282ac471227def030e5a02225d763",
+                "shasum": ""
+            },
+            "require": {
+                "php": "^8.3"
+            },
+            "require-dev": {
+                "phpunit/phpunit": "^12.0"
+            },
+            "type": "library",
+            "autoload": {
+                "psr-4": {
+                    "Pandora\\Shared\\": "src/"
+                }
+            },
+            "autoload-dev": {
+                "psr-4": {
+                    "Pandora\\Shared\\Tests\\": "tests/"
+                }
+            },
+            "license": [
+                "proprietary"
+            ],
+            "description": "Pandora 集團共用基礎設施與 domain services — ECPay, IndexNow, Discord, LINE Messaging, Google Ads, Achievement, Outfit, Serendipity. Pure PHP.",
+            "support": {
+                "source": "https://github.com/freeco-company/pandora-shared/tree/v0.1.1",
+                "issues": "https://github.com/freeco-company/pandora-shared/issues"
+            },
+            "time": "2026-05-01T00:56:36+00:00"
         },
         {
             "name": "fruitcake/php-cors",
