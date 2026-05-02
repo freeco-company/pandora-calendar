@@ -17,7 +17,7 @@ return new class extends Migration {
             $table->id();
             $table->string('aggregate_type', 32);  // user / cycle / subscription
             $table->unsignedBigInteger('aggregate_id');
-            $table->string('event_kind', 64);      // pandora_calendar.first_cycle, ...
+            $table->string('event_kind', 64);      // calendar.first_cycle, ...
             $table->string('destination', 32);     // gamification / conversion / body_rhythm
             $table->json('payload');
             $table->timestamp('occurred_at');

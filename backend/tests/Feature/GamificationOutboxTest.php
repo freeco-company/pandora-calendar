@@ -54,6 +54,6 @@ it('writes body_rhythm outbox event when cycle saved', function () {
 it('rejects publishing unknown event_kind', function () {
     $publisher = app(\App\Services\Gamification\GamificationPublisher::class);
 
-    expect(fn () => $publisher->publish($this->user, 'pandora_calendar.totally_made_up'))
+    expect(fn () => $publisher->publish($this->user, 'calendar.totally_made_up'))
         ->toThrow(InvalidArgumentException::class);
 });

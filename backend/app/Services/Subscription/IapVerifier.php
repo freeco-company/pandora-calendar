@@ -5,25 +5,27 @@ namespace App\Services\Subscription;
 use App\Models\Subscription;
 use App\Models\SubscriptionEvent;
 use App\Models\User;
+use App\Services\Subscription\Google\GooglePlayAccessTokenProvider;
 use Carbon\CarbonImmutable;
 use Illuminate\Http\Client\Factory as HttpFactory;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Log;
 
 /**
- * IAP receipt verifier — Apple StoreKit 2 + Google Play Billing 走同一個 API surface。
+ * IAP receipt verifier — Apple StoreKit 2 + Google Play Billing。
  *
- * Phase 0-2：實作 Apple/Google verifier（含 sandbox fallback for Apple），ECPay 走另一條 webhook。
- *
- * 安全：商店通知 webhook 進來時 / 用戶 client-side restore purchase 時，**永遠 server-side
- * verify**。Client side receipt token 不可信。
+ * 安全：商店通知 webhook 進來時 / 用戶 client-side restore purchase 時，
+ * **永遠 server-side verify**。Client side receipt token 不可信。
  */
 class IapVerifier
 {
     public const PLATFORM_APPLE = 'apple';
     public const PLATFORM_GOOGLE = 'google';
 
-    public function __construct(private readonly HttpFactory $http) {}
+    public function __construct(
+        private readonly HttpFactory $http,
+        private readonly GooglePlayAccessTokenProvider $googleTokens,
+    ) {}
 
     public function verifyApple(User $user, string $receiptData, string $productId): Subscription
     {
@@ -54,7 +56,6 @@ class IapVerifier
                 $verified = $data;
                 break;
             }
-            // hard error
             Log::warning('apple-iap-verify-failed', ['status' => $status, 'user_id' => $user->id]);
             throw new \RuntimeException("Apple IAP verify failed with status $status");
         }
@@ -85,12 +86,10 @@ class IapVerifier
 
     public function verifyGoogle(User $user, string $purchaseToken, string $productId, string $packageName): Subscription
     {
-        // Real implementation will call Google Play Developer API; for Phase 0-2 we trust the
-        // signed JWT from Google Play webhook + a structural check. Production should swap in
-        // a googleapis HTTP client with service account JWT.
         $serviceAccountJson = config('pandora.subscription.google_play_service_account_json');
+
         if (! $serviceAccountJson) {
-            // Phase 0 stub: accept token, mark sub active for 30d (test fixtures only)
+            // Phase 0 stub for dev/testing without real Google credentials.
             return $this->upsert(
                 user: $user,
                 platform: self::PLATFORM_GOOGLE,
@@ -103,14 +102,22 @@ class IapVerifier
             );
         }
 
-        // Real call would go here
+        $accessToken = $this->googleTokens->get();
+
         $url = "https://androidpublisher.googleapis.com/androidpublisher/v3/applications/{$packageName}/purchases/subscriptions/{$productId}/tokens/{$purchaseToken}";
+
         $res = $this->http->timeout(8)
-            ->withToken($this->fetchGooglePlayAccessToken($serviceAccountJson))
+            ->withToken($accessToken)
             ->get($url);
 
+        // Token might have just expired between cache and call → retry once with fresh token
+        if ($res->status() === 401) {
+            $accessToken = $this->googleTokens->refresh();
+            $res = $this->http->timeout(8)->withToken($accessToken)->get($url);
+        }
+
         if (! $res->ok()) {
-            throw new \RuntimeException("Google Play verify failed: {$res->status()}");
+            throw new \RuntimeException("Google Play verify failed: {$res->status()} ".substr($res->body(), 0, 200));
         }
         $data = $res->json();
 
@@ -124,13 +131,6 @@ class IapVerifier
             payload: $data,
             receiptHash: hash('sha256', $purchaseToken),
         );
-    }
-
-    private function fetchGooglePlayAccessToken(string $serviceAccountJson): string
-    {
-        // Service-account JWT exchange → access token; out of scope for Phase 0 stub.
-        // Cached in production via Cache::remember to avoid hitting Google quota every call.
-        throw new \RuntimeException('Google Play access token exchange not implemented in Phase 0');
     }
 
     public function upsert(

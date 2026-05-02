@@ -5,6 +5,8 @@ namespace App\Http\Controllers\Webhooks;
 use App\Http\Controllers\Controller;
 use App\Models\Subscription;
 use App\Models\SubscriptionEvent;
+use App\Services\Subscription\Apple\AppleJwsVerifier;
+use App\Services\Subscription\Apple\AppleJwsVerifyException;
 use Carbon\CarbonImmutable;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
@@ -14,17 +16,21 @@ use Illuminate\Support\Facades\Log;
  * Apple App Store Server Notifications V2 receiver.
  * https://developer.apple.com/documentation/appstoreservernotifications
  *
- * Phase 0-2 處理 notificationType:
- * - SUBSCRIBED / DID_RENEW → upsert + extend ends_at
- * - DID_FAIL_TO_RENEW → status = grace
- * - EXPIRED → status = expired
- * - REFUND → status = refunded
+ * Verification (P2 上線就緒):
+ *   AppleJwsVerifier 完整 verify ES256 signature + x5c cert chain to Apple Root CA G3.
+ *   Verifier reject 時 → 401，避免被偽造 webhook 觸發訂閱狀態變動。
  *
- * 完整 payload signed by Apple JWT；prod 必須 verify x5c chain（jose-php package）。
- * Phase 0 為求 demo 完整性，先 trust + log；P2 上架前必補 JWT verify。
+ * Notification handling:
+ *   SUBSCRIBED / DID_RENEW → upsert + extend ends_at
+ *   DID_FAIL_TO_RENEW → status = grace
+ *   EXPIRED → status = expired
+ *   REFUND → status = refunded
+ *   CONSUMPTION_REQUEST / GRACE_PERIOD_EXPIRED → 紀錄但不變狀態
  */
 class AppleAsnController extends Controller
 {
+    public function __construct(private readonly AppleJwsVerifier $verifier) {}
+
     public function handle(Request $request): JsonResponse
     {
         $signedPayload = $request->input('signedPayload', '');
@@ -32,17 +38,24 @@ class AppleAsnController extends Controller
             return response()->json(['error' => 'missing signedPayload'], 400);
         }
 
-        // Phase 0 stub: parse JWT body without verification.
-        // P2 production: verify with Apple's x5c cert chain via firebase/php-jwt or jose-php.
-        $body = $this->parseJwtBody($signedPayload);
+        try {
+            $body = $this->verifier->verifyAndDecode($signedPayload);
+            $body = $this->verifier->decodeNestedTransaction($body);
+        } catch (AppleJwsVerifyException $e) {
+            Log::warning('apple-asn-verify-rejected', ['err' => $e->getMessage()]);
+
+            return response()->json(['error' => 'verify_failed', 'detail' => $e->getMessage()], 401);
+        }
+
         $notificationType = $body['notificationType'] ?? '';
         $data = $body['data'] ?? [];
-        $originalTxId = $data['signedRenewalInfo']['originalTransactionId']
-            ?? $data['signedTransactionInfo']['originalTransactionId']
+
+        $originalTxId = $data['renewalInfo']['originalTransactionId']
+            ?? $data['transactionInfo']['originalTransactionId']
             ?? null;
 
         if (! $originalTxId) {
-            return response()->json(['error' => 'no originalTransactionId']);
+            return response()->json(['ignored' => 'no originalTransactionId']);
         }
 
         $sub = Subscription::where('platform', 'apple')
@@ -60,12 +73,15 @@ class AppleAsnController extends Controller
             'DID_FAIL_TO_RENEW' => $sub->update(['status' => 'grace']),
             'EXPIRED' => $sub->update(['status' => 'expired']),
             'REFUND' => $sub->update(['status' => 'refunded', 'cancelled_at' => now()]),
+            'DID_CHANGE_RENEWAL_STATUS' => $sub->update([
+                'auto_renew' => (bool) ($data['renewalInfo']['autoRenewStatus'] ?? false),
+            ]),
             default => null,
         };
 
         SubscriptionEvent::create([
             'subscription_id' => $sub->id,
-            'event_type' => strtolower($notificationType),
+            'event_type' => strtolower($notificationType ?: 'unknown'),
             'payload' => $body,
             'occurred_at' => now(),
         ]);
@@ -75,22 +91,12 @@ class AppleAsnController extends Controller
 
     private function extend(Subscription $sub, array $data, string $type): void
     {
-        $expiresMs = $data['signedTransactionInfo']['expiresDate'] ?? null;
+        $expiresMs = $data['transactionInfo']['expiresDate'] ?? null;
         if ($expiresMs) {
             $sub->ends_at = CarbonImmutable::createFromTimestampMs($expiresMs);
         }
         $sub->status = 'active';
         $sub->renewed_at = $type === 'DID_RENEW' ? now() : null;
         $sub->save();
-    }
-
-    private function parseJwtBody(string $jwt): array
-    {
-        $parts = explode('.', $jwt);
-        if (count($parts) < 2) {
-            return [];
-        }
-
-        return json_decode(base64_decode(strtr($parts[1], '-_', '+/')), true) ?? [];
     }
 }
