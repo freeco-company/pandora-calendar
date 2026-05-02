@@ -53,9 +53,14 @@ class FlushOutboxCommand extends Command
 
     private function makeGamificationPublisher(): ?HttpGamificationPublisher
     {
-        $url = config('pandora.gamification.base_url');
-        $secret = config('pandora.gamification.secret');
-        if (! $url || ! $secret) {
+        // P5.1：對齊 AppServiceProvider 的 binding 邏輯（新 config + enabled flag + fallback）。
+        $enabled = (bool) config('gamification.enabled', false);
+        $url = config('gamification.base_url') ?: config('pandora.gamification.base_url');
+        $secret = config('gamification.internal_secret')
+            ?: config('gamification.hmac_secret')
+            ?: config('pandora.gamification.secret');
+
+        if (! $enabled || ! $url || ! $secret) {
             return null;
         }
 

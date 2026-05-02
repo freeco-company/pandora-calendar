@@ -31,10 +31,15 @@ class AppServiceProvider extends ServiceProvider
         });
 
         $this->app->bind(GamificationPublisher::class, function ($app) {
-            $url = config('pandora.gamification.base_url');
-            $secret = config('pandora.gamification.secret');
+            // P5.1：以新 config('gamification') 為主，legacy config('pandora.gamification') 為 fallback。
+            // enabled flag 必須 true，且 base_url + secret 都齊才走 HTTP 版；任一缺 → noop。
+            $enabled = (bool) config('gamification.enabled', false);
+            $url = config('gamification.base_url') ?: config('pandora.gamification.base_url');
+            $secret = config('gamification.internal_secret')
+                ?: config('gamification.hmac_secret')
+                ?: config('pandora.gamification.secret');
 
-            return $url && $secret
+            return ($enabled && $url && $secret)
                 ? new HttpGamificationPublisher($app->make(HttpFactory::class), $url, $secret)
                 : new NoopGamificationPublisher;
         });
