@@ -200,6 +200,16 @@ async function loginWith(provider: 'google' | 'line' | 'apple') {
       </div>
 
       <p v-if="error" class="text-xs text-sakura-500 text-center font-zen pt-1">{{ error }}</p>
+
+      <!-- 忘記密碼 fallback：PC self-service password reset 尚未實作，先導 mailto -->
+      <p v-if="mode === 'login'" class="text-center pt-1">
+        <a
+          href="mailto:support@js-store.com.tw?subject=潘朵拉月曆%20-%20忘記密碼&body=請協助重設我的密碼，謝謝。我的 email："
+          class="text-[11px] text-stone-400 hover:text-peach-500 transition-colors font-zen underline-offset-2 hover:underline"
+        >
+          忘記密碼？
+        </a>
+      </p>
     </Card>
 
     <!-- Dev demo (gated by import.meta.env.DEV) -->
@@ -224,6 +234,12 @@ async function loginWith(provider: 'google' | 'line' | 'apple') {
 
     <p class="font-zen text-[10px] text-stone-400 mt-6 leading-relaxed text-center">
       ❌ 不做廣告 · ❌ 不賣資料 · 妳的週期資料只屬於妳
+    </p>
+
+    <p class="font-zen text-[10px] text-stone-400 mt-2 text-center space-x-2">
+      <RouterLink to="/privacy" class="hover:text-peach-500 transition-colors">隱私權</RouterLink>
+      <span>·</span>
+      <RouterLink to="/terms" class="hover:text-peach-500 transition-colors">使用條款</RouterLink>
     </p>
   </div>
 </template>

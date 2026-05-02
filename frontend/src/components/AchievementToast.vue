@@ -27,7 +27,7 @@ onUnmounted(() => window.removeEventListener('pandora:achievement', onAchievemen
       class="fixed top-1/3 left-1/2 -translate-x-1/2 z-[65] pointer-events-none"
       data-test="achievement-toast"
     >
-      <div class="surface-card animate-pop bg-gradient-to-br from-cream-100 to-peach-100 px-6 py-5 text-center shadow-soft-lg max-w-xs">
+      <div class="rounded-3xl backdrop-blur-sm animate-pop bg-gradient-to-br from-cream-100 to-peach-100 px-6 py-5 text-center shadow-soft-lg max-w-xs">
         <p class="text-3xl mb-1">{{ item.icon || '🏆' }}</p>
         <p class="font-zen text-[10px] tracking-widest text-peach-500">ACHIEVEMENT</p>
         <h3 class="font-display text-lg font-bold text-peach-500 mt-1">{{ item.title }}</h3>

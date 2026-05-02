@@ -1,7 +1,7 @@
 <script setup lang="ts">
 import { computed, onMounted, ref } from 'vue'
 import { useRouter } from 'vue-router'
-import { getStoredUser, logout } from '../api'
+import { getStoredUser, logout, deleteCalendarData } from '../api'
 import { useEntitlementsStore } from '../stores/entitlements'
 import Card from '../components/ui/Card.vue'
 import Button from '../components/ui/Button.vue'
@@ -48,6 +48,30 @@ async function doLogout() {
   await logout()
   ent.reset()
   router.push('/login')
+}
+
+const deleteConfirmText = ref('')
+const deleteLoading = ref(false)
+const deleteError = ref<string | null>(null)
+
+async function confirmDeleteData() {
+  if (deleteConfirmText.value !== '刪除') {
+    deleteError.value = '請輸入「刪除」二字確認'
+    return
+  }
+  deleteLoading.value = true
+  deleteError.value = null
+  try {
+    const result = await deleteCalendarData()
+    sfx.play('notify')
+    alert('妳的月曆資料已全部清除。\n\n' + (result?.message ?? ''))
+    ent.reset()
+    router.push('/login')
+  } catch (e: any) {
+    deleteError.value = e?.response?.data?.error ?? '刪除失敗，請重試或來信 support@js-store.com.tw'
+  } finally {
+    deleteLoading.value = false
+  }
 }
 </script>
 
@@ -174,8 +198,48 @@ async function doLogout() {
 
     <Button variant="secondary" full data-test="logout" sfx="ui_close" @click="doLogout">登出</Button>
 
+    <!-- App Store / GDPR：刪除我的月曆資料 -->
+    <Card tone="plain" class="space-y-3 border border-sakura-200">
+      <details>
+        <summary class="cursor-pointer font-display text-sm text-sakura-500 font-bold flex items-center justify-between">
+          <span>🗑 刪除我的月曆資料</span>
+          <span class="text-xs text-stone-400">展開</span>
+        </summary>
+        <div class="mt-3 space-y-2.5 text-[12px] text-stone-600 font-zen leading-relaxed">
+          <p>這會清除妳在月曆累積的所有資料：週期 / 症狀 / 朵朵 check-in / 寵物進度 / 訂閱狀態。</p>
+          <p class="text-stone-500 text-[11px]">
+            ⚠️ 集團帳號（FP 統一身份）保留在 Pandora Core，若要連集團帳號一起清除請另外來信
+            <a href="mailto:support@js-store.com.tw" class="text-peach-500 underline">support@js-store.com.tw</a>
+          </p>
+          <input
+            v-model="deleteConfirmText"
+            placeholder='輸入「刪除」二字確認'
+            class="w-full px-3 py-2 rounded-2xl border border-cream-200 bg-cream-50 focus:outline-none focus:border-sakura-300 text-sm font-zen"
+            data-test="delete-confirm-input"
+          />
+          <p v-if="deleteError" class="text-xs text-sakura-500 font-zen">{{ deleteError }}</p>
+          <button
+            @click="confirmDeleteData"
+            :disabled="deleteLoading"
+            data-test="delete-account-confirm"
+            class="w-full py-2.5 rounded-2xl bg-sakura-400 hover:bg-sakura-500 disabled:opacity-50 text-white font-zen text-sm transition-all"
+          >
+            {{ deleteLoading ? '清除中…' : '清除全部月曆資料' }}
+          </button>
+        </div>
+      </details>
+    </Card>
+
+    <div class="flex justify-center gap-4 text-[11px] text-stone-400 pt-2 font-zen">
+      <RouterLink to="/privacy" class="hover:text-peach-500 transition-colors">隱私權</RouterLink>
+      <span>·</span>
+      <RouterLink to="/terms" class="hover:text-peach-500 transition-colors">使用條款</RouterLink>
+      <span>·</span>
+      <a href="mailto:support@js-store.com.tw" class="hover:text-peach-500 transition-colors">客服</a>
+    </div>
+
     <p class="text-center text-[10px] text-stone-400 pt-1 font-zen">
-      Pandora Calendar v0.3.0 · P0-P6 visual / sound / character
+      Pandora Calendar v0.4.0 · P1 Identity · P3 Gamification
     </p>
   </div>
 </template>

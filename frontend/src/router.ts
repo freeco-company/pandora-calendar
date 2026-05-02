@@ -12,6 +12,8 @@ const routes: RouteRecordRaw[] = [
   { path: '/me/week-report', component: () => import('./views/WeekReportView.vue') },
   { path: '/me/pms', component: () => import('./views/PmsView.vue') },
   { path: '/me/jerosse', component: () => import('./views/JerosseDeep.vue') },
+  { path: '/privacy', component: () => import('./views/Privacy.vue'), meta: { public: true } },
+  { path: '/terms', component: () => import('./views/Terms.vue'), meta: { public: true } },
 ]
 
 export const router = createRouter({

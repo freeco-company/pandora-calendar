@@ -57,6 +57,61 @@ api.interceptors.request.use((config) => {
   return config
 })
 
+// 401 auto-refresh：access token 過期時自動拿 refresh token 換新 access token + retry 一次
+let refreshPromise: Promise<string | null> | null = null
+
+async function attemptRefresh(): Promise<string | null> {
+  const refresh = getRefreshToken()
+  if (!refresh) return null
+
+  if (!refreshPromise) {
+    refreshPromise = (async () => {
+      try {
+        const { data } = await axios.post(
+          `${API_BASE}/v1/auth/refresh`,
+          { refresh_token: refresh },
+          { headers: { Accept: 'application/json', 'Content-Type': 'application/json' } },
+        )
+        if (data?.access_token) {
+          setToken(data.access_token)
+          if (data.refresh_token) setRefreshToken(data.refresh_token)
+          return data.access_token as string
+        }
+      } catch {
+        setToken(null)
+        setRefreshToken(null)
+        setStoredUser(null)
+      }
+      return null
+    })().finally(() => {
+      refreshPromise = null
+    })
+  }
+  return refreshPromise
+}
+
+api.interceptors.response.use(
+  (resp) => resp,
+  async (error) => {
+    const original = error.config
+    // 跳過 auth/* 自己 — refresh 失敗不要遞迴 refresh
+    if (
+      error.response?.status === 401 &&
+      original &&
+      !original._retry &&
+      !String(original.url ?? '').includes('/v1/auth/')
+    ) {
+      original._retry = true
+      const newToken = await attemptRefresh()
+      if (newToken) {
+        original.headers.Authorization = `Bearer ${newToken}`
+        return api(original)
+      }
+    }
+    return Promise.reject(error)
+  },
+)
+
 /**
  * Phase 0 demo helper（dev/testing only — 後端 abort 在 production）。
  * 留作 e2e + local dev seed 帳號用。
@@ -100,16 +155,35 @@ export async function platformOauthUrl(provider: 'google' | 'line' | 'apple') {
 
 export async function logout() {
   const refresh = getRefreshToken()
-  if (refresh) {
-    try {
-      await api.post('/v1/auth/logout', { refresh_token: refresh })
-    } catch {
-      // 失敗不擋登出本地 cleanup
-    }
+  // 不論 PC logout 成功與否，本地 token / cache 一定要清乾淨（避免登出半套）
+  try {
+    if (refresh) await api.post('/v1/auth/logout', { refresh_token: refresh })
+  } catch {
+    /* swallow — local cleanup must always run */
   }
   setToken(null)
   setRefreshToken(null)
   setStoredUser(null)
+  // 順便清 LS XP cache 與 pet 設定（避免下個登入用戶看到上一個人的 cache）
+  try {
+    localStorage.removeItem('pandora_calendar_xp_total')
+    localStorage.removeItem('pandora_calendar_level')
+  } catch {
+    /* localStorage may be disabled in private mode */
+  }
+}
+
+/**
+ * App Store / GDPR：刪除我在 calendar 端的所有資料。
+ * 跨集團砍帳號需另外 contact support（PC self-service delete 尚未實作）。
+ */
+export async function deleteCalendarData() {
+  const { data } = await api.delete('/v1/me')
+  // 連同登出本地（PC user mirror 還在，但 calendar 本機 token 不留）
+  setToken(null)
+  setRefreshToken(null)
+  setStoredUser(null)
+  return data
 }
 
 export type Phase = 'menstrual' | 'follicular' | 'ovulation' | 'luteal' | 'unknown'

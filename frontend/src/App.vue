@@ -17,7 +17,11 @@ function tabClick() {
 </script>
 
 <template>
-  <div class="min-h-screen flex flex-col" :class="{ 'pb-24': showTabBar }">
+  <div
+    class="min-h-screen flex flex-col"
+    :class="{ 'pb-24': showTabBar }"
+    style="padding-top: env(safe-area-inset-top)"
+  >
     <main class="flex-1 relative">
       <RouterView v-slot="{ Component }">
         <Transition name="page" mode="out-in">

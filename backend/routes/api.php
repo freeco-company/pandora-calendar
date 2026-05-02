@@ -114,6 +114,9 @@ Route::middleware(['auth.platform'])->prefix('v1')->group(function () {
     Route::get('/me/gamification/pending', [\App\Http\Controllers\Api\V1\MeGamificationController::class, 'pending']);
     Route::get('/me/dodo', [\App\Http\Controllers\Api\V1\MeGamificationController::class, 'dodo']);
     Route::get('/me/pet', [\App\Http\Controllers\Api\V1\MeGamificationController::class, 'pet']);
+
+    // App Store / GDPR：In-app account data deletion
+    Route::delete('/me', [\App\Http\Controllers\Api\V1\AccountController::class, 'destroy']);
 });
 
 // Phase 0 demo helper（dev / testing only）
