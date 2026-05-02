@@ -36,11 +36,12 @@ final class HttpGamificationPublisher implements GamificationPublisher
             'idempotency_key' => $idempotencyKey,
             'destination' => OutboxEvent::DEST_GAMIFICATION,
             'payload' => [
-                'event_kind' => $eventKind,
-                'user_uuid' => $user->identity_uuid,
+                'pandora_user_uuid' => $user->identity_uuid,
                 'source_app' => config('gamification.app_id') ?? config('pandora.gamification.app_id', 'pandora_calendar'),
+                'event_kind' => $eventKind,
                 'idempotency_key' => $idempotencyKey,
-                'context' => $context,
+                'occurred_at' => now()->toIso8601String(),
+                'metadata' => $context,
             ],
             'occurred_at' => now(),
         ]);
