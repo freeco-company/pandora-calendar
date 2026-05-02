@@ -1,5 +1,6 @@
 <?php
 
+use App\Http\Controllers\Api\V1\AuthController;
 use App\Http\Controllers\Api\V1\BodyRhythmController;
 use App\Http\Controllers\Api\V1\CommerceController;
 use App\Http\Controllers\Api\V1\CycleController;
@@ -27,7 +28,16 @@ Route::post('/webhooks/ecpay-notify', [EcpayNotifyController::class, 'handle']);
 Route::post('/v1/internal/webhooks/gamification', [\App\Http\Controllers\Api\V1\Internal\GamificationWebhookController::class, 'handle'])
     ->middleware('gamification.webhook');
 
-Route::middleware(['auth:sanctum'])->prefix('v1')->group(function () {
+// P1 ADR-007 — auth proxy 到 Pandora Core（不存 password / refresh token 在本機）
+Route::prefix('v1/auth')->group(function () {
+    Route::post('/register', [AuthController::class, 'register']);
+    Route::post('/login', [AuthController::class, 'login']);
+    Route::post('/refresh', [AuthController::class, 'refresh']);
+    Route::post('/logout', [AuthController::class, 'logout']);
+    Route::get('/oauth/{provider}/url', [AuthController::class, 'oauthUrl']);
+});
+
+Route::middleware(['auth.platform'])->prefix('v1')->group(function () {
     Route::get('/me', function (Request $r) {
         $u = $r->user();
 

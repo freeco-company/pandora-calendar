@@ -35,4 +35,12 @@ return [
         ],
     ],
 
+    'pandora_core' => [
+        'base_url' => env('PANDORA_CORE_BASE_URL'),
+        'internal_secret' => env('PANDORA_CORE_INTERNAL_SECRET'),
+        'jwt_issuer' => env('PANDORA_CORE_JWT_ISSUER', 'pandora-core'),
+        'jwt_audience' => env('PANDORA_CORE_JWT_AUDIENCE', 'fairy-calendar'),
+        'product_code' => env('PANDORA_CORE_PRODUCT_CODE', 'fairy-calendar'),
+    ],
+
 ];

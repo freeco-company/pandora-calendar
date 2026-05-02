@@ -16,3 +16,12 @@ Schedule::command('pandora:outbox:flush')
     ->everyMinute()
     ->withoutOverlapping()
     ->runInBackground();
+
+/*
+| P1 ADR-007 §6 — 每 10 分鐘從 Pandora Core 拉 users delta 同步 mirror
+| 是 webhook 漏接的 safety net（PII-free response）。
+*/
+Schedule::command('identity:reconcile-users')
+    ->everyTenMinutes()
+    ->withoutOverlapping()
+    ->runInBackground();

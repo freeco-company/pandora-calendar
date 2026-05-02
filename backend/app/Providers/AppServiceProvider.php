@@ -8,9 +8,6 @@ use App\Services\Conversion\HttpConversionPublisher;
 use App\Services\Gamification\GamificationPublisher;
 use App\Services\Gamification\NoopGamificationPublisher;
 use App\Services\Gamification\HttpGamificationPublisher;
-use App\Services\Identity\HttpIdentityClient;
-use App\Services\Identity\IdentityClient;
-use App\Services\Identity\MockIdentityClient;
 use Illuminate\Http\Client\Factory as HttpFactory;
 use Illuminate\Support\ServiceProvider;
 
@@ -18,17 +15,10 @@ class AppServiceProvider extends ServiceProvider
 {
     public function register(): void
     {
-        $this->app->bind(IdentityClient::class, function ($app) {
-            $driver = config('pandora.identity.driver', 'mock');
-
-            return $driver === 'http'
-                ? new HttpIdentityClient(
-                    $app->make(HttpFactory::class),
-                    config('pandora.identity.base_url', ''),
-                    config('pandora.identity.secret', ''),
-                )
-                : new MockIdentityClient;
-        });
+        // IdentityClient + PlatformJwtVerifier 為純 concrete class，由容器自動 resolve。
+        // 舊 IDENTITY_DRIVER=mock|http 切換取消（PC 端 lookup API 從未實作），
+        // 改為 mirror meal 的 resolveFromJwt pattern。Dev/testing 走 sanctum
+        // demo login + SanctumOrPandoraJwt middleware，與 prod JWT 路徑並存。
 
         $this->app->bind(GamificationPublisher::class, function ($app) {
             // P5.1：以新 config('gamification') 為主，legacy config('pandora.gamification') 為 fallback。
