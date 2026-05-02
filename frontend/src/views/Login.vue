@@ -157,26 +157,45 @@ async function loginWith(provider: 'google' | 'line' | 'apple') {
         <div class="flex-1 h-px bg-cream-200" />
       </div>
       <div class="grid grid-cols-3 gap-2">
+        <!-- Google：四色標誌 -->
         <button
           @click="loginWith('google')"
           :disabled="loading"
-          class="py-2.5 rounded-2xl border border-cream-200 bg-white hover:bg-cream-50 disabled:opacity-50 text-sm font-zen text-stone-600 transition-all"
+          aria-label="使用 Google 登入"
+          class="py-2.5 rounded-2xl border border-cream-200 bg-white hover:bg-cream-50 disabled:opacity-50 transition-all flex items-center justify-center gap-1.5"
         >
-          Google
+          <svg class="w-4 h-4" viewBox="0 0 18 18" xmlns="http://www.w3.org/2000/svg">
+            <path fill="#4285F4" d="M17.64 9.2c0-.637-.057-1.251-.164-1.84H9v3.481h4.844a4.14 4.14 0 0 1-1.796 2.716v2.258h2.908c1.702-1.567 2.684-3.875 2.684-6.615z"/>
+            <path fill="#34A853" d="M9 18c2.43 0 4.467-.806 5.956-2.18l-2.908-2.259c-.806.54-1.837.86-3.048.86-2.344 0-4.328-1.584-5.036-3.711H.957v2.332A8.997 8.997 0 0 0 9 18z"/>
+            <path fill="#FBBC05" d="M3.964 10.71A5.41 5.41 0 0 1 3.682 9c0-.593.102-1.17.282-1.71V4.958H.957A8.996 8.996 0 0 0 0 9c0 1.452.348 2.827.957 4.042l3.007-2.332z"/>
+            <path fill="#EA4335" d="M9 3.58c1.321 0 2.508.454 3.44 1.345l2.582-2.58C13.463.891 11.426 0 9 0A8.997 8.997 0 0 0 .957 4.958L3.964 7.29C4.672 5.163 6.656 3.58 9 3.58z"/>
+          </svg>
+          <span class="text-sm font-zen text-stone-600">Google</span>
         </button>
+        <!-- LINE：官方綠 -->
         <button
           @click="loginWith('line')"
           :disabled="loading"
-          class="py-2.5 rounded-2xl border border-cream-200 bg-white hover:bg-cream-50 disabled:opacity-50 text-sm font-zen text-stone-600 transition-all"
+          aria-label="使用 LINE 登入"
+          class="py-2.5 rounded-2xl border border-cream-200 bg-white hover:bg-cream-50 disabled:opacity-50 transition-all flex items-center justify-center gap-1.5"
         >
-          LINE
+          <svg class="w-4 h-4" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
+            <path fill="#06C755" d="M24 10.314C24 4.943 18.615.572 12 .572S0 4.943 0 10.314c0 4.815 4.272 8.85 10.041 9.612.391.084.923.258 1.058.592.122.303.08.778.039 1.085l-.171 1.027c-.053.303-.242 1.186 1.039.647 1.281-.54 6.91-4.069 9.428-6.967C23.156 14.337 24 12.43 24 10.314"/>
+            <path fill="#FFF" d="M19.969 13.422h-3.394a.231.231 0 0 1-.23-.231v-.001-5.265-.001a.23.23 0 0 1 .23-.231h3.394c.127 0 .23.104.23.231v.857a.23.23 0 0 1-.23.231h-2.305v.89h2.305c.127 0 .23.104.23.231v.857a.231.231 0 0 1-.23.232h-2.305v.89h2.305c.127 0 .23.104.23.231v.857a.231.231 0 0 1-.23.231M7.245 13.422a.23.23 0 0 0 .23-.231v-.857a.231.231 0 0 0-.23-.231H4.94V7.925a.231.231 0 0 0-.23-.231h-.858a.23.23 0 0 0-.23.231v5.265a.23.23 0 0 0 .23.231h3.394M9.291 7.694H8.434a.23.23 0 0 0-.23.23v5.267a.23.23 0 0 0 .23.23h.857a.23.23 0 0 0 .23-.23V7.924a.23.23 0 0 0-.23-.23M15.118 7.694h-.857a.231.231 0 0 0-.231.23v3.128l-2.41-3.255-.018-.024-.014-.014-.012-.011-.005-.004-.013-.01-.006-.005-.013-.01-.008-.004-.013-.008-.008-.005-.014-.007-.008-.003-.015-.005-.009-.003-.015-.005h-.901a.231.231 0 0 0-.23.23v5.266a.23.23 0 0 0 .23.231h.857a.23.23 0 0 0 .231-.23v-3.127l2.413 3.259c.017.024.038.043.062.058l.001.001.014.009.007.003.011.005.012.005.007.002.017.005h.014a.27.27 0 0 0 .06.008h.853a.231.231 0 0 0 .231-.23V7.924a.231.231 0 0 0-.231-.23"/>
+          </svg>
+          <span class="text-sm font-zen text-stone-600">LINE</span>
         </button>
+        <!-- Apple：黑色 logo -->
         <button
           @click="loginWith('apple')"
           :disabled="loading"
-          class="py-2.5 rounded-2xl border border-cream-200 bg-white hover:bg-cream-50 disabled:opacity-50 text-sm font-zen text-stone-600 transition-all"
+          aria-label="使用 Apple 登入"
+          class="py-2.5 rounded-2xl border border-stone-800 bg-stone-900 hover:bg-stone-800 disabled:opacity-50 transition-all flex items-center justify-center gap-1.5"
         >
-          Apple
+          <svg class="w-4 h-4" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg" fill="white">
+            <path d="M17.05 20.28c-.98.95-2.05.8-3.08.35-1.09-.46-2.09-.48-3.24 0-1.44.62-2.2.44-3.06-.35C2.79 15.25 3.51 7.59 9.05 7.31c1.35.07 2.29.74 3.08.8 1.18-.24 2.31-.93 3.57-.84 1.51.12 2.65.72 3.4 1.8-3.12 1.87-2.38 5.98.48 7.13-.57 1.5-1.31 2.99-2.54 4.09l.01-.01zM12 7.25c-.15-2.23 1.66-4.07 3.74-4.25.29 2.58-2.34 4.5-3.74 4.25z"/>
+          </svg>
+          <span class="text-sm font-zen text-white">Apple</span>
         </button>
       </div>
 
