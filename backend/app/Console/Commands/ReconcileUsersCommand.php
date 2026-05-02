@@ -62,7 +62,7 @@ class ReconcileUsersCommand extends Command
             try {
                 $resp = Http::timeout(15)
                     ->withHeaders([
-                        'X-Internal-Secret' => $secret,
+                        'X-Pandora-Internal-Secret' => $secret,
                         'X-Source-App' => 'pandora-calendar',
                         'Accept' => 'application/json',
                     ])
