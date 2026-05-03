@@ -41,6 +41,17 @@ export type IconName =
   | 'dodo' // 朵朵 chick anchor
   | 'journal'
   | 'flower-sakura'
+  // Wave 11 — P4 / SVG P1 emoji 收尾
+  | 'lock'
+  | 'unlock'
+  | 'trash'
+  | 'chat-bubble'
+  | 'moon'
+  | 'sun'
+  | 'cloud-rain'
+  | 'water-drop'
+  | 'handshake'
+  | 'sprout-small'
 
 const props = withDefaults(
   defineProps<{
@@ -87,9 +98,24 @@ const animClass = computed(() => {
     case 'gem':
       return 'icon-anim-sparkle'
     case 'rain-cloud':
+    case 'cloud-rain':
       return 'icon-anim-bob'
     case 'dodo':
       return 'icon-anim-floaty'
+    case 'moon':
+      return 'icon-anim-breathe'
+    case 'sun':
+      return 'icon-anim-sparkle'
+    case 'water-drop':
+      return 'icon-anim-bob'
+    case 'sprout-small':
+      return 'icon-anim-sway'
+    case 'chat-bubble':
+    case 'handshake':
+    case 'lock':
+    case 'unlock':
+    case 'trash':
+      return 'icon-anim-bob'
     default:
       return ''
   }
@@ -380,6 +406,117 @@ const a11y = computed(() =>
       <rect x="4.5" y="3.5" width="14" height="17" rx="1.5" fill="#fde68a" stroke="#d97706" stroke-width="0.8" />
       <rect x="4.5" y="3.5" width="3" height="17" fill="#f59e0b" />
       <path d="M9.5 8 L16 8 M9.5 11 L16 11 M9.5 14 L14 14" stroke="#92400e" stroke-width="0.9" stroke-linecap="round" />
+    </g>
+
+    <!-- Lock -->
+    <g v-else-if="name === 'lock'">
+      <rect x="5.5" y="10.5" width="13" height="10" rx="2" fill="#fcd34d" stroke="#b45309" stroke-width="0.7" />
+      <path d="M8 10.5 V 8 a 4 4 0 0 1 8 0 V 10.5" fill="none" stroke="#b45309" stroke-width="1.5" stroke-linecap="round" />
+      <circle cx="12" cy="15" r="1.4" fill="#92400e" />
+      <path d="M12 16.2 V 18" stroke="#92400e" stroke-width="1.4" stroke-linecap="round" />
+    </g>
+
+    <!-- Unlock -->
+    <g v-else-if="name === 'unlock'">
+      <rect x="5.5" y="10.5" width="13" height="10" rx="2" fill="#bbf7d0" stroke="#166534" stroke-width="0.7" />
+      <path d="M8 10.5 V 8 a 4 4 0 0 1 7.8 -1" fill="none" stroke="#166534" stroke-width="1.5" stroke-linecap="round" />
+      <circle cx="12" cy="15" r="1.4" fill="#14532d" />
+      <path d="M12 16.2 V 18" stroke="#14532d" stroke-width="1.4" stroke-linecap="round" />
+    </g>
+
+    <!-- Trash -->
+    <g v-else-if="name === 'trash'">
+      <path d="M5 7 H 19" stroke="#94a3b8" stroke-width="1.4" stroke-linecap="round" />
+      <path d="M9 7 V 5.5 a 1 1 0 0 1 1 -1 H 14 a 1 1 0 0 1 1 1 V 7" fill="none" stroke="#94a3b8" stroke-width="1.2" />
+      <path d="M6.5 7 L 7.5 19 a 1.5 1.5 0 0 0 1.5 1.4 H 15 a 1.5 1.5 0 0 0 1.5 -1.4 L 17.5 7 Z" fill="#e2e8f0" stroke="#64748b" stroke-width="0.8" />
+      <path d="M10 10 L 10.4 17 M 14 10 L 13.6 17" stroke="#64748b" stroke-width="0.9" stroke-linecap="round" />
+    </g>
+
+    <!-- Chat bubble -->
+    <g v-else-if="name === 'chat-bubble'">
+      <defs>
+        <linearGradient :id="`g-chat-${name}`" x1="0" y1="0" x2="0" y2="1">
+          <stop offset="0%" stop-color="#fbcfe8" />
+          <stop offset="100%" stop-color="#f9a8d4" />
+        </linearGradient>
+      </defs>
+      <path d="M4 7 a 3 3 0 0 1 3 -3 H 17 a 3 3 0 0 1 3 3 V 14 a 3 3 0 0 1 -3 3 H 11 L 7 21 V 17 H 7 a 3 3 0 0 1 -3 -3 Z" :fill="`url(#g-chat-${name})`" />
+      <circle cx="9" cy="10.5" r="1" fill="white" fill-opacity="0.85" />
+      <circle cx="12" cy="10.5" r="1" fill="white" fill-opacity="0.85" />
+      <circle cx="15" cy="10.5" r="1" fill="white" fill-opacity="0.85" />
+    </g>
+
+    <!-- Moon (a friendly crescent — 與 phase-luteal 不同：about/night decoration) -->
+    <g v-else-if="name === 'moon'">
+      <defs>
+        <linearGradient :id="`g-mn-${name}`" x1="0" y1="0" x2="1" y2="1">
+          <stop offset="0%" stop-color="#fef3c7" />
+          <stop offset="100%" stop-color="#fbbf24" />
+        </linearGradient>
+      </defs>
+      <path d="M16 4 A 9 9 0 1 0 20 14.5 A 7 7 0 0 1 16 4 Z" :fill="`url(#g-mn-${name})`" stroke="#d97706" stroke-width="0.5" />
+      <circle cx="9.5" cy="11" r="0.7" fill="white" fill-opacity="0.55" />
+    </g>
+
+    <!-- Sun -->
+    <g v-else-if="name === 'sun'">
+      <defs>
+        <radialGradient :id="`g-sun-${name}`">
+          <stop offset="0%" stop-color="#fef9c3" />
+          <stop offset="100%" stop-color="#facc15" />
+        </radialGradient>
+      </defs>
+      <circle cx="12" cy="12" r="4.4" :fill="`url(#g-sun-${name})`" />
+      <g stroke="#eab308" stroke-width="1.4" stroke-linecap="round">
+        <path d="M12 3 V 5.5" />
+        <path d="M12 18.5 V 21" />
+        <path d="M3 12 H 5.5" />
+        <path d="M18.5 12 H 21" />
+        <path d="M5.6 5.6 L 7.4 7.4" />
+        <path d="M16.6 16.6 L 18.4 18.4" />
+        <path d="M5.6 18.4 L 7.4 16.6" />
+        <path d="M16.6 7.4 L 18.4 5.6" />
+      </g>
+    </g>
+
+    <!-- Cloud-rain (lighter version — soft rain) -->
+    <g v-else-if="name === 'cloud-rain'">
+      <defs>
+        <linearGradient :id="`g-cr-${name}`" x1="0" y1="0" x2="0" y2="1">
+          <stop offset="0%" stop-color="#e0e7ff" />
+          <stop offset="100%" stop-color="#cbd5e1" />
+        </linearGradient>
+      </defs>
+      <path d="M5.5 12.5 a 3.5 3.5 0 0 1 2.5 -5.8 a 4.5 4.5 0 0 1 8.5 0.8 a 3.5 3.5 0 0 1 0.5 6.5 L 7 14 a 3 3 0 0 1 -1.5 -1.5 Z" :fill="`url(#g-cr-${name})`" />
+      <path d="M9 17 L 8 19" stroke="#60a5fa" stroke-width="1.3" stroke-linecap="round" />
+      <path d="M12 17 L 11 19" stroke="#60a5fa" stroke-width="1.3" stroke-linecap="round" />
+      <path d="M15 17 L 14 19" stroke="#60a5fa" stroke-width="1.3" stroke-linecap="round" />
+    </g>
+
+    <!-- Water drop -->
+    <g v-else-if="name === 'water-drop'">
+      <defs>
+        <linearGradient :id="`g-wd-${name}`" x1="0" y1="0" x2="0" y2="1">
+          <stop offset="0%" stop-color="#bae6fd" />
+          <stop offset="100%" stop-color="#0ea5e9" />
+        </linearGradient>
+      </defs>
+      <path d="M12 3 C 8 9, 6.5 12.5, 6.5 15.5 a 5.5 5.5 0 0 0 11 0 C 17.5 12.5, 16 9, 12 3 Z" :fill="`url(#g-wd-${name})`" />
+      <ellipse cx="9.5" cy="13" rx="1.2" ry="2" fill="white" fill-opacity="0.5" />
+    </g>
+
+    <!-- Handshake (simplified — connection / partnership) -->
+    <g v-else-if="name === 'handshake'">
+      <path d="M3 12 L 8 9 L 12 12 L 16 9 L 21 12 L 21 14 L 16 17 L 12 14 L 8 17 L 3 14 Z" fill="#fcd34d" stroke="#b45309" stroke-width="0.7" stroke-linejoin="round" />
+      <circle cx="6" cy="11.5" r="1" fill="#fffbeb" fill-opacity="0.7" />
+      <circle cx="18" cy="11.5" r="1" fill="#fffbeb" fill-opacity="0.7" />
+    </g>
+
+    <!-- Small sprout (compact — for inline list use) -->
+    <g v-else-if="name === 'sprout-small'">
+      <path d="M12 21 V 14" stroke="#65a30d" stroke-width="1.4" stroke-linecap="round" />
+      <path d="M12 14 C 12 11.5, 9.5 10, 7 11 C 8 13.5, 10 14.5, 12 14.5" fill="#86efac" stroke="#65a30d" stroke-width="0.5" />
+      <path d="M12 14 C 12 12, 14.5 10.5, 17 11.5 C 16 13.7, 14 14.5, 12 14.5" fill="#bbf7d0" stroke="#65a30d" stroke-width="0.5" />
     </g>
 
     <!-- Flower (sakura) -->

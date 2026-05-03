@@ -12,6 +12,7 @@ import Card from '../components/ui/Card.vue'
 import Button from '../components/ui/Button.vue'
 import Spinner from '../components/ui/Spinner.vue'
 import Character from '../components/Character.vue'
+import Icon from '../components/icons/Icon.vue'
 import { useEntitlementsStore } from '../stores/entitlements'
 import { useSfx } from '../lib/sound'
 import { useTone } from '../composables/useTone'
@@ -305,7 +306,7 @@ function iconFor(code: string) {
           <!-- privacy_concern -->
           <template v-else-if="offerKind === 'privacy'">
             <Card tone="cream" class="space-y-3">
-              <div class="text-center text-3xl">🔒</div>
+              <div class="flex justify-center"><Icon name="lock" :size="36" decorative /></div>
               <h2 class="font-display text-xl font-bold text-peach-500 text-center">
                 {{ t('cancel_privacy_title') }}
               </h2>
@@ -341,7 +342,7 @@ function iconFor(code: string) {
         <!-- Step 3：win_back（朵朵告別 emotional 但不黏人） -->
         <template v-else-if="step === 3">
           <Card tone="cream" class="text-center space-y-3">
-            <div class="text-4xl">💛</div>
+            <div class="flex justify-center"><Icon name="heart" :size="44" animated decorative /></div>
             <h2 class="font-display text-xl font-bold text-peach-500 leading-snug">
               {{ data.win_back.headline }}
             </h2>
@@ -387,7 +388,7 @@ function iconFor(code: string) {
             </p>
             <div class="bg-sage-50 border border-sage-100 rounded-2xl p-3">
               <p class="font-zen text-xs text-sage-600 leading-relaxed">
-                💛 {{ t('cancel_step4_records_safe') }}
+                <Icon name="heart" :size="14" decorative class="inline-block align-middle mr-1" /> {{ t('cancel_step4_records_safe') }}
               </p>
             </div>
             <Button

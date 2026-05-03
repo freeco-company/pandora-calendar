@@ -5,6 +5,7 @@ import { App as CapacitorApp, type AppState } from '@capacitor/app'
 import { Capacitor } from '@capacitor/core'
 import { getToken } from './api'
 import { useSfx } from './lib/sound'
+import { useClickSound } from './composables/useClickSound'
 import {
   isLockEnabled,
   isLocked,
@@ -17,13 +18,15 @@ import LevelUpModal from './components/LevelUpModal.vue'
 import AchievementToast from './components/AchievementToast.vue'
 import DodoReplyToast from './components/DodoReplyToast.vue'
 import PetOnboardingModal from './components/PetOnboardingModal.vue'
+import AmbientSparkles from './components/AmbientSparkles.vue'
 import LockView from './views/Lock.vue'
 
 const route = useRoute()
 const showTabBar = computed(
   () => !!getToken() && route.path !== '/login' && !locked.value,
 )
-const sfx = useSfx()
+// kept for backward compat / future direct use; tabClick 改走 useClickSound
+useSfx()
 
 // === Lock state ===
 const locked = ref(false)
@@ -88,8 +91,10 @@ watch(
   () => refreshLockState(),
 )
 
+const _click = useClickSound()
 function tabClick() {
-  sfx.play('ui_tap')
+  // tab_select：軟 pop + light haptic
+  _click.play('choice_select')
 }
 </script>
 
@@ -99,6 +104,9 @@ function tabClick() {
     :class="{ 'pb-24': showTabBar }"
     style="padding-top: env(safe-area-inset-top)"
   >
+    <!-- 全局療癒粒子層（在 router-view 之下，pointer-events: none） -->
+    <AmbientSparkles />
+
     <main class="flex-1 relative">
       <RouterView v-slot="{ Component }">
         <Transition name="page" mode="out-in">

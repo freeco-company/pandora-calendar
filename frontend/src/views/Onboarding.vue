@@ -3,6 +3,7 @@ import { ref } from 'vue'
 import { useRouter } from 'vue-router'
 import { api } from '../api'
 import Character from '../components/Character.vue'
+import Icon from '../components/icons/Icon.vue'
 import OnboardingStep1Period from './onboarding/OnboardingStep1Period.vue'
 import OnboardingStep2CycleLength from './onboarding/OnboardingStep2CycleLength.vue'
 import OnboardingStep3Goal, { type OnboardingGoal } from './onboarding/OnboardingStep3Goal.vue'
@@ -155,7 +156,7 @@ async function submit() {
         data-test="onboarding-privacy"
       >
         <p class="font-display font-bold text-peach-500 text-lg flex items-center justify-center gap-1.5">
-          <span>🌙</span>{{ t('privacy_yours') }}
+          <Icon name="moon" :size="20" animated decorative />{{ t('privacy_yours') }}
         </p>
         <p class="font-zen text-[12px] text-stone-500 leading-relaxed">
           {{ t('privacy_blurb_long') }}

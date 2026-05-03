@@ -28,8 +28,18 @@ function ensureCtx(): AudioContext | null {
   if (!AC) return null
   ctx = new AC()
   master = ctx.createGain()
-  master.gain.value = 0.85
+  // 預設音量讀 localStorage（Profile slider 寫入）；fallback 0.5（柔和不嚇人）
+  let initVol = 0.5
+  try {
+    const raw = typeof localStorage !== 'undefined' ? localStorage.getItem('pandora_calendar_sfx_volume') : null
+    if (raw != null) initVol = Math.max(0, Math.min(1, Number(raw) / 100))
+  } catch {
+    /* ignore */
+  }
+  master.gain.value = initVol
   master.connect(ctx.destination)
+  // 暴露給 Profile slider 即時調整
+  ;(window as any).__pandora_sfx_master__ = master
   return ctx
 }
 

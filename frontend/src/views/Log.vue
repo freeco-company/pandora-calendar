@@ -2,6 +2,7 @@
 import { onMounted, ref } from 'vue'
 import { CalendarApi, type CycleRecord, type SymptomRecord } from '../api'
 import Card from '../components/ui/Card.vue'
+import Icon from '../components/icons/Icon.vue'
 import Button from '../components/ui/Button.vue'
 import EmptyState from '../components/ui/EmptyState.vue'
 import { useSfx } from '../lib/sound'
@@ -129,7 +130,7 @@ function pickMood(v: string) {
     <div class="md:grid md:grid-cols-2 md:gap-5 md:items-start space-y-5 md:space-y-0">
     <Card tone="plain" class="space-y-4">
       <div class="flex items-center gap-2">
-        <span class="text-2xl">🌙</span>
+        <Icon name="phase-menstrual" :size="22" animated decorative />
         <h2 class="font-display font-bold text-peach-500 text-base">{{ t('log_section_period') }}</h2>
       </div>
       <div class="grid grid-cols-2 gap-3 text-sm">
@@ -179,7 +180,7 @@ function pickMood(v: string) {
 
     <Card tone="plain" class="space-y-4">
       <div class="flex items-center gap-2">
-        <span class="text-2xl">🌸</span>
+        <Icon name="flower-sakura" :size="22" decorative />
         <h2 class="font-display font-bold text-peach-500 text-base">{{ t('log_section_today_state') }}</h2>
       </div>
       <label class="block text-sm">
@@ -243,9 +244,9 @@ function pickMood(v: string) {
       <div class="grid grid-cols-3 gap-2">
         <button
           v-for="m in [
-            { v: 'good', e: '😊', label: t('log_mood_good') },
-            { v: 'okay', e: '😐', label: t('log_mood_okay') },
-            { v: 'bad', e: '😞', label: t('log_mood_bad') },
+            { v: 'good', icon: 'heart' as const, label: t('log_mood_good') },
+            { v: 'okay', icon: 'face-neutral' as const, label: t('log_mood_okay') },
+            { v: 'bad',  icon: 'rain-cloud' as const, label: t('log_mood_bad') },
           ]"
           :key="m.v"
           @click="pickMood(m.v)"
@@ -256,7 +257,7 @@ function pickMood(v: string) {
               : 'bg-white border-cream-200 hover:bg-cream-50'
           "
         >
-          <span class="text-2xl">{{ m.e }}</span>
+          <Icon :name="m.icon" :size="26" :animated="symptomMood === m.v" decorative />
           <span class="text-[11px] font-zen text-stone-600">{{ m.label }}</span>
         </button>
       </div>

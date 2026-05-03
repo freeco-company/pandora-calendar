@@ -139,7 +139,10 @@ Route::middleware(['auth.platform'])->prefix('v1')->group(function () {
 
     Route::get('/pregnancy/current', [PregnancyController::class, 'current']);
     Route::post('/pregnancy', [PregnancyController::class, 'start']);
+    Route::post('/pregnancy/start', [PregnancyController::class, 'start']);
+    Route::patch('/pregnancy/end', [PregnancyController::class, 'end']);
     Route::patch('/pregnancy/{pregnancy}/end', [PregnancyController::class, 'end']);
+    Route::get('/pregnancy/week/{week}', [PregnancyController::class, 'week'])->where('week', '[0-9]+');
 
     Route::get('/insight/pms', [InsightController::class, 'pms']);
 
@@ -147,7 +150,13 @@ Route::middleware(['auth.platform'])->prefix('v1')->group(function () {
     Route::post('/week-report/generate', [WeekReportController::class, 'generate']);
 
     // 婕樂纖商品連結（P5+，gate 嚴守）
+    // legacy endpoint — 保留向後相容；新前端走 /v1/ecommerce/* 兩段式 (eligibility / recommendations)
     Route::get('/commerce/product-links', [CommerceController::class, 'productLinks']);
+
+    // P5 ecommerce 深層 endpoints（紅線：只在「我的 → 婕樂纖會員」呼叫）
+    Route::get('/ecommerce/eligibility', [\App\Http\Controllers\Api\V1\EcommerceController::class, 'eligibility']);
+    Route::get('/ecommerce/recommendations', [\App\Http\Controllers\Api\V1\EcommerceController::class, 'recommendations'])
+        ->middleware('ensure.mother_customer');
 
     // P5.3 / P5.4 ADR-009：朵朵 / pet / pending events
     Route::get('/me/gamification/pending', [\App\Http\Controllers\Api\V1\MeGamificationController::class, 'pending']);
@@ -229,9 +238,29 @@ Route::middleware(['auth.platform'])->prefix('v1')->group(function () {
     Route::get('/actions/history', [\App\Http\Controllers\Api\V1\DailyActionController::class, 'history']);
     Route::get('/actions/protocol', [\App\Http\Controllers\Api\V1\DailyActionController::class, 'protocol']);
 
+    // P4 含金量 Q&A — 朵朵 LLM + RAG 衛教（free 3/day · Premium 無限）
+    Route::post('/qna/ask', [\App\Http\Controllers\Api\V1\QnaController::class, 'ask'])
+        ->middleware('throttle:30,1');
+    Route::get('/qna/history', [\App\Http\Controllers\Api\V1\QnaController::class, 'history']);
+    Route::delete('/qna/{id}', [\App\Http\Controllers\Api\V1\QnaController::class, 'destroy'])
+        ->whereNumber('id');
+
     // Cycle pattern report（每 cycle 結束 04:00 schedule 自動生）
     Route::get('/pattern-report/latest', [\App\Http\Controllers\Api\V1\PatternReportController::class, 'latest']);
     Route::get('/pattern-report/list', [\App\Http\Controllers\Api\V1\PatternReportController::class, 'index']);
+
+    // P5 進度照 photo journal — 隱私核心：metadata-only by default，雲端 sync = Premium opt-in
+    Route::post('/photo-journal', [\App\Http\Controllers\Api\V1\PhotoJournalController::class, 'store']);
+    Route::get('/photo-journal/list', [\App\Http\Controllers\Api\V1\PhotoJournalController::class, 'list']);
+    Route::get('/photo-journal/{id}', [\App\Http\Controllers\Api\V1\PhotoJournalController::class, 'show'])->whereNumber('id');
+    Route::post('/photo-journal/{id}/upload-cloud', [\App\Http\Controllers\Api\V1\PhotoJournalController::class, 'uploadCloud'])
+        ->whereNumber('id')->middleware('throttle:30,1');
+    Route::delete('/photo-journal/{id}', [\App\Http\Controllers\Api\V1\PhotoJournalController::class, 'destroy'])->whereNumber('id');
+    Route::delete('/photo-journal/{id}/cloud-only', [\App\Http\Controllers\Api\V1\PhotoJournalController::class, 'destroyCloudOnly'])->whereNumber('id');
+
+    // signed cloud stream（auth required + signature 雙重）
+    Route::get('/photo-journal/cloud/{key}', [\App\Http\Controllers\Api\V1\PhotoJournalController::class, 'cloudStream'])
+        ->name('photo-journal.cloud-stream');
 });
 
 // Phase 0 demo helper（dev / testing only）

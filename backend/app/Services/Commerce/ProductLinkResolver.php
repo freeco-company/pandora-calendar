@@ -2,7 +2,6 @@
 
 namespace App\Services\Commerce;
 
-use App\Models\CycleSymptom;
 use App\Models\User;
 use App\Services\Subscription\FeatureGate;
 use Carbon\CarbonImmutable;
@@ -27,7 +26,10 @@ use Carbon\CarbonImmutable;
  */
 class ProductLinkResolver
 {
-    public function __construct(private readonly FeatureGate $gate) {}
+    public function __construct(
+        private readonly FeatureGate $gate,
+        private readonly MotherEcommerceConnector $connector,
+    ) {}
 
     /**
      * @return array<int, array{product_slug: string, message: string, mother_url: string}>
@@ -38,39 +40,8 @@ class ProductLinkResolver
             return [];
         }
 
-        $links = [];
-        $recentSymptoms = CycleSymptom::where('user_id', $user->id)
-            ->where('logged_on', '>=', now()->subDays(30))
-            ->get()
-            ->pluck('tags')
-            ->flatten()
-            ->countBy();
-
-        if (($recentSymptoms['bloating'] ?? 0) >= 3) {
-            $links[] = [
-                'product_slug' => 'fp-burst-fiber',
-                'message' => '妳這個月腹脹有點頻繁，婕樂纖爆纖錠是不少朋友的選擇。',
-                'mother_url' => 'https://pandora.js-store.com.tw/products/fp-burst-fiber',
-            ];
-        }
-
-        if (($recentSymptoms['acne'] ?? 0) >= 2) {
-            $links[] = [
-                'product_slug' => 'fp-water-light',
-                'message' => '經前一週皮膚比較乾，婕樂纖水光錠是常被選的補充。',
-                'mother_url' => 'https://pandora.js-store.com.tw/products/fp-water-light',
-            ];
-        }
-
-        if (($recentSymptoms['craving_sweet'] ?? 0) >= 3) {
-            $links[] = [
-                'product_slug' => 'fp-thick-milk-tea',
-                'message' => '想喝甜的時候，婕樂纖厚焙奶茶是不少朋友的點心選擇。',
-                'mother_url' => 'https://pandora.js-store.com.tw/products/fp-thick-milk-tea',
-            ];
-        }
-
-        return $links;
+        // 委派到 connector — 文案 / 規則來自 config('ecommerce-products') 並過 sanitizer
+        return $this->connector->recommendationsFor($user);
     }
 
     public function passesGate(User $user): bool

@@ -1,6 +1,6 @@
 <script setup lang="ts">
 import { computed } from 'vue'
-import { useSfx } from '../../lib/sound'
+import { useClickSound } from '../../composables/useClickSound'
 
 type Variant = 'primary' | 'secondary' | 'ghost' | 'danger'
 type Size = 'sm' | 'md' | 'lg'
@@ -18,7 +18,7 @@ const props = withDefaults(
 )
 
 const emit = defineEmits<{ click: [ev: MouseEvent] }>()
-const sfx = useSfx()
+const click = useClickSound()
 
 const cls = computed(() => {
   const base =
@@ -52,7 +52,10 @@ const cls = computed(() => {
 
 function onClick(ev: MouseEvent) {
   if (props.disabled || props.loading) return
-  if (props.sfx) sfx.play(props.sfx as any)
+  // variant 預設 SFX：ghost → choice_select、其他 → ui_tap（可被 prop 覆蓋）
+  const defaultSfx = props.variant === 'ghost' ? 'choice_select' : 'ui_tap'
+  const name = props.sfx === null ? null : props.sfx === 'ui_tap' ? defaultSfx : props.sfx
+  if (name) click.play(name)
   emit('click', ev)
 }
 </script>

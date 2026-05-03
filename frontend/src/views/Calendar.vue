@@ -13,9 +13,11 @@ import { moodForPhase } from '../lib/character'
 import { usePet } from '../composables/usePet'
 import { useTone } from '../composables/useTone'
 import { useRouter } from 'vue-router'
+import { usePregnancyMode } from '../composables/usePregnancyMode'
 
 const { t } = useTone()
 const router = useRouter()
+const pregnancyMode = usePregnancyMode()
 
 const cycles = ref<CycleRecord[]>([])
 const symptoms = ref<SymptomRecord[]>([])
@@ -162,6 +164,26 @@ function goPet() {
 
 <template>
   <div class="px-5 md:px-8 pt-10 pb-6 max-w-md md:max-w-4xl lg:max-w-5xl mx-auto">
+    <!-- P4 孕期模式 banner — 不影響原本 phase 計算，只在 active 時顯示一條 link -->
+    <button
+      v-if="pregnancyMode.isActive()"
+      type="button"
+      data-test="calendar-pregnancy-banner"
+      class="w-full mb-3 px-4 py-3 rounded-3xl bg-peach-50 hover:bg-peach-100 text-left flex items-center justify-between transition-colors"
+      @click="router.push('/me/pregnancy')"
+    >
+      <span class="font-zen text-sm text-peach-600">
+        🌸 {{ t('pregnancy_calendar_banner') }}
+        <span
+          v-if="pregnancyMode.state.value"
+          class="ml-1 text-[11px] text-peach-500"
+        >
+          ({{ t('pregnancy_week_n', { n: pregnancyMode.state.value.gestational_week }) }})
+        </span>
+      </span>
+      <span class="text-peach-500 text-sm">→</span>
+    </button>
+
     <!-- 倒數大字 header — emotional moment：font-display 大字 + tight leading -->
     <header class="flex items-start justify-between mb-5 gap-3">
       <div class="flex-1 min-w-0">

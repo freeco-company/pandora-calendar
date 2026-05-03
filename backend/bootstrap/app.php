@@ -23,6 +23,8 @@ return Application::configure(basePath: dirname(__DIR__))
             'auth.platform' => \App\Http\Middleware\SanctumOrPandoraJwt::class,
             // P1 ADR-007：PC user.upserted webhook 簽章 + nonce 驗證
             'identity.webhook' => \App\Http\Middleware\VerifyIdentityWebhookSignature::class,
+            // P5：婕樂纖深層商品連結 gate（母艦消費 + 訂閱 + 連用 ≥ 90 天）
+            'ensure.mother_customer' => \App\Http\Middleware\EnsureMotherCustomer::class,
         ]);
     })
     ->withExceptions(function (Exceptions $exceptions): void {

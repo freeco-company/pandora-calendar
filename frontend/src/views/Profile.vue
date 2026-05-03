@@ -5,9 +5,12 @@ import { getStoredUser, logout, deleteCalendarData } from '../api'
 import { useEntitlementsStore } from '../stores/entitlements'
 import { pushSupport, enablePush, disablePush, listSubscriptions, sendTestPush } from '../lib/push'
 import Card from '../components/ui/Card.vue'
+import Icon from '../components/icons/Icon.vue'
 import Button from '../components/ui/Button.vue'
+import Modal from '../components/ui/Modal.vue'
 import Character from '../components/Character.vue'
 import { useSfx } from '../lib/sound'
+import { useClickSound } from '../composables/useClickSound'
 import { savePet } from '../lib/character'
 import { usePet } from '../composables/usePet'
 import { getSpeciesPersonality } from '../lib/petPersonality'
@@ -24,6 +27,8 @@ import { Capacitor } from '@capacitor/core'
 import { useInclusiveMode } from '../composables/useInclusiveMode'
 import { useTone } from '../composables/useTone'
 import { useI18n, type Locale } from '../composables/useI18n'
+import { usePregnancyMode } from '../composables/usePregnancyMode'
+import { useEcommerceGate } from '../composables/useEcommerceGate'
 
 const router = useRouter()
 const user = getStoredUser()
@@ -32,6 +37,48 @@ const sfx = useSfx()
 const inclusiveMode = useInclusiveMode()
 const { t } = useTone()
 const { locale: currentLocale } = useI18n()
+
+// === P4 孕期模式 toggle ===
+const pregnancy = usePregnancyMode()
+const showPregnancyStartDialog = ref(false)
+const pregnancyLmpInput = ref('')
+const pregnancyStartBusy = ref(false)
+const pregnancyStartError = ref<string | null>(null)
+
+function openPregnancyStartDialog() {
+  if (!ent.isPremium()) {
+    router.push('/me/premium')
+    return
+  }
+  if (pregnancy.isActive()) {
+    router.push('/me/pregnancy')
+    return
+  }
+  pregnancyLmpInput.value = ''
+  pregnancyStartError.value = null
+  showPregnancyStartDialog.value = true
+  sfx.play('ui_open')
+}
+
+async function confirmPregnancyStart() {
+  if (!pregnancyLmpInput.value) {
+    pregnancyStartError.value = t('pregnancy_lmp_required')
+    return
+  }
+  pregnancyStartBusy.value = true
+  pregnancyStartError.value = null
+  try {
+    await pregnancy.start(pregnancyLmpInput.value)
+    sfx.play('correct')
+    showPregnancyStartDialog.value = false
+    router.push('/me/pregnancy')
+  } catch (e: any) {
+    pregnancyStartError.value = e?.response?.data?.message ?? t('pregnancy_start_failed')
+    sfx.play('wrong')
+  } finally {
+    pregnancyStartBusy.value = false
+  }
+}
 
 function onLocaleChange(e: Event) {
   const val = (e.target as HTMLSelectElement).value as Locale
@@ -103,6 +150,9 @@ async function sendPushTest() {
 
 const journey = ref<JourneyData | null>(null)
 const journeyLoading = ref(true)
+
+// P5 婕樂纖深層商品連結 gate（紅線：不通過則整段不 render）
+const ecommerceGate = useEcommerceGate()
 
 const nextMilestone = computed(() => {
   if (!journey.value) return null
@@ -191,6 +241,8 @@ onMounted(async () => {
     journeyLoading.value = false
   }
   refreshPushDeviceCount()
+  // 不 await — gate 決定一個深層 link 顯不顯示，loading 期間先隱藏即可
+  ecommerceGate.load().catch(() => {})
 })
 
 const greeting = computed(() => {
@@ -204,6 +256,40 @@ const greeting = computed(() => {
 function toggleMute() {
   muted.value = sfx.toggle()
   if (!muted.value) sfx.play('ui_tap')
+}
+
+// 觸覺回饋（獨立於聲音）
+const click = useClickSound()
+const hapticDisabled = ref(click.isHapticDisabled())
+function toggleHaptic() {
+  hapticDisabled.value = click.toggleHaptic()
+  if (!hapticDisabled.value) click.vibrate('light')
+}
+
+// 音量（0-100）
+const VOLUME_LS_KEY = 'pandora_calendar_sfx_volume'
+const volume = ref<number>(
+  typeof localStorage !== 'undefined' && localStorage.getItem(VOLUME_LS_KEY)
+    ? Number(localStorage.getItem(VOLUME_LS_KEY))
+    : 50,
+)
+function onVolumeInput(ev: Event) {
+  const v = Number((ev.target as HTMLInputElement).value)
+  volume.value = v
+  try {
+    localStorage.setItem(VOLUME_LS_KEY, String(v))
+  } catch {
+    /* ignore */
+  }
+  // 即時反映到 master gain（透過 lib/sound 的 ctx）
+  const w = window as any
+  if (w.__pandora_sfx_master__) {
+    w.__pandora_sfx_master__.gain.value = Math.max(0, Math.min(1, v / 100))
+  }
+}
+function testSfx() {
+  sfx.play('correct')
+  click.vibrate('light')
 }
 
 function editPetName() {
@@ -335,7 +421,7 @@ function toggleSection(key: string) {
         data-test="premium-badge"
         class="inline-block mt-1 text-[11px] bg-gradient-to-r from-peach-400 to-sakura-400 text-white px-3 py-1 rounded-full font-zen font-semibold shadow-soft"
       >
-        💎 Premium
+        <Icon name="gem" :size="14" decorative class="mr-0.5" /> Premium
       </span>
 
       <!-- Hero stat row：Lv / streak / XP，重要資訊不藏在 accordion 裡 -->
@@ -351,7 +437,7 @@ function toggleSection(key: string) {
         <div class="bg-white/80 rounded-2xl py-2.5 shadow-soft">
           <p class="font-zen text-[10px] text-stone-400">{{ t('profile_streak_label') }}</p>
           <p class="font-display font-bold text-peach-500 text-xl leading-none mt-1">
-            🔥{{ journey.streak_days }}
+            <Icon name="flame" :size="18" animated decorative class="align-middle" />{{ journey.streak_days }}
           </p>
         </div>
         <div class="bg-white/80 rounded-2xl py-2.5 shadow-soft">
@@ -519,11 +605,28 @@ function toggleSection(key: string) {
             <span class="font-zen text-peach-500 text-sm">{{ t('profile_link_pms') }}</span>
             <span class="text-stone-400">→</span>
           </RouterLink>
+          <!-- P5 進度照（隱私強化卡）— 健康整合 section 入口 -->
+          <RouterLink
+            to="/me/photo-journal"
+            data-test="link-photo-journal"
+            class="block px-5 py-4 hover:bg-peach-50 transition-colors border-b border-cream-100"
+            @click="sfx.play('ui_tap')"
+          >
+            <div class="flex items-center justify-between">
+              <span class="font-zen text-peach-500 text-sm">{{ t('profile_link_photo_journal') }}</span>
+              <span class="text-stone-400">→</span>
+            </div>
+            <p class="font-display text-[12px] text-peach-500 font-bold mt-1.5" data-test="photo-journal-privacy-big">
+              {{ t('profile_photo_journal_privacy_big') }}
+            </p>
+          </RouterLink>
           <!--
-            🔒 紅線：婕樂纖會員入口只在這層深層出現，且後端 ProductLinkResolver gate
-            通過才會實際顯示內容。
+            🔒 紅線（P5 強化版）：婕樂纖會員入口只在 gate 通過時才 render。
+            Gate = 綁母艦 + ≥1 訂單 + 訂閱中 + 連用 ≥ 90 天（後端 DeepLinkGate）。
+            Gate fail 時整段 v-if 不顯示，未綁母艦 / 新用戶完全看不到此連結。
           -->
           <RouterLink
+            v-if="ecommerceGate.eligible.value"
             to="/me/jerosse"
             data-test="link-jerosse"
             class="flex items-center justify-between px-5 py-4 hover:bg-peach-50 transition-colors"
@@ -545,7 +648,7 @@ function toggleSection(key: string) {
         @click="toggleSection('subscription')"
       >
         <span class="font-display font-bold text-peach-500 text-base flex items-center gap-2">
-          <span>💎</span>{{ t('profile_section_subscription') }}
+          <Icon name="gem" :size="18" decorative />{{ t('profile_section_subscription') }}
         </span>
         <span class="flex items-center gap-2">
           <span
@@ -651,6 +754,49 @@ function toggleSection(key: string) {
             </button>
           </label>
 
+          <!-- P4 孕期模式 toggle —— 只在「個人化」section -->
+          <div class="pt-3 border-t border-stone-200/60" data-test="pregnancy-mode-toggle">
+            <label class="flex items-start justify-between gap-3 cursor-pointer">
+              <div class="flex-1 pr-2">
+                <p class="font-zen text-sm text-stone-700">
+                  {{ t('pregnancy_toggle_label') }}
+                  <span
+                    v-if="pregnancy.isActive()"
+                    class="ml-1 text-[11px] bg-peach-100 text-peach-600 px-2 py-0.5 rounded-full"
+                    data-test="pregnancy-active-badge"
+                  >
+                    {{ t('pregnancy_week_n', { n: pregnancy.state.value?.gestational_week ?? 0 }) }}
+                  </span>
+                </p>
+                <p class="font-zen text-[11px] text-stone-500 mt-1 leading-relaxed">
+                  {{ ent.isPremium() ? t('pregnancy_toggle_help') : t('pregnancy_toggle_premium_only') }}
+                </p>
+              </div>
+              <button
+                type="button"
+                data-test="pregnancy-toggle-btn"
+                class="relative w-12 h-7 rounded-full transition-colors shrink-0 disabled:opacity-50"
+                :class="pregnancy.isActive() ? 'bg-peach-400' : 'bg-stone-300'"
+                :aria-pressed="pregnancy.isActive()"
+                :disabled="!ent.isPremium()"
+                @click="openPregnancyStartDialog"
+              >
+                <span
+                  class="absolute top-0.5 left-0.5 w-6 h-6 bg-white rounded-full shadow transition-transform"
+                  :class="pregnancy.isActive() ? 'translate-x-5' : ''"
+                />
+              </button>
+            </label>
+            <RouterLink
+              v-if="pregnancy.isActive()"
+              to="/me/pregnancy"
+              data-test="pregnancy-enter-link"
+              class="mt-2 inline-block font-zen text-[11px] text-peach-500 underline"
+            >
+              {{ t('pregnancy_enter_link') }} →
+            </RouterLink>
+          </div>
+
           <div class="pt-3 border-t border-stone-200/60" data-test="locale-switcher">
             <label class="block">
               <p class="font-zen text-sm text-stone-700">{{ t('profile_locale_label') }}</p>
@@ -691,6 +837,53 @@ function toggleSection(key: string) {
               />
             </button>
           </label>
+
+          <!-- 觸覺回饋（獨立於聲音）-->
+          <label class="flex items-center justify-between cursor-pointer pt-2 border-t border-cream-100">
+            <div>
+              <p class="font-zen text-sm text-stone-700">{{ t('profile_setting_haptic_label') }}</p>
+              <p class="font-zen text-[11px] text-stone-400 mt-0.5">{{ t('profile_setting_haptic_help') }}</p>
+            </div>
+            <button
+              @click="toggleHaptic"
+              data-test="haptic-toggle"
+              class="relative w-12 h-7 rounded-full transition-colors shrink-0"
+              :class="hapticDisabled ? 'bg-stone-300' : 'bg-peach-400'"
+              :aria-pressed="!hapticDisabled"
+            >
+              <span
+                class="absolute top-0.5 left-0.5 w-6 h-6 bg-white rounded-full shadow transition-transform"
+                :class="hapticDisabled ? '' : 'translate-x-5'"
+              />
+            </button>
+          </label>
+
+          <!-- 音量 slider -->
+          <div class="pt-2 border-t border-cream-100" :class="muted ? 'opacity-50' : ''">
+            <div class="flex items-center justify-between mb-1.5">
+              <p class="font-zen text-sm text-stone-700">{{ t('profile_setting_volume_label') }}</p>
+              <span class="font-zen text-[11px] text-stone-400 tabular-nums">{{ volume }}%</span>
+            </div>
+            <input
+              type="range"
+              min="0"
+              max="100"
+              step="5"
+              :value="volume"
+              :disabled="muted"
+              data-test="volume-slider"
+              class="w-full accent-peach-400 cursor-pointer disabled:cursor-not-allowed"
+              @input="onVolumeInput"
+            />
+            <button
+              @click="testSfx"
+              :disabled="muted"
+              data-test="sfx-test"
+              class="font-zen text-[11px] text-peach-500 underline mt-1 disabled:opacity-50 disabled:no-underline"
+            >
+              {{ t('profile_setting_sfx_test') }}
+            </button>
+          </div>
 
           <label
             v-if="pushState.supported"
@@ -745,7 +938,7 @@ function toggleSection(key: string) {
         @click="toggleSection('security')"
       >
         <span class="font-display font-bold text-peach-500 text-base flex items-center gap-2">
-          <span>🔒</span>{{ t('profile_section_security') }}
+          <Icon name="lock" :size="18" decorative />{{ t('profile_section_security') }}
         </span>
         <span
           class="text-stone-400 transition-transform"
@@ -878,7 +1071,7 @@ function toggleSection(key: string) {
         @click="toggleSection('help')"
       >
         <span class="font-display font-bold text-peach-500 text-base flex items-center gap-2">
-          <span>💬</span>{{ t('profile_section_help') }}
+          <Icon name="chat-bubble" :size="18" decorative />{{ t('profile_section_help') }}
         </span>
         <span
           class="text-stone-400 transition-transform"
@@ -888,6 +1081,18 @@ function toggleSection(key: string) {
 
       <div v-show="openSections.help">
         <Card tone="plain" :padded="false" class="overflow-hidden" data-test="help-card">
+          <RouterLink
+            to="/me/qna"
+            data-test="link-qna"
+            class="flex items-center justify-between px-5 py-4 hover:bg-peach-50 transition-colors border-b border-cream-100"
+            @click="sfx.play('ui_tap')"
+          >
+            <span class="font-zen text-peach-500 text-sm flex items-center gap-2">
+              <Icon name="dodo" :size="18" decorative />
+              {{ t('profile_link_qna') }}
+            </span>
+            <span class="text-stone-400">→</span>
+          </RouterLink>
           <RouterLink
             to="/faq"
             data-test="link-faq"
@@ -928,7 +1133,7 @@ function toggleSection(key: string) {
         @click="toggleSection('about')"
       >
         <span class="font-display font-bold text-peach-500 text-base flex items-center gap-2">
-          <span>🌙</span>{{ t('profile_section_about') }}
+          <Icon name="moon" :size="18" animated decorative />{{ t('profile_section_about') }}
         </span>
         <span
           class="text-stone-400 transition-transform"
@@ -955,6 +1160,55 @@ function toggleSection(key: string) {
     </section>
 
     </div><!-- /md:grid -->
+
+    <!-- P4 孕期模式 — 啟用 dialog（問 LMP）-->
+    <Modal
+      :open="showPregnancyStartDialog"
+      :title="t('pregnancy_start_dialog_title')"
+      data-test="pregnancy-start-dialog"
+      @close="showPregnancyStartDialog = false"
+    >
+      <div class="space-y-3">
+        <p class="font-zen text-sm text-stone-700 leading-relaxed">
+          {{ t('pregnancy_start_dialog_blurb') }}
+        </p>
+        <label class="block">
+          <p class="font-zen text-xs text-stone-500 mb-1">{{ t('pregnancy_lmp_label') }}</p>
+          <input
+            v-model="pregnancyLmpInput"
+            type="date"
+            :max="new Date().toISOString().slice(0, 10)"
+            data-test="pregnancy-lmp-input"
+            class="w-full px-3 py-2 rounded-2xl border border-cream-200 bg-cream-50 focus:outline-none focus:border-peach-300 text-sm font-zen"
+          />
+          <p class="font-zen text-[11px] text-stone-500 mt-1 leading-relaxed">
+            {{ t('pregnancy_lmp_help') }}
+          </p>
+        </label>
+        <p
+          v-if="pregnancyStartError"
+          class="font-zen text-[11px] text-sakura-500"
+          data-test="pregnancy-start-error"
+        >
+          {{ pregnancyStartError }}
+        </p>
+        <div class="flex gap-2 pt-2">
+          <Button
+            variant="secondary"
+            full
+            :disabled="pregnancyStartBusy"
+            @click="showPregnancyStartDialog = false"
+          >{{ t('common_cancel') }}</Button>
+          <Button
+            variant="primary"
+            full
+            :loading="pregnancyStartBusy"
+            data-test="pregnancy-start-confirm"
+            @click="confirmPregnancyStart"
+          >{{ t('pregnancy_start_confirm_btn') }}</Button>
+        </div>
+      </div>
+    </Modal>
 
     <!-- ============ Section 8: 登出（thumb-zone 底部，永遠可見）============ -->
     <div class="pt-4 max-w-md mx-auto" style="padding-bottom: env(safe-area-inset-bottom)">

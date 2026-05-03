@@ -22,6 +22,7 @@ import EmptyState from '../components/ui/EmptyState.vue'
 import LoadingSkeleton from '../components/ui/LoadingSkeleton.vue'
 import Spinner from '../components/ui/Spinner.vue'
 import Character from '../components/Character.vue'
+import Icon from '../components/icons/Icon.vue'
 import { useSfx } from '../lib/sound'
 import { moodForPhase } from '../lib/character'
 import { getCurrentLevel, awardXp, consumeGamificationPending } from '../lib/gamification'
@@ -51,7 +52,8 @@ const TONE_BG: Record<string, string> = {
   sage: 'bg-gradient-to-br from-sage-50 to-cream-100',
 }
 
-const MOOD_EMOJI: Record<string, string> = { good: '😊', okay: '😐', bad: '😞' }
+const MOOD_EMOJI: Record<string, string> = { good: '😊', okay: '😐', bad: '😞' } // legacy fallback (timeline plain text)
+// (MOOD_ICON map removed — buttons inline icon names directly)
 
 async function loadRecent() {
   const res = await CalendarApi.dodoRecent()
@@ -201,9 +203,9 @@ const timeline = computed<TimelineEntry[]>(() =>
       <div class="grid grid-cols-3 gap-2.5 pt-2" data-test="mood-checkin">
         <button
           v-for="m in [
-            { v: 'good', e: '😊', label: t('dodo_mood_good') },
-            { v: 'okay', e: '😐', label: t('dodo_mood_okay') },
-            { v: 'bad', e: '😞', label: t('dodo_mood_bad') },
+            { v: 'good', icon: 'heart' as const, label: t('dodo_mood_good') },
+            { v: 'okay', icon: 'face-neutral' as const, label: t('dodo_mood_okay') },
+            { v: 'bad',  icon: 'rain-cloud' as const,  label: t('dodo_mood_bad') },
           ]"
           :key="m.v"
           :data-test="`mood-${m.v}`"
@@ -211,7 +213,7 @@ const timeline = computed<TimelineEntry[]>(() =>
           @click="checkin(m.v as any)"
           class="bg-cream-50 hover:bg-peach-50 active:scale-95 disabled:opacity-50 border border-cream-200 rounded-2xl py-4 transition-all flex flex-col items-center gap-1"
         >
-          <span class="text-3xl" aria-hidden="true">{{ m.e }}</span>
+          <Icon :name="m.icon" :size="32" decorative />
           <span class="text-xs font-zen text-stone-600">{{ m.label }}</span>
         </button>
       </div>
@@ -248,12 +250,12 @@ const timeline = computed<TimelineEntry[]>(() =>
             class="inline-flex items-center gap-1"
             :class="streakDays >= 7 ? 'text-peach-500 font-bold' : 'text-stone-500'"
           >
-            <span aria-hidden="true">{{ streakDays >= 14 ? '🔥' : streakDays >= 7 ? '🔥' : '🌱' }}</span>
+            <Icon :name="streakDays >= 7 ? 'flame' : 'sprout-small'" :size="16" :animated="streakDays >= 7" decorative />
             <span>連續 {{ streakDays }} 天</span>
           </span>
         </div>
         <p class="text-hint mt-1.5 leading-relaxed">
-          <span class="inline-block mr-1">🌱</span>{{ t('dodo_commitment') }}
+          <Icon name="sprout-small" :size="14" decorative class="inline-block mr-1 align-middle" />{{ t('dodo_commitment') }}
         </p>
       </div>
     </section>
@@ -352,7 +354,7 @@ const timeline = computed<TimelineEntry[]>(() =>
       data-test="upgrade-prompt"
       class="text-center space-y-3 animate-pop"
     >
-      <div class="text-3xl" aria-hidden="true">💎</div>
+      <div class="flex justify-center" aria-hidden="true"><Icon name="gem" :size="36" animated decorative /></div>
       <p class="text-body">{{ error }}</p>
       <Button variant="primary" sfx="ui_open" @click="router.push('/me/premium')">
         {{ t('dodo_upgrade_btn') }}
@@ -381,9 +383,9 @@ const timeline = computed<TimelineEntry[]>(() =>
       <div class="grid grid-cols-3 gap-2.5">
         <button
           v-for="m in [
-            { v: 'good', e: '😊', label: t('dodo_mood_good') },
-            { v: 'okay', e: '😐', label: t('dodo_mood_okay') },
-            { v: 'bad', e: '😞', label: t('dodo_mood_bad') },
+            { v: 'good', icon: 'heart' as const, label: t('dodo_mood_good') },
+            { v: 'okay', icon: 'face-neutral' as const, label: t('dodo_mood_okay') },
+            { v: 'bad',  icon: 'rain-cloud' as const,  label: t('dodo_mood_bad') },
           ]"
           :key="m.v"
           :data-test="`mood-${m.v}`"
@@ -391,7 +393,7 @@ const timeline = computed<TimelineEntry[]>(() =>
           @click="checkin(m.v as any)"
           class="bg-cream-50 hover:bg-peach-50 active:scale-95 disabled:opacity-50 border border-cream-200 rounded-2xl py-4 transition-all flex flex-col items-center gap-1 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-peach-300"
         >
-          <span class="text-3xl" aria-hidden="true">{{ m.e }}</span>
+          <Icon :name="m.icon" :size="32" decorative />
           <span class="text-xs font-zen text-stone-600">{{ m.label }}</span>
         </button>
       </div>

@@ -19,6 +19,7 @@ import {
 import TodayActionCard from '../components/TodayActionCard.vue'
 import Card from '../components/ui/Card.vue'
 import Spinner from '../components/ui/Spinner.vue'
+import Icon, { type IconName } from '../components/icons/Icon.vue'
 import { useTone } from '../composables/useTone'
 import { useEntitlementsStore } from '../stores/entitlements'
 
@@ -111,11 +112,11 @@ const buckets = computed<Bucket[]>(() => {
 
 type ProtocolPhase = 'menstrual' | 'follicular' | 'ovulation' | 'luteal'
 const phaseOrder: ProtocolPhase[] = ['menstrual', 'follicular', 'ovulation', 'luteal']
-const phaseEmoji: Record<ProtocolPhase, string> = {
-  menstrual: '🌸',
-  follicular: '🌱',
-  ovulation: '☀️',
-  luteal: '🌙',
+const phaseIcon: Record<ProtocolPhase, IconName> = {
+  menstrual: 'phase-menstrual',
+  follicular: 'phase-follicular',
+  ovulation: 'phase-ovulation',
+  luteal: 'phase-luteal',
 }
 
 function phaseLabel(p: ProtocolPhase) {
@@ -180,7 +181,7 @@ const isPremium = computed(() => ent.isPremium())
         </button>
       </Card>
       <Card v-else-if="!buckets.length" tone="cream" class="text-center py-6">
-        <p class="text-3xl mb-2">🌱</p>
+        <Icon name="sprout" :size="36" animated decorative class="mb-2 mx-auto" />
         <p class="text-sm font-zen text-stone-500">
           {{ t('action_history_empty') }}
         </p>
@@ -191,8 +192,8 @@ const isPremium = computed(() => ent.isPremium())
             <p class="font-display font-bold text-stone-700 text-sm">{{ b.label }}</p>
             <p class="font-zen text-[11px] text-stone-500 flex items-center gap-2">
               <span>{{ b.total }} 件</span>
-              <span v-if="b.helpful > 0" class="text-sage-500">💛 {{ b.helpful }}</span>
-              <span v-if="b.unhelpful > 0" class="text-stone-400">🌧 {{ b.unhelpful }}</span>
+              <span v-if="b.helpful > 0" class="text-sage-500 inline-flex items-center gap-0.5"><Icon name="heart" :size="12" decorative /> {{ b.helpful }}</span>
+              <span v-if="b.unhelpful > 0" class="text-stone-400 inline-flex items-center gap-0.5"><Icon name="cloud-rain" :size="12" decorative /> {{ b.unhelpful }}</span>
             </p>
           </div>
           <ul class="space-y-1.5">
@@ -229,7 +230,7 @@ const isPremium = computed(() => ent.isPremium())
       <div class="flex items-baseline justify-between mb-1">
         <h2 class="font-display font-bold text-peach-500 text-lg">{{ t('action_protocol_title') }}</h2>
         <span v-if="isPremium" class="font-zen text-[10px] text-sage-500 bg-sage-50 px-2 py-0.5 rounded-full">
-          🔓 已解鎖
+          <Icon name="unlock" :size="12" decorative class="inline-block align-middle mr-0.5" />已解鎖
         </span>
       </div>
       <p class="font-zen text-[12px] text-stone-500 mb-3">{{ t('action_protocol_subtitle') }}</p>
@@ -244,10 +245,10 @@ const isPremium = computed(() => ent.isPremium())
         class="w-full text-left rounded-3xl bg-gradient-to-br from-peach-300 via-peach-400 to-sakura-400 p-5 shadow-soft active:scale-[0.99] transition-transform overflow-hidden relative"
         data-test="action-protocol-paywall"
       >
-        <div class="absolute -bottom-8 -right-8 text-[140px] opacity-10 leading-none select-none" aria-hidden="true">🔒</div>
+        <div class="absolute -bottom-4 -right-4 opacity-10 leading-none select-none" aria-hidden="true"><Icon name="lock" :size="140" decorative /></div>
         <div class="relative space-y-2 text-white">
           <div class="flex items-center gap-2">
-            <span class="text-2xl" aria-hidden="true">🔒</span>
+            <Icon name="lock" :size="24" decorative />
             <span class="font-zen text-[11px] tracking-widest uppercase opacity-90">Premium</span>
           </div>
           <p class="font-display font-black text-lg leading-snug">
@@ -274,7 +275,7 @@ const isPremium = computed(() => ent.isPremium())
       <div v-else-if="protocol" class="space-y-3" data-test="action-protocol-list">
         <Card v-for="phase in phaseOrder" :key="phase" tone="cream">
           <div class="flex items-center gap-2 mb-2">
-            <span class="text-lg" aria-hidden="true">{{ phaseEmoji[phase] }}</span>
+            <Icon :name="phaseIcon[phase]" :size="22" animated decorative />
             <p class="font-display font-bold text-peach-500 text-sm">{{ phaseLabel(phase) }}</p>
           </div>
           <ul v-if="protocol[phase]?.length" class="space-y-1.5">

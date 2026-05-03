@@ -7,25 +7,13 @@ use App\Services\AI\Providers\NullProvider;
 use App\Services\AI\Providers\OpenAIProvider;
 
 /**
- * LLM provider 抽象介面 + factory
+ * LLM provider factory（介面 LLMProvider 拆到同 namespace 獨立檔案）
  *
  * 設計原則：
  *   - env-driven：config('llm.provider') 切 openai / claude / null
- *   - 失敗永遠 return null，讓上層 fallback 到 DodoDialogLibrary
- *   - 不擋上架（無 key → NullProvider → library）
+ *   - 失敗永遠 return null，讓上層 fallback 到 DodoDialogLibrary / Qna safe response
+ *   - 不擋上架（無 key → NullProvider → fallback）
  */
-interface LLMProvider
-{
-    /**
-     * @param  array<string, mixed>  $options
-     *   max_tokens (int), temperature (float), user_hash (string for OpenAI 反濫用)
-     */
-    public function complete(string $systemPrompt, string $userPrompt, array $options = []): ?string;
-
-    /** Provider 名稱（log / debug 用） */
-    public function name(): string;
-}
-
 class LLMClient
 {
     /**

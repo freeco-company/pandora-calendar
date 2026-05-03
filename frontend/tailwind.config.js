@@ -36,13 +36,21 @@ export default {
         zen: ['"Zen Kaku Gothic New"', '"Noto Sans TC"', '"PingFang TC"', '-apple-system', 'sans-serif'],
         maru: ['"Zen Maru Gothic"', '"Noto Sans TC"', 'sans-serif'],
         rounded: ['"M PLUS Rounded 1c"', '"Noto Sans TC"', 'sans-serif'],
-        pop: ['"Mochiy Pop One"', '"M PLUS Rounded 1c"', '"Noto Sans TC"', 'sans-serif'],
+        // pop（更新）：手寫感可愛體 — streak 數字 / Lv 數字 / 友善小字
+        pop: ['"Yusei Magic"', '"M PLUS Rounded 1c"', '"Noto Sans TC"', 'sans-serif'],
+        // cute：超圓潤卡通風 — 朵朵對白 / 寵物名 / 慶祝 toast / achievement / hero 副標 / daily action title
+        cute: ['"Mochiy Pop One"', '"Zen Maru Gothic"', '"Noto Sans TC"', 'sans-serif'],
         sans: ['"Zen Kaku Gothic New"', '"Noto Sans TC"', '"PingFang TC"', '-apple-system', 'sans-serif'],
       },
       boxShadow: {
         soft: '0 6px 24px -8px rgba(159, 107, 62, 0.18)',
-        'soft-lg': '0 12px 36px -10px rgba(159, 107, 62, 0.22)',
+        // peach 色 shadow（療癒感，取代黑灰 shadow）
+        'soft-md': '0 4px 14px -4px rgba(255, 192, 173, 0.30)',
+        'soft-lg': '0 8px 24px -8px rgba(255, 192, 173, 0.40)',
+        'soft-xl': '0 16px 40px -10px rgba(255, 192, 173, 0.45)',
         glow: '0 0 32px rgba(255, 205, 178, 0.55)',
+        'glow-peach': '0 0 20px rgba(255, 169, 145, 0.30)',
+        'glow-sakura': '0 0 20px rgba(240, 160, 178, 0.30)',
       },
       borderRadius: { '2.5xl': '1.25rem', '4xl': '2rem' },
       // Semantic radius scale — for new code, prefer tokens over raw rounded-xl/2xl/3xl
@@ -72,6 +80,24 @@ export default {
           '0%, 100%': { boxShadow: '0 0 0 0 rgba(255, 153, 119, 0.45)' },
           '50%': { boxShadow: '0 0 0 6px rgba(255, 153, 119, 0)' },
         },
+        breathe: {
+          '0%, 100%': { transform: 'scale(1)', opacity: '0.85' },
+          '50%': { transform: 'scale(1.04)', opacity: '1' },
+        },
+        floatUp: {
+          '0%': { transform: 'translateY(0) rotate(0)', opacity: '0' },
+          '50%': { opacity: '0.6' },
+          '100%': { transform: 'translateY(-100px) rotate(180deg)', opacity: '0' },
+        },
+        'gradient-shift': {
+          '0%, 100%': { 'background-position': '0% 50%' },
+          '50%': { 'background-position': '100% 50%' },
+        },
+        'spring-bounce': {
+          '0%': { transform: 'scale(0.9)' },
+          '60%': { transform: 'scale(1.05)' },
+          '100%': { transform: 'scale(1)' },
+        },
       },
       animation: {
         floaty: 'floaty 4s ease-in-out infinite',
@@ -80,6 +106,10 @@ export default {
         slidein: 'slidein 0.45s cubic-bezier(0.22, 1, 0.36, 1)',
         fadein: 'fadein 0.3s ease-out',
         'pulse-slow': 'pulse-slow 2.4s ease-in-out infinite',
+        breathe: 'breathe 4s ease-in-out infinite',
+        'float-up': 'floatUp 6s ease-in-out infinite',
+        'gradient-shift': 'gradient-shift 12s ease infinite',
+        'spring-bounce': 'spring-bounce 0.4s cubic-bezier(0.175, 0.885, 0.32, 1.275)',
       },
     },
   },

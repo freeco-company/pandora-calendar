@@ -324,6 +324,13 @@ export interface ProductLink {
   product_slug: string
   message: string
   mother_url: string
+  product_name?: string
+}
+
+export interface EcommerceEligibility {
+  eligible: boolean
+  reasons: Array<'not_linked' | 'no_purchase' | 'no_subscription' | 'too_new'>
+  days_used: number
 }
 
 export interface ApiError {
@@ -382,8 +389,61 @@ export const PremiumApi = {
     api.post('/v1/health-samples/import', { source: 'healthkit', samples }),
 }
 
+// === P4 孕期模式 ===
+export type PregnancyEndReason = 'birth' | 'miscarriage' | 'cancelled' | 'false_alarm'
+
+export interface PregnancyAction {
+  key: string
+  label: string
+}
+
+export interface PregnancyState {
+  id: number
+  lmp_date: string
+  estimated_due_date: string
+  mode_started_at: string | null
+  status: 'active' | 'paused' | 'ended'
+  gestational_week: number
+  trimester: 1 | 2 | 3
+  days_until_due: number
+  fetal_size: { label: string; emoji: string }
+  this_week: {
+    week: number
+    trimester: 1 | 2 | 3
+    dodo_message: string
+    suggested_actions: PregnancyAction[]
+  }
+}
+
+export interface PregnancyWeekContent {
+  week: number
+  trimester: 1 | 2 | 3
+  fetal_size: { label: string; emoji: string }
+  dodo_message: string
+  suggested_actions: PregnancyAction[]
+}
+
+export const PregnancyApi = {
+  current: () => api.get<{ data: PregnancyState | null }>('/v1/pregnancy/current'),
+  start: (lmpDate: string) =>
+    api.post<{ data: PregnancyState }>('/v1/pregnancy/start', { lmp_date: lmpDate }),
+  end: (reason: PregnancyEndReason) =>
+    api.patch<{ data: { id: number; status: string; ended_reason: string; ended_on: string } }>(
+      '/v1/pregnancy/end',
+      { reason },
+    ),
+  week: (week: number) =>
+    api.get<{ data: PregnancyWeekContent }>(`/v1/pregnancy/week/${week}`),
+}
+
 export const CommerceApi = {
   productLinks: () => api.get<{ data: ProductLink[]; gate_passed: boolean }>('/v1/commerce/product-links'),
+}
+
+// P5 婕樂纖深層商品連結（嚴守紅線：只在「我的 → 婕樂纖會員」呼叫）
+export const EcommerceApi = {
+  eligibility: () => api.get<{ data: EcommerceEligibility }>('/v1/ecommerce/eligibility'),
+  recommendations: () => api.get<{ data: ProductLink[] }>('/v1/ecommerce/recommendations'),
 }
 
 export type GamificationPending =
@@ -822,6 +882,42 @@ export interface CommunityPost {
   created_at: string | null
 }
 
+// ── P4 含金量 Q&A — 朵朵 LLM + RAG ─────────────────────────
+export interface QnaItem {
+  id: number
+  question: string
+  answer: string
+  sources: number[]
+  safety_flag: 'redline_self_harm' | 'redline_compliance' | null
+  remaining_today?: number | null
+  is_premium?: boolean
+  created_at?: string | null
+}
+
+export interface QnaAskResponse {
+  data: {
+    id: number
+    answer: string
+    sources: number[]
+    safety_flag: 'redline_self_harm' | 'redline_compliance' | null
+    remaining_today: number | null
+    is_premium: boolean
+  }
+}
+
+export interface QnaHistoryResponse {
+  data: QnaItem[]
+  meta: { remaining_today: number | null; is_premium: boolean }
+}
+
+export const QnaApi = {
+  ask: (question: string) =>
+    api.post<QnaAskResponse>('/v1/qna/ask', { question }),
+  history: (days = 30) =>
+    api.get<QnaHistoryResponse>('/v1/qna/history', { params: { days } }),
+  remove: (id: number) => api.delete<{ data: { deleted: true } }>(`/v1/qna/${id}`),
+}
+
 export interface CommunityReply {
   id: number
   post_id: number
@@ -877,4 +973,63 @@ export const CommunityApi = {
       '/v1/community/reports',
       payload,
     ),
+}
+
+// =====================================================================
+// P5 Photo Journal — 進度照
+// 隱私核心：metadata 寫 backend，binary 預設只在 device；Premium 才能 cloud sync。
+// =====================================================================
+export type PhotoJournalTag = 'face' | 'body' | 'note'
+
+export interface PhotoJournalEntry {
+  id: number
+  tag: PhotoJournalTag
+  captured_on: string // YYYY-MM-DD
+  cycle_day: number | null
+  phase: string | null
+  note: string | null
+  local_path: string | null
+  thumb_blurhash: string | null
+  cloud_synced: boolean
+  cloud_url: string | null
+  created_at: string | null
+}
+
+export interface PhotoJournalMonth {
+  month: string
+  count: number
+  entries: PhotoJournalEntry[]
+}
+
+export const PhotoJournalApi = {
+  create: (payload: {
+    tag: PhotoJournalTag
+    captured_on: string
+    cycle_day?: number | null
+    phase?: string | null
+    note?: string | null
+    local_path?: string | null
+    thumb_blurhash?: string | null
+  }) => api.post<{ data: PhotoJournalEntry }>('/v1/photo-journal', payload),
+
+  list: (month: string) =>
+    api.get<{ data: PhotoJournalMonth }>('/v1/photo-journal/list', { params: { month } }),
+
+  show: (id: number) => api.get<{ data: PhotoJournalEntry }>(`/v1/photo-journal/${id}`),
+
+  uploadCloud: (id: number, file: Blob) => {
+    const fd = new FormData()
+    fd.append('photo', file)
+    return api.post<{ data: PhotoJournalEntry }>(
+      `/v1/photo-journal/${id}/upload-cloud`,
+      fd,
+      { headers: { 'Content-Type': 'multipart/form-data' } },
+    )
+  },
+
+  remove: (id: number) =>
+    api.delete<{ data: { deleted: true } }>(`/v1/photo-journal/${id}`),
+
+  removeCloudOnly: (id: number) =>
+    api.delete<{ data: PhotoJournalEntry }>(`/v1/photo-journal/${id}/cloud-only`),
 }

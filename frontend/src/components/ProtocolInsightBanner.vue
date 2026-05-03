@@ -12,6 +12,7 @@ import { onMounted, ref } from 'vue'
 import { useRouter } from 'vue-router'
 import { ProtocolInsightApi, type ProtocolInsight } from '../api'
 import { useTone } from '../composables/useTone'
+import Icon from './icons/Icon.vue'
 
 const { t } = useTone()
 const router = useRouter()
@@ -63,7 +64,7 @@ onMounted(load)
       data-test="protocol-insight-banner"
     >
       <div class="flex items-start gap-3">
-        <span class="text-2xl shrink-0 select-none" aria-hidden="true">💡</span>
+        <Icon name="dodo" :size="28" animated decorative class="shrink-0" />
         <div class="flex-1 min-w-0">
           <p class="font-zen text-[11px] text-peach-500 tracking-wide mb-1">
             {{ t('dodo_say') }}
