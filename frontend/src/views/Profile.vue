@@ -67,6 +67,11 @@ function editPetName() {
   }
 }
 
+function changePet() {
+  sfx.play('ui_open')
+  window.dispatchEvent(new CustomEvent('pandora:pet-change'))
+}
+
 async function doLogout() {
   sfx.play('ui_close')
   await logout()
@@ -142,6 +147,21 @@ async function confirmDeleteData() {
       >
         {{ pet.nickname }} <span class="text-xs text-stone-400">✎</span>
       </button>
+      <div class="flex justify-center gap-2 pt-1">
+        <button
+          @click="changePet"
+          data-test="change-pet"
+          class="text-[11px] font-zen text-peach-500 bg-white border border-peach-200 px-3 py-1.5 rounded-full hover:bg-peach-50 transition-all active:scale-95"
+        >
+          🔄 換寵物
+        </button>
+        <RouterLink
+          to="/me/journey"
+          class="text-[11px] font-zen text-peach-500 bg-white border border-peach-200 px-3 py-1.5 rounded-full hover:bg-peach-50 transition-all active:scale-95"
+        >
+          🎀 換 outfit
+        </RouterLink>
+      </div>
       <p class="font-zen text-xs text-stone-500">
         XP {{ xp }} · 連續記錄會讓寵物升級
       </p>

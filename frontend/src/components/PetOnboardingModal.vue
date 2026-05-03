@@ -6,12 +6,15 @@ import Button from './ui/Button.vue'
 import { useSfx } from '../lib/sound'
 
 const sfx = useSfx()
+const props = defineProps<{ forceOpen?: boolean }>()
+const emit = defineEmits<{ (e: 'close'): void }>()
 const open = ref(false)
 const loading = ref(false)
 const error = ref<string | null>(null)
 const species = ref<string>('cat')
 const nickname = ref('')
 const available = ref<string[]>([])
+const isChangeMode = ref(false)
 
 const SPECIES_LABEL: Record<string, string> = {
   cat: '貓貓',
@@ -27,19 +30,47 @@ const SPECIES_LABEL: Record<string, string> = {
   robot: '機器人',
 }
 
-onMounted(async () => {
+async function load(prefill = true) {
   try {
     const { data } = await PetApi.show()
     available.value = data.data.available_species
-    if (!data.data.onboarded) {
-      open.value = true
-      // 預設選第一隻
+    if (prefill && data.data.species) {
+      species.value = data.data.species
+      nickname.value = data.data.nickname ?? ''
+    } else {
       species.value = available.value[0] ?? 'cat'
     }
+    return data.data
   } catch {
-    /* 未登入或網路問題：不彈 modal，由路由 guard 處理 */
+    return null
+  }
+}
+
+onMounted(async () => {
+  const data = await load(false)
+  if (data && !data.onboarded) {
+    open.value = true
   }
 })
+
+// 父元件用 :force-open 觸發「換寵物」
+import { watch, onUnmounted } from 'vue'
+watch(() => props.forceOpen, async (v) => {
+  if (v) {
+    isChangeMode.value = true
+    await load(true)
+    open.value = true
+  }
+})
+
+// 全域事件 trigger：任何 view 可以 dispatch CustomEvent('pandora:pet-change') 來開
+async function onPetChangeEvent() {
+  isChangeMode.value = true
+  await load(true)
+  open.value = true
+}
+onMounted(() => window.addEventListener('pandora:pet-change', onPetChangeEvent))
+onUnmounted(() => window.removeEventListener('pandora:pet-change', onPetChangeEvent))
 
 function pickSpecies(s: string) {
   sfx.play('choice_select')
@@ -57,6 +88,7 @@ async function confirm() {
     await PetApi.update(species.value, nickname.value.trim())
     sfx.play('correct')
     open.value = false
+    emit('close')
     // reload page so all components pick up new pet
     location.reload()
   } catch (e: any) {
@@ -64,6 +96,11 @@ async function confirm() {
   } finally {
     loading.value = false
   }
+}
+
+function cancel() {
+  open.value = false
+  emit('close')
 }
 </script>
 
@@ -75,10 +112,20 @@ async function confirm() {
       data-test="pet-onboarding-modal"
     >
       <div class="w-full max-w-sm bg-cream-50 rounded-3xl p-6 shadow-soft-lg space-y-4 animate-pop">
-        <header class="text-center space-y-1">
-          <p class="font-zen text-xs text-stone-500 tracking-widest uppercase">Welcome</p>
-          <h2 class="font-display text-xl font-bold text-peach-500">挑一個夥伴陪妳</h2>
-          <p class="font-zen text-[12px] text-stone-500">妳每記錄一次週期，朵朵就會幫忙照顧妳的小夥伴。</p>
+        <header class="text-center space-y-1 relative">
+          <button
+            v-if="isChangeMode"
+            @click="cancel"
+            class="absolute right-0 top-0 text-stone-400 text-2xl leading-none"
+            aria-label="關閉"
+          >×</button>
+          <p class="font-zen text-xs text-stone-500 tracking-widest uppercase">{{ isChangeMode ? 'Change' : 'Welcome' }}</p>
+          <h2 class="font-display text-xl font-bold text-peach-500">
+            {{ isChangeMode ? '換一個夥伴' : '挑一個夥伴陪妳' }}
+          </h2>
+          <p class="font-zen text-[12px] text-stone-500">
+            {{ isChangeMode ? '隨時都能再換 / 改名字。' : '妳每記錄一次週期，朵朵就會幫忙照顧妳的小夥伴。' }}
+          </p>
         </header>
 
         <!-- Selected pet preview -->
