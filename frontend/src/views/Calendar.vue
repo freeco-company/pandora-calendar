@@ -160,26 +160,26 @@ function goPet() {
 
 <template>
   <div class="px-5 md:px-8 pt-10 pb-6 max-w-md md:max-w-4xl lg:max-w-5xl mx-auto">
-    <!-- 倒數大字 header -->
-    <header class="flex items-start justify-between mb-5">
-      <div class="flex-1">
-        <p class="font-zen text-xs text-stone-500 tracking-widest uppercase">{{ monthTitle }}</p>
+    <!-- 倒數大字 header — emotional moment：font-display 大字 + tight leading -->
+    <header class="flex items-start justify-between mb-5 gap-3">
+      <div class="flex-1 min-w-0">
+        <p class="eyebrow">{{ monthTitle }}</p>
         <template v-if="daysUntilNext !== null">
-          <p class="font-zen text-[11px] text-stone-500 mt-1">{{ countdownLabel }}</p>
-          <h1 class="font-display text-5xl font-bold text-peach-500 mt-0.5 leading-none">
+          <p class="font-zen text-[11px] text-stone-500 mt-1.5">{{ countdownLabel }}</p>
+          <h1 class="font-display text-[56px] md:text-6xl font-bold text-peach-500 mt-0.5 leading-none tracking-tight">
             <template v-if="daysUntilNext < 0">+{{ Math.abs(daysUntilNext) }}</template>
             <template v-else>{{ daysUntilNext }}</template>
-            <span class="text-base text-stone-400 ml-2 font-zen">
+            <span class="text-base text-stone-400 ml-2 font-zen align-middle">
               {{ daysUntilNext === 0 ? t('calendar_unit_today') : t('calendar_unit_day') }}
             </span>
           </h1>
         </template>
         <template v-else>
-          <h1 class="font-display text-2xl font-bold text-peach-500 mt-0.5">{{ monthTitle }}</h1>
+          <h1 class="heading-1 mt-0.5">{{ monthTitle }}</h1>
         </template>
         <p
           v-if="rhythm"
-          class="font-zen text-[12px] text-stone-600 mt-1.5"
+          class="font-zen text-[12px] text-stone-600 mt-2"
           data-test="phase-label"
         >
           {{ t('calendar_phase_now_prefix') }}
@@ -240,8 +240,9 @@ function goPet() {
             :key="idx"
             @click="openDay(cell)"
             :disabled="cell.day === 0"
-            class="aspect-square rounded-xl flex items-center justify-center text-sm font-zen relative transition-all active:scale-95 disabled:cursor-default"
+            class="aspect-square rounded-xl flex items-center justify-center text-sm font-zen relative transition-all active:scale-95 disabled:cursor-default focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-peach-400"
             :data-test="cell.date ? `cal-day-${cell.day}` : undefined"
+            :aria-label="cell.date ? `${cell.day} 日${cell.phase ? ' · ' + phaseLabels[cell.phase] : ''}${cell.hasLog ? ' · 已記錄' : ''}${cell.isToday ? ' · 今天' : ''}` : undefined"
             :class="{
               'bg-phase-menstrual/20 text-sakura-500': cell.phase === 'menstrual',
               'bg-phase-follicular/30 text-peach-500': cell.phase === 'follicular',
@@ -265,30 +266,59 @@ function goPet() {
       </Card>
 
       <Card tone="cream" class="mb-4">
-        <h3 class="font-display font-bold text-peach-500 text-base mb-2">{{ t('calendar_section_next_period') }}</h3>
-        <p v-if="prediction?.next_period_eta" class="text-sm text-stone-700 leading-relaxed font-zen">
-          {{ t('calendar_eta_prefix') }}
-          <span class="font-bold text-peach-500">{{ prediction.next_period_eta }}</span>
-          {{ t('calendar_eta_confidence_label') }}
-          <span :class="prediction.confidence === 'high' ? 'text-sage-500' : 'text-peach-400'">
-            {{
-              prediction.confidence === 'high'
-                ? t('calendar_confidence_high')
-                : prediction.confidence === 'low'
-                ? t('calendar_confidence_low')
-                : t('calendar_confidence_none')
-            }}
-          </span>
-        </p>
-        <p v-else class="text-sm text-stone-500 font-zen">{{ t('calendar_no_prediction') }}</p>
+        <h3 class="heading-3 mb-2">{{ t('calendar_section_next_period') }}</h3>
+        <template v-if="prediction?.next_period_eta">
+          <p class="text-body">
+            {{ t('calendar_eta_prefix') }}
+            <span class="font-bold text-peach-500 font-display text-lg">{{ prediction.next_period_eta }}</span>
+          </p>
+          <!-- Confidence bar — bar 視覺化讓 high/low 一眼有感 -->
+          <div class="mt-3 flex items-center gap-2">
+            <div class="flex-1 h-1.5 rounded-full bg-white overflow-hidden">
+              <div
+                class="h-full rounded-full transition-all duration-500"
+                :class="prediction.confidence === 'high'
+                  ? 'bg-gradient-to-r from-sage-300 to-sage-500'
+                  : prediction.confidence === 'low'
+                  ? 'bg-gradient-to-r from-peach-200 to-peach-400'
+                  : 'bg-stone-200'"
+                :style="{ width: prediction.confidence === 'high' ? '90%' : prediction.confidence === 'low' ? '45%' : '15%' }"
+              />
+            </div>
+            <span
+              class="font-zen text-[11px] font-semibold whitespace-nowrap"
+              :class="prediction.confidence === 'high' ? 'text-sage-500' : 'text-peach-500'"
+            >
+              {{
+                prediction.confidence === 'high'
+                  ? t('calendar_confidence_high')
+                  : prediction.confidence === 'low'
+                  ? t('calendar_confidence_low')
+                  : t('calendar_confidence_none')
+              }}
+            </span>
+          </div>
+        </template>
+        <p v-else class="text-body text-stone-500">{{ t('calendar_no_prediction') }}</p>
       </Card>
 
+      <!-- Legend：色 + 形狀（圓 / 方 / 菱 / 圓邊框）雙重區別，色盲友善 -->
       <div class="flex gap-3 text-[11px] text-stone-500 px-2 font-zen flex-wrap">
-        <span class="flex items-center gap-1.5"><span class="w-2.5 h-2.5 rounded-full bg-phase-menstrual" />{{ t('calendar_legend_period') }}</span>
-        <span class="flex items-center gap-1.5"><span class="w-2.5 h-2.5 rounded-full bg-phase-follicular" />{{ t('calendar_legend_follicular') }}</span>
-        <span class="flex items-center gap-1.5"><span class="w-2.5 h-2.5 rounded-full bg-phase-ovulation" />{{ t('calendar_legend_ovulation') }}</span>
-        <span class="flex items-center gap-1.5"><span class="w-2.5 h-2.5 rounded-full bg-phase-luteal" />{{ t('calendar_legend_luteal') }}</span>
-        <span class="flex items-center gap-1.5"><span class="w-1.5 h-1.5 rounded-full bg-peach-500" />{{ t('calendar_legend_logged') }}</span>
+        <span class="flex items-center gap-1.5">
+          <span class="w-2.5 h-2.5 rounded-full bg-phase-menstrual" aria-hidden="true" />{{ t('calendar_legend_period') }}
+        </span>
+        <span class="flex items-center gap-1.5">
+          <span class="w-2.5 h-2.5 rounded-sm bg-phase-follicular" aria-hidden="true" />{{ t('calendar_legend_follicular') }}
+        </span>
+        <span class="flex items-center gap-1.5">
+          <span class="w-2.5 h-2.5 rotate-45 bg-phase-ovulation" aria-hidden="true" />{{ t('calendar_legend_ovulation') }}
+        </span>
+        <span class="flex items-center gap-1.5">
+          <span class="w-2.5 h-2.5 rounded-full border-2 border-phase-luteal" aria-hidden="true" />{{ t('calendar_legend_luteal') }}
+        </span>
+        <span class="flex items-center gap-1.5">
+          <span class="status-dot bg-peach-500" aria-hidden="true" />{{ t('calendar_legend_logged') }}
+        </span>
       </div>
       </div>
 

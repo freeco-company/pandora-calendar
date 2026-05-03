@@ -99,13 +99,18 @@ async function loginWith(provider: 'google' | 'line' | 'apple') {
 </script>
 
 <template>
-  <div class="min-h-screen flex flex-col items-center justify-center px-6 py-10 bg-dawn-gradient">
+  <div
+    class="min-h-screen flex flex-col items-center justify-center px-6 bg-dawn-gradient"
+    style="padding-top: calc(env(safe-area-inset-top) + 2.5rem); padding-bottom: calc(env(safe-area-inset-bottom) + 2.5rem)"
+  >
     <header class="text-center mb-6 max-w-sm">
-      <div class="flex justify-center mb-2">
-        <Character species="dodo" :size="148" mood="happy" :show-halo="true" :floaty="true" />
+      <div class="flex justify-center mb-3">
+        <Character species="dodo" :size="156" mood="happy" :show-halo="true" :floaty="true" />
       </div>
-      <h1 class="font-display text-4xl font-bold text-peach-500 tracking-wide">{{ t('login_app_title') }}</h1>
-      <p class="font-zen text-stone-600 mt-2 text-sm">{{ t('login_subtitle') }}</p>
+      <h1 class="font-display text-4xl md:text-5xl font-bold text-peach-500 tracking-wide leading-tight">
+        {{ t('login_app_title') }}
+      </h1>
+      <p class="font-zen text-stone-600 mt-3 text-base leading-relaxed">{{ t('login_subtitle') }}</p>
     </header>
 
     <Card tone="plain" class="w-full max-w-sm space-y-3">

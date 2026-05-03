@@ -45,6 +45,9 @@ export default {
         glow: '0 0 32px rgba(255, 205, 178, 0.55)',
       },
       borderRadius: { '2.5xl': '1.25rem', '4xl': '2rem' },
+      // Semantic radius scale — for new code, prefer tokens over raw rounded-xl/2xl/3xl
+      // sm 8 / md 12 / lg 16 / xl 24 (= 既有 rounded-3xl)
+      // Spacing scale 對齊 Tailwind 4px base：1/2/3/4/6/8/12 = 4/8/12/16/24/32/48 px
       backgroundImage: {
         'cream-gradient': 'linear-gradient(180deg, #FFF7EC 0%, #FBE9D8 60%, #F5DCC2 100%)',
         'peach-gradient': 'linear-gradient(135deg, #FFE4D2 0%, #FFCCA8 100%)',

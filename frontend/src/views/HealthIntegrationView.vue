@@ -142,24 +142,24 @@ onMounted(() => {
 
 const reflectionSeverityClass = computed(() => {
   const s = reflection.value?.severity
-  if (s === 'heads_up') return 'bg-[#fce8e0] border-[#f5b89e]'
-  if (s === 'notice') return 'bg-[#fdf3dc] border-[#ecc97a]'
-  return 'bg-[#e7f0fa] border-[#b8d0e8]'
+  if (s === 'heads_up') return 'bg-sakura-50 border-sakura-200'
+  if (s === 'notice') return 'bg-peach-50 border-peach-200'
+  return 'bg-lavender-50 border-lavender-200'
 })
 </script>
 
 <template>
-  <div class="min-h-screen bg-[#fbf6ee] pb-32">
-    <header class="sticky top-0 z-10 bg-[#fbf6ee]/95 backdrop-blur border-b border-[#e8dcc6] px-4 py-3 flex items-center gap-3">
-      <button class="text-[#7a6649] text-sm" @click="$router.back()">{{ t('health_back') }}</button>
-      <h1 class="text-base font-semibold text-[#3d2f1f]">{{ t('health_title') }}</h1>
+  <div class="min-h-screen bg-cream-50 pb-32">
+    <header class="sticky top-0 z-10 bg-cream-50/95 backdrop-blur border-b border-cream-200 px-4 py-3 flex items-center gap-3">
+      <button class="text-stone-500 font-zen text-sm" @click="$router.back()">{{ t('health_back') }}</button>
+      <h1 class="font-display text-base font-bold text-peach-500">{{ t('health_title') }}</h1>
     </header>
 
-    <main class="px-4 py-5 space-y-4 max-w-md mx-auto">
+    <main class="px-5 md:px-8 py-5 space-y-4 max-w-md md:max-w-2xl lg:max-w-3xl mx-auto">
       <!-- 朵朵當天反饋（reflection）— Premium-only，後端 402 → reflection.value 為 null 自動隱藏 -->
       <section
         v-if="reflectionLoading"
-        class="rounded-2xl px-4 py-3 bg-[#f5ecdc] text-[#7a6649] text-sm text-center"
+        class="rounded-2xl px-4 py-3 bg-cream-100 text-stone-500 text-sm text-center font-zen"
         data-test="reflection-loading"
       >
         {{ t('reflection_loading') }}
@@ -173,11 +173,11 @@ const reflectionSeverityClass = computed(() => {
         <div class="flex items-start gap-2">
           <span class="text-2xl shrink-0" aria-hidden="true">🌸</span>
           <div class="flex-1 min-w-0">
-            <p class="text-[11px] tracking-wide text-stone-500 mb-1">{{ t('dodo_say') }}</p>
-            <p class="text-[15px] leading-relaxed text-stone-800 font-medium">{{ reflection.message }}</p>
+            <p class="text-[11px] tracking-wide text-stone-500 font-zen mb-1">{{ t('dodo_say') }}</p>
+            <p class="text-[15px] leading-relaxed text-stone-700 font-medium font-zen">{{ reflection.message }}</p>
             <button
               type="button"
-              class="mt-2 text-[12px] underline text-[#7a6649]"
+              class="mt-2 text-[12px] underline text-peach-500 font-zen"
               data-test="reflection-cta"
               @click="gotoActionToday"
             >
@@ -188,7 +188,7 @@ const reflectionSeverityClass = computed(() => {
       </section>
       <section
         v-else
-        class="rounded-2xl px-4 py-3 bg-white border border-[#ece2cf] text-[#9b8763] text-xs text-center"
+        class="rounded-2xl px-4 py-3 bg-white border border-cream-200 text-stone-400 text-xs text-center font-zen"
         data-test="reflection-empty"
       >
         {{ t('reflection_empty') }}
@@ -196,13 +196,13 @@ const reflectionSeverityClass = computed(() => {
 
       <!-- 平台 banner -->
       <section
-        class="rounded-2xl p-4"
+        class="rounded-2xl p-4 font-zen"
         :class="
           checking
-            ? 'bg-[#f5ecdc] text-[#7a6649]'
+            ? 'bg-cream-100 text-stone-500'
             : available
-              ? 'bg-[#dff5e8] text-[#1f5d3a]'
-              : 'bg-[#fbe4d4] text-[#8a4a1f]'
+              ? 'bg-sage-50 text-sage-500 border border-sage-200'
+              : 'bg-peach-50 text-peach-500 border border-peach-200'
         "
       >
         <div class="flex items-start gap-3">
@@ -222,7 +222,7 @@ const reflectionSeverityClass = computed(() => {
       </section>
 
       <!-- toggles -->
-      <section class="bg-white rounded-2xl shadow-sm border border-[#ece2cf] divide-y divide-[#f1e7d4]">
+      <section class="bg-white rounded-2xl shadow-soft border border-cream-200 divide-y divide-cream-100">
         <div
           v-for="kind in (['bbt', 'steps', 'sleep', 'menstrual_flow'] as HealthDataType[])"
           :key="kind"
@@ -230,8 +230,8 @@ const reflectionSeverityClass = computed(() => {
         >
           <span class="text-2xl pt-1">{{ KIND_META[kind].emoji }}</span>
           <div class="flex-1 min-w-0">
-            <p class="font-medium text-[#3d2f1f]">{{ KIND_META[kind].label }}</p>
-            <p class="text-xs text-[#9b8763] mt-0.5">{{ KIND_META[kind].desc }}</p>
+            <p class="font-zen font-medium text-stone-700">{{ KIND_META[kind].label }}</p>
+            <p class="text-xs text-stone-500 font-zen mt-0.5 leading-relaxed">{{ KIND_META[kind].desc }}</p>
           </div>
           <label class="relative inline-flex items-center cursor-pointer pt-1.5">
             <span class="sr-only">{{ KIND_META[kind].label }}</span>
@@ -244,7 +244,7 @@ const reflectionSeverityClass = computed(() => {
               @change="(toggles[kind] = ($event.target as HTMLInputElement).checked), saveToggles()"
             />
             <div
-              class="w-11 h-6 bg-[#e0d4ba] rounded-full peer-checked:bg-[#c89b6a] peer-disabled:opacity-50 transition relative after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:after:translate-x-5"
+              class="w-11 h-6 bg-cream-300 rounded-full peer-checked:bg-peach-400 peer-disabled:opacity-50 transition relative after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:after:translate-x-5"
             ></div>
           </label>
         </div>
@@ -253,11 +253,11 @@ const reflectionSeverityClass = computed(() => {
       <!-- sync 按鈕 -->
       <section>
         <button
-          class="w-full rounded-2xl py-3 font-medium text-white shadow-sm transition"
+          class="w-full rounded-full py-3 font-zen font-medium text-white shadow-soft transition"
           :class="
             available && !syncing
-              ? 'bg-[#c89b6a] hover:bg-[#b48653] active:scale-[0.98]'
-              : 'bg-[#d8c8a8] cursor-not-allowed'
+              ? 'bg-gradient-to-br from-peach-300 to-peach-500 hover:shadow-soft-lg active:scale-[0.98]'
+              : 'bg-cream-300 cursor-not-allowed'
           "
           :disabled="!available || syncing"
           @click="handleAuthAndSync"
@@ -268,30 +268,30 @@ const reflectionSeverityClass = computed(() => {
 
         <button
           v-if="toggles.menstrual_flow && available"
-          class="mt-2 w-full rounded-2xl py-2.5 text-sm text-[#7a6649] border border-[#e0d4ba] bg-white"
+          class="mt-2 w-full rounded-full py-2.5 text-sm font-zen text-peach-500 border border-peach-200 bg-white hover:bg-peach-50"
           @click="handleSyncMenstrualToHealth"
         >
           {{ t('health_write_today') }}
         </button>
 
-        <p class="text-xs text-[#9b8763] mt-2 text-center">{{ lastSyncedLabel }}</p>
+        <p class="text-xs text-stone-500 font-zen mt-2 text-center">{{ lastSyncedLabel }}</p>
       </section>
 
       <!-- result 顯示 -->
-      <section v-if="totalImported > 0 || Object.keys(lastResults).length > 0" class="bg-white rounded-2xl px-4 py-3 border border-[#ece2cf]">
-        <p class="text-sm font-medium text-[#3d2f1f] mb-2">{{ t('health_result_title') }}</p>
-        <ul class="text-xs text-[#7a6649] space-y-1">
+      <section v-if="totalImported > 0 || Object.keys(lastResults).length > 0" class="bg-white rounded-2xl px-4 py-3 border border-cream-200 shadow-soft">
+        <p class="font-display text-sm font-bold text-peach-500 mb-2">{{ t('health_result_title') }}</p>
+        <ul class="text-xs text-stone-600 font-zen space-y-1">
           <li v-for="(r, k) in lastResults" :key="k">
             <span class="font-medium">{{ t('health_result_kind_prefix', { label: KIND_META[k as HealthDataType].label }) }}</span>
             {{ t('health_result_imported', { n: r?.imported ?? 0 }) }}
             <span v-if="(r?.duplicates ?? 0) > 0" class="opacity-70">{{ t('health_result_duplicates', { n: r?.duplicates ?? 0 }) }}</span>
-            <span v-if="(r?.errors?.length ?? 0) > 0" class="text-[#b85c2e]">{{ t('health_result_errors', { n: r?.errors?.length ?? 0 }) }}</span>
+            <span v-if="(r?.errors?.length ?? 0) > 0" class="text-sakura-500">{{ t('health_result_errors', { n: r?.errors?.length ?? 0 }) }}</span>
           </li>
         </ul>
       </section>
 
       <!-- 錯誤訊息 -->
-      <section v-if="lastError" class="rounded-2xl bg-[#fce8e0] text-[#8a3a1c] px-4 py-3 text-sm">
+      <section v-if="lastError" class="rounded-2xl bg-sakura-50 border border-sakura-200 text-sakura-500 px-4 py-3 text-sm font-zen">
         <p class="flex items-start gap-2">
           <span>⚠️</span>
           <span>{{ lastError }}</span>
@@ -306,8 +306,8 @@ const reflectionSeverityClass = computed(() => {
       </section>
 
       <!-- 隱私說明 -->
-      <section class="rounded-2xl bg-[#f5ecdc]/60 px-4 py-3 text-xs text-[#7a6649] leading-relaxed">
-        <p class="font-medium text-[#3d2f1f] mb-1">{{ t('health_privacy_title') }}</p>
+      <section class="rounded-2xl bg-cream-100/60 px-4 py-3 text-xs text-stone-600 font-zen leading-relaxed">
+        <p class="font-display font-bold text-peach-500 text-sm mb-1">{{ t('health_privacy_title') }}</p>
         <p>{{ t('health_privacy_blurb') }}</p>
       </section>
     </main>

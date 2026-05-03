@@ -40,6 +40,53 @@ body {
   box-shadow: 0 6px 24px -8px rgba(159, 107, 62, 0.18);
 }
 
+/* ===== Design system semantic utilities (v1) =====
+ * 集中提煉，新 code 優先用語意 class；既有 inline tailwind 不強制改造。
+ * Token 對應：
+ *   surface  → cream gradient bg / white card
+ *   text     → stone-900 (h1) / stone-700 (body) / stone-500 (caption) / stone-400 (hint)
+ *   brand    → peach-500 primary / sakura-400 accent / sage-500 success
+ *   spacing  → mb-1/2/3/4/6/8 (4/8/12/16/24/32 px)
+ *   radius   → 12 (sm) / 16 (md) / 24 (lg / hero)
+ */
+
+/* Typography helpers — 對齊「emotional moments 用 display, 一般 UI 用 zen」 */
+.heading-1 { @apply font-display text-2xl md:text-3xl font-bold text-peach-500 leading-tight; }
+.heading-2 { @apply font-display text-xl font-bold text-peach-500 leading-tight; }
+.heading-3 { @apply font-display text-base font-bold text-peach-500; }
+.eyebrow   { @apply font-zen text-[11px] uppercase tracking-widest text-stone-500; }
+.text-body { @apply font-zen text-sm text-stone-700 leading-relaxed; }
+.text-caption { @apply font-zen text-xs text-stone-500; }
+.text-hint  { @apply font-zen text-[11px] text-stone-400; }
+
+/* Form input baseline — 給 date / text input 共用 */
+.field-input {
+  @apply w-full px-3 py-2.5 rounded-2xl border border-cream-200 bg-cream-50
+         focus:outline-none focus:border-peach-300 focus:bg-white transition-colors
+         text-sm font-zen text-stone-700;
+}
+
+/* Sticky thumb-zone CTA — 黏底儲存 button（mobile） */
+.cta-thumb {
+  position: sticky;
+  bottom: max(0.5rem, env(safe-area-inset-bottom));
+  z-index: 10;
+}
+
+/* Status dot — 用顏色 + size 雙重表達狀態，避免色盲只靠顏色 */
+.status-dot { @apply inline-block w-1.5 h-1.5 rounded-full align-middle; }
+
+/* Loading skeleton block */
+.skeleton-block {
+  @apply rounded-2xl bg-stone-100 animate-pulse;
+}
+
+/* Phase color cell pattern overlay — 4.5:1 對比 + 色盲 fallback 用淡 stripe */
+.phase-cell-menstrual { background-color: rgba(224, 122, 145, 0.20); color: #C86079; }
+.phase-cell-follicular { background-color: rgba(255, 204, 168, 0.30); color: #E97A45; }
+.phase-cell-ovulation { background-color: rgba(158, 190, 146, 0.25); color: #5F8852; }
+.phase-cell-luteal { background-color: rgba(181, 154, 215, 0.20); color: #7C5DA8; }
+
 /* Character helpers */
 .char-stage { position: relative; display: inline-block; }
 .char-body {

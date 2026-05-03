@@ -4,9 +4,9 @@
  *
  * 三個區塊：
  *   1. 今天的 TodayActionCard（共用元件）
- *   2. 過去 30 天 history（grouped by 7-day buckets）
- *   3. 妳的健康 protocol（free top1 / Premium 完整）
- *   4. CTA 跳 pattern report
+ *   2. pattern report CTA（妳的這個月）
+ *   3. 過去 30 天 history（grouped by week，caption 用「上週」「2 週前」+ 該週 helpful/unhelpful 統計）
+ *   4. 妳的健康 protocol（free 鎖頭 / Premium 解鎖）
  */
 import { computed, onMounted, ref } from 'vue'
 import { useRouter } from 'vue-router'
@@ -20,9 +20,11 @@ import TodayActionCard from '../components/TodayActionCard.vue'
 import Card from '../components/ui/Card.vue'
 import Spinner from '../components/ui/Spinner.vue'
 import { useTone } from '../composables/useTone'
+import { useEntitlementsStore } from '../stores/entitlements'
 
 const { t } = useTone()
 const router = useRouter()
+const ent = useEntitlementsStore()
 
 const history = ref<ActionHistoryRow[]>([])
 const historyLoading = ref(false)
@@ -67,35 +69,54 @@ async function loadProtocol() {
 onMounted(() => {
   loadHistory()
   loadProtocol()
+  ent.load()
 })
 
-// group history into 7-day buckets, newest bucket first
+// group history into 7-day buckets, newest first
 interface Bucket {
-  label: string
+  label: string       // 「這週」「上週」「2 週前」「3 週前」
+  total: number
+  helpful: number
+  unhelpful: number
   rows: ActionHistoryRow[]
 }
+
+const WEEK_LABELS = ['這週', '上週', '2 週前', '3 週前']
 
 const buckets = computed<Bucket[]>(() => {
   const sorted = [...history.value].sort((a, b) => (a.for_date < b.for_date ? 1 : -1))
   const out: Bucket[] = []
-  for (let i = 0; i < 30; i += 7) {
-    const start = i
-    const end = Math.min(i + 7, 30)
+  for (let w = 0; w < 4; w++) {
+    const start = w * 7
+    const end = Math.min(start + 7, 30)
     const todayMs = new Date().setHours(0, 0, 0, 0)
     const startMs = todayMs - start * 86400000
     const endMs = todayMs - (end - 1) * 86400000
     const startStr = new Date(endMs).toISOString().slice(0, 10)
     const endStr = new Date(startMs).toISOString().slice(0, 10)
     const rows = sorted.filter((r) => r.for_date >= startStr && r.for_date <= endStr)
-    if (rows.length > 0) {
-      out.push({ label: `${startStr} – ${endStr}`, rows })
-    }
+    if (rows.length === 0) continue
+    const helpful = rows.filter((r) => (r as any).feedback === 'helpful').length
+    const unhelpful = rows.filter((r) => (r as any).feedback === 'unhelpful').length
+    out.push({
+      label: WEEK_LABELS[w] ?? `${w} 週前`,
+      total: rows.length,
+      helpful,
+      unhelpful,
+      rows,
+    })
   }
   return out
 })
 
 type ProtocolPhase = 'menstrual' | 'follicular' | 'ovulation' | 'luteal'
 const phaseOrder: ProtocolPhase[] = ['menstrual', 'follicular', 'ovulation', 'luteal']
+const phaseEmoji: Record<ProtocolPhase, string> = {
+  menstrual: '🌸',
+  follicular: '🌱',
+  ovulation: '☀️',
+  luteal: '🌙',
+}
 
 function phaseLabel(p: ProtocolPhase) {
   return t(`action_phase_${p}`)
@@ -112,34 +133,39 @@ function goPaywall() {
 function goPatternReport() {
   router.push('/me/pattern-report')
 }
+
+const isPremium = computed(() => ent.isPremium())
 </script>
 
 <template>
-  <div class="px-5 md:px-8 pt-10 pb-24 max-w-md md:max-w-3xl mx-auto space-y-6" data-test="daily-action-view">
-    <!-- Section 1: 今天的 action -->
+  <div class="px-5 md:px-8 pt-8 pb-24 max-w-md md:max-w-3xl mx-auto space-y-6" data-test="daily-action-view">
+    <!-- Section 1：今天的 action（主視覺） -->
     <section>
       <TodayActionCard />
     </section>
 
-    <!-- Section 2: pattern report CTA -->
+    <!-- Section 2：pattern report CTA「最新一份妳的這個月」-->
     <button
       type="button"
       @click="goPatternReport"
-      class="w-full rounded-3xl bg-gradient-to-br from-lavender-50 to-cream-50 px-5 py-4 shadow-soft active:scale-[0.99] transition-transform text-left flex items-center justify-between"
+      class="w-full rounded-3xl bg-gradient-to-br from-lavender-100 via-lavender-50 to-cream-50 px-5 py-4 shadow-soft active:scale-[0.99] transition-transform text-left flex items-center justify-between gap-3"
       data-test="action-view-pattern-cta"
     >
-      <div>
-        <p class="font-zen text-[11px] uppercase tracking-widest text-lavender-500/80">
-          {{ t('pattern_report_heading') }}
-        </p>
-        <p class="font-display font-bold text-stone-700 text-base mt-0.5">
-          {{ t('action_view_pattern_report') }}
-        </p>
+      <div class="flex items-center gap-3 flex-1 min-w-0">
+        <span class="shrink-0 text-2xl">📖</span>
+        <div class="min-w-0">
+          <p class="font-zen text-[11px] uppercase tracking-widest text-lavender-500/80">
+            {{ t('pattern_report_heading') }}
+          </p>
+          <p class="font-display font-bold text-stone-700 text-base mt-0.5 truncate">
+            {{ t('action_view_pattern_report') }}
+          </p>
+        </div>
       </div>
-      <span class="text-2xl text-lavender-500" aria-hidden="true">→</span>
+      <span class="text-xl text-lavender-500 shrink-0" aria-hidden="true">→</span>
     </button>
 
-    <!-- Section 3: 過去 30 天 -->
+    <!-- Section 3：過去 30 天 history（by week + helpful 統計） -->
     <section>
       <h2 class="font-display font-bold text-peach-500 text-lg mb-3">{{ t('action_history_title') }}</h2>
       <Spinner v-if="historyLoading" />
@@ -153,14 +179,22 @@ function goPatternReport() {
           {{ t('btn_retry') }}
         </button>
       </Card>
-      <Card v-else-if="!buckets.length" tone="cream">
-        <p class="text-sm font-zen text-stone-500 text-center py-2">
+      <Card v-else-if="!buckets.length" tone="cream" class="text-center py-6">
+        <p class="text-3xl mb-2">🌱</p>
+        <p class="text-sm font-zen text-stone-500">
           {{ t('action_history_empty') }}
         </p>
       </Card>
       <div v-else class="space-y-3">
         <Card v-for="b in buckets" :key="b.label" tone="cream" class="space-y-2">
-          <p class="font-zen text-[11px] tracking-wider text-stone-500">{{ b.label }}</p>
+          <div class="flex items-baseline justify-between gap-2 mb-1">
+            <p class="font-display font-bold text-stone-700 text-sm">{{ b.label }}</p>
+            <p class="font-zen text-[11px] text-stone-500 flex items-center gap-2">
+              <span>{{ b.total }} 件</span>
+              <span v-if="b.helpful > 0" class="text-sage-500">💛 {{ b.helpful }}</span>
+              <span v-if="b.unhelpful > 0" class="text-stone-400">🌧 {{ b.unhelpful }}</span>
+            </p>
+          </div>
           <ul class="space-y-1.5">
             <li
               v-for="row in b.rows"
@@ -169,13 +203,12 @@ function goPatternReport() {
               data-test="action-history-row"
             >
               <span
-                class="mt-0.5 w-2 h-2 rounded-full shrink-0"
+                class="mt-1.5 w-2 h-2 rounded-full shrink-0"
                 :class="row.is_completed ? 'bg-sage-500' : 'bg-stone-300'"
                 aria-hidden="true"
               />
               <span class="flex-1 min-w-0">
-                <span class="text-stone-500 text-[11px] mr-2">{{ row.for_date }}</span>
-                <span :class="row.is_completed ? 'text-stone-700' : 'text-stone-400'">
+                <span :class="row.is_completed ? 'text-stone-700' : 'text-stone-400 line-through'">
                   {{ row.title }}
                 </span>
               </span>
@@ -191,25 +224,40 @@ function goPatternReport() {
       </div>
     </section>
 
-    <!-- Section 4: 妳的 protocol -->
+    <!-- Section 4：妳的 protocol — peach gradient CTA card -->
     <section>
-      <h2 class="font-display font-bold text-peach-500 text-lg">{{ t('action_protocol_title') }}</h2>
-      <p class="font-zen text-[12px] text-stone-500 mb-3 mt-0.5">{{ t('action_protocol_subtitle') }}</p>
+      <div class="flex items-baseline justify-between mb-1">
+        <h2 class="font-display font-bold text-peach-500 text-lg">{{ t('action_protocol_title') }}</h2>
+        <span v-if="isPremium" class="font-zen text-[10px] text-sage-500 bg-sage-50 px-2 py-0.5 rounded-full">
+          🔓 已解鎖
+        </span>
+      </div>
+      <p class="font-zen text-[12px] text-stone-500 mb-3">{{ t('action_protocol_subtitle') }}</p>
 
       <Spinner v-if="protocolLoading" />
 
-      <Card v-else-if="protocolPaywall" tone="cream" class="space-y-3" data-test="action-protocol-paywall">
-        <p class="font-zen text-sm text-stone-700 leading-relaxed">
-          {{ t('action_protocol_premium_gate') }}
-        </p>
-        <button
-          type="button"
-          @click="goPaywall"
-          class="w-full sm:w-auto px-5 py-2.5 rounded-full bg-peach-gradient text-white font-display font-bold text-sm shadow-soft active:scale-95"
-        >
-          {{ t('action_protocol_unlock') }}
-        </button>
-      </Card>
+      <!-- Free user：peach gradient + 鎖頭 CTA card -->
+      <button
+        v-else-if="protocolPaywall"
+        type="button"
+        @click="goPaywall"
+        class="w-full text-left rounded-3xl bg-gradient-to-br from-peach-300 via-peach-400 to-sakura-400 p-5 shadow-soft active:scale-[0.99] transition-transform overflow-hidden relative"
+        data-test="action-protocol-paywall"
+      >
+        <div class="absolute -bottom-8 -right-8 text-[140px] opacity-10 leading-none select-none" aria-hidden="true">🔒</div>
+        <div class="relative space-y-2 text-white">
+          <div class="flex items-center gap-2">
+            <span class="text-2xl" aria-hidden="true">🔒</span>
+            <span class="font-zen text-[11px] tracking-widest uppercase opacity-90">Premium</span>
+          </div>
+          <p class="font-display font-black text-lg leading-snug">
+            {{ t('action_protocol_premium_gate') }}
+          </p>
+          <span class="inline-block mt-2 px-4 py-2 rounded-full bg-white text-peach-500 font-display font-bold text-sm">
+            {{ t('action_protocol_unlock') }} →
+          </span>
+        </div>
+      </button>
 
       <Card v-else-if="protocolError" tone="cream">
         <p class="text-sm font-zen text-stone-500">{{ protocolError }}</p>
@@ -222,9 +270,13 @@ function goPatternReport() {
         </button>
       </Card>
 
+      <!-- Premium：完整 protocol 4 phase -->
       <div v-else-if="protocol" class="space-y-3" data-test="action-protocol-list">
         <Card v-for="phase in phaseOrder" :key="phase" tone="cream">
-          <p class="font-display font-bold text-peach-500 text-sm mb-2">{{ phaseLabel(phase) }}</p>
+          <div class="flex items-center gap-2 mb-2">
+            <span class="text-lg" aria-hidden="true">{{ phaseEmoji[phase] }}</span>
+            <p class="font-display font-bold text-peach-500 text-sm">{{ phaseLabel(phase) }}</p>
+          </div>
           <ul v-if="protocol[phase]?.length" class="space-y-1.5">
             <li
               v-for="entry in protocol[phase]"

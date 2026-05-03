@@ -30,20 +30,23 @@ function next() {
 
 <template>
   <section class="space-y-5" data-test="onboarding-step-2">
-    <div class="space-y-1.5">
-      <p class="font-zen text-xs text-stone-500 tracking-widest uppercase">Step 2 / 3</p>
+    <div class="text-center space-y-2">
+      <div class="text-5xl" aria-hidden="true">🌙</div>
       <h2 class="font-display text-2xl font-bold text-peach-500 leading-snug">
         {{ t('onboarding_step2_heading') }}
       </h2>
-      <p class="font-zen text-sm text-stone-500">
+      <p class="font-zen text-sm text-stone-500 leading-relaxed">
         {{ t('onboarding_step2_help_long') }}
       </p>
     </div>
 
-    <div class="bg-cream-50 rounded-3xl p-5 text-center space-y-3">
-      <p class="font-display font-bold text-peach-500 text-5xl leading-none">
-        {{ length }}<span class="text-base text-stone-400 ml-1 font-zen">{{ t('onboarding_step2_unit_days') }}</span>
-      </p>
+    <div class="bg-cream-50 rounded-3xl p-6 text-center space-y-4">
+      <div>
+        <p class="font-display font-bold text-peach-500 text-6xl leading-none tracking-tight">
+          {{ length }}
+        </p>
+        <p class="font-zen text-sm text-stone-400 mt-1">{{ t('onboarding_step2_unit_days') }}</p>
+      </div>
       <input
         v-model.number="length"
         type="range"
@@ -51,7 +54,10 @@ function next() {
         max="45"
         step="1"
         data-test="onboarding-cycle-length"
-        class="w-full accent-peach-400"
+        :aria-valuemin="21"
+        :aria-valuemax="45"
+        :aria-valuenow="length"
+        class="w-full accent-peach-400 h-2"
       />
       <div class="flex justify-between text-[11px] font-zen text-stone-400 px-1">
         <span>21</span>
@@ -59,7 +65,7 @@ function next() {
         <span>35</span>
         <span>45</span>
       </div>
-      <p class="font-zen text-[12px] text-stone-500">{{ hint }}</p>
+      <p class="font-zen text-[13px] text-peach-500 leading-relaxed">{{ hint }}</p>
     </div>
 
     <div class="grid grid-cols-2 gap-3">

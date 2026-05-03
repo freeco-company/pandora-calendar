@@ -39,12 +39,12 @@ function submit() {
 
 <template>
   <section class="space-y-5" data-test="onboarding-step-3">
-    <div class="space-y-1.5">
-      <p class="font-zen text-xs text-stone-500 tracking-widest uppercase">Step 3 / 3</p>
+    <div class="text-center space-y-2">
+      <div class="text-5xl" aria-hidden="true">💛</div>
       <h2 class="font-display text-2xl font-bold text-peach-500 leading-snug">
         {{ t('onboarding_step3_heading') }}
       </h2>
-      <p class="font-zen text-sm text-stone-500">
+      <p class="font-zen text-sm text-stone-500 leading-relaxed">
         {{ t('onboarding_step3_help') }}
       </p>
     </div>
@@ -55,24 +55,25 @@ function submit() {
         :key="opt.value"
         type="button"
         :data-test="`onboarding-goal-${opt.value}`"
-        class="w-full px-4 py-3.5 rounded-2xl border text-left flex items-center gap-3 transition-all active:scale-[0.99]"
+        :aria-pressed="selected === opt.value"
+        class="w-full px-4 py-4 rounded-2xl border-2 text-left flex items-center gap-3 transition-all active:scale-[0.99]"
         :class="
           selected === opt.value
-            ? 'bg-peach-50 border-peach-300 shadow-soft'
-            : 'bg-white border-cream-200 hover:bg-cream-50'
+            ? 'bg-peach-50 border-peach-400 shadow-soft scale-[1.01]'
+            : 'bg-white border-cream-200 hover:bg-cream-50 hover:border-cream-300'
         "
         @click="pick(opt.value)"
       >
-        <span class="text-2xl">{{ opt.emoji }}</span>
-        <div class="flex-1">
-          <p class="font-display font-bold text-peach-500 text-sm">{{ opt.title }}</p>
-          <p class="font-zen text-[11px] text-stone-500 mt-0.5">{{ opt.subtitle }}</p>
+        <span class="text-3xl shrink-0">{{ opt.emoji }}</span>
+        <div class="flex-1 min-w-0">
+          <p class="font-display font-bold text-peach-500 text-base">{{ opt.title }}</p>
+          <p class="font-zen text-[12px] text-stone-500 mt-0.5 leading-relaxed">{{ opt.subtitle }}</p>
         </div>
         <span
-          class="w-5 h-5 rounded-full border-2 flex items-center justify-center"
+          class="w-6 h-6 rounded-full border-2 flex items-center justify-center shrink-0 transition-all"
           :class="selected === opt.value ? 'border-peach-400 bg-peach-400' : 'border-cream-300'"
         >
-          <span v-if="selected === opt.value" class="text-white text-[10px]">✓</span>
+          <span v-if="selected === opt.value" class="text-white text-xs">✓</span>
         </span>
       </button>
     </div>

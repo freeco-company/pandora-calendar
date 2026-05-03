@@ -107,42 +107,51 @@ function tabClick() {
       </RouterView>
     </main>
 
+    <!--
+      Tab bar — 4 個 tab：月曆 / 記錄 / 日誌 / 我的
+      「日誌」原為「朵朵」，重新定位：朵朵已散布全 App（toast / banner / Calendar reflection），
+      此 tab 改作為「朵朵 × 妳的對話 / 心情歷程」timeline，命名上更直白。
+    -->
     <nav
       v-if="showTabBar"
-      class="fixed bottom-0 inset-x-0 bg-white/85 backdrop-blur-md border-t border-cream-200 px-3 py-2 grid grid-cols-4 text-[11px] font-zen z-30 shadow-[0_-4px_16px_-4px_rgba(159,107,62,0.12)]"
+      class="fixed bottom-0 inset-x-0 bg-white/90 backdrop-blur-md border-t border-cream-200 px-2 pt-1.5 grid grid-cols-4 text-[11px] font-zen z-30 shadow-[0_-4px_16px_-4px_rgba(159,107,62,0.12)]"
       style="padding-bottom: max(0.5rem, env(safe-area-inset-bottom))"
     >
       <RouterLink
         to="/calendar"
-        class="flex flex-col items-center py-1.5 gap-0.5 rounded-2xl transition-colors"
+        class="flex flex-col items-center justify-center py-1.5 gap-0.5 rounded-2xl transition-colors min-h-[52px]"
         active-class="text-peach-500 bg-peach-50"
         @click="tabClick"
       >
-        <span class="text-xl">🗓️</span><span>月曆</span>
+        <span class="text-[22px] leading-none" aria-hidden="true">🗓️</span>
+        <span class="text-[11px] leading-tight">月曆</span>
       </RouterLink>
       <RouterLink
         to="/log"
-        class="flex flex-col items-center py-1.5 gap-0.5 rounded-2xl transition-colors"
+        class="flex flex-col items-center justify-center py-1.5 gap-0.5 rounded-2xl transition-colors min-h-[52px]"
         active-class="text-peach-500 bg-peach-50"
         @click="tabClick"
       >
-        <span class="text-xl">📝</span><span>記錄</span>
+        <span class="text-[22px] leading-none" aria-hidden="true">📝</span>
+        <span class="text-[11px] leading-tight">記錄</span>
       </RouterLink>
       <RouterLink
         to="/dodo"
-        class="flex flex-col items-center py-1.5 gap-0.5 rounded-2xl transition-colors"
+        class="flex flex-col items-center justify-center py-1.5 gap-0.5 rounded-2xl transition-colors min-h-[52px]"
         active-class="text-peach-500 bg-peach-50"
         @click="tabClick"
       >
-        <span class="text-xl">🐣</span><span>朵朵</span>
+        <span class="text-[22px] leading-none" aria-hidden="true">📔</span>
+        <span class="text-[11px] leading-tight">日誌</span>
       </RouterLink>
       <RouterLink
         to="/me"
-        class="flex flex-col items-center py-1.5 gap-0.5 rounded-2xl transition-colors"
+        class="flex flex-col items-center justify-center py-1.5 gap-0.5 rounded-2xl transition-colors min-h-[52px]"
         active-class="text-peach-500 bg-peach-50"
         @click="tabClick"
       >
-        <span class="text-xl">👤</span><span>我的</span>
+        <span class="text-[22px] leading-none" aria-hidden="true">👤</span>
+        <span class="text-[11px] leading-tight">我的</span>
       </RouterLink>
     </nav>
 

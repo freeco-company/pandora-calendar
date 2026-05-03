@@ -121,9 +121,9 @@ function pickMood(v: string) {
 <template>
   <div class="px-5 md:px-8 pt-10 pb-6 max-w-md md:max-w-4xl lg:max-w-5xl mx-auto space-y-5">
     <header>
-      <p class="font-zen text-xs text-stone-500 tracking-widest uppercase">{{ t('log_eyebrow') }}</p>
-      <h1 class="font-display text-2xl font-bold text-peach-500 mt-0.5">{{ t('log_title_today') }}</h1>
-      <p class="font-zen text-sm text-stone-500 mt-1">{{ t('log_subtitle') }}</p>
+      <p class="eyebrow">{{ t('log_eyebrow') }}</p>
+      <h1 class="heading-1 mt-0.5">{{ t('log_title_today') }}</h1>
+      <p class="text-body text-stone-500 mt-1">{{ t('log_subtitle') }}</p>
     </header>
 
     <div class="md:grid md:grid-cols-2 md:gap-5 md:items-start space-y-5 md:space-y-0">
@@ -203,9 +203,16 @@ function pickMood(v: string) {
             class="w-full px-3.5 py-2.5 flex items-center justify-between bg-cream-50 hover:bg-peach-50 transition-colors"
           >
             <span class="font-zen text-sm text-peach-500 flex items-center gap-1.5">
-              <span>{{ group.emoji }}</span>
+              <span aria-hidden="true">{{ group.emoji }}</span>
               <span>{{ group.title }}</span>
               <span class="text-[10px] text-stone-400">{{ group.tags.length }}</span>
+              <!-- 已勾過的 category：顯示綠色 ✓，給操作者「填了什麼」即時 feedback -->
+              <span
+                v-if="group.tags.some((tg) => selectedTags.includes(tg.value))"
+                class="text-sage-500 text-[12px] font-bold"
+                :title="`已選 ${group.tags.filter((tg) => selectedTags.includes(tg.value)).length} 項`"
+                aria-hidden="true"
+              >✓</span>
             </span>
             <span class="text-stone-400 text-xs">
               {{ expandedCategories[group.key] ? '−' : '+' }}

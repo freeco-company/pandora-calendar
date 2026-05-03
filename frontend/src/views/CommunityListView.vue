@@ -8,7 +8,6 @@ import {
   type CommunitySort,
 } from '../api'
 import Card from '../components/ui/Card.vue'
-import Button from '../components/ui/Button.vue'
 import Spinner from '../components/ui/Spinner.vue'
 import EmptyState from '../components/ui/EmptyState.vue'
 import { useTone } from '../composables/useTone'
@@ -94,28 +93,27 @@ onMounted(load)
 </script>
 
 <template>
-  <div class="min-h-screen pb-24">
-    <header class="px-5 pt-5 pb-3">
-      <div class="flex items-center justify-between">
-        <h1 class="text-xl font-semibold text-cream-900">{{ t('community_list_title') }}</h1>
-        <Button variant="ghost" size="sm" @click="router.back()">{{ t('btn_back') }}</Button>
-      </div>
-      <p class="text-xs text-cream-700 mt-1">
+  <div class="min-h-screen pb-24 px-5 md:px-8 max-w-md md:max-w-2xl lg:max-w-3xl mx-auto">
+    <header class="pt-10 pb-4">
+      <button class="text-stone-500 font-zen text-sm mb-2" @click="router.back()">{{ t('btn_back') }}</button>
+      <p class="font-zen text-xs text-stone-500 tracking-widest uppercase">{{ t('community_list_subtitle_eyebrow') ?? t('community_list_subtitle') }}</p>
+      <h1 class="font-display text-2xl font-bold text-peach-500 mt-0.5">{{ t('community_list_title') }}</h1>
+      <p class="font-zen text-xs text-stone-500 mt-1">
         {{ t('community_list_subtitle') }}
       </p>
     </header>
 
     <!-- Category tabs -->
-    <div class="px-3 overflow-x-auto">
-      <div class="flex gap-2 pb-2">
+    <div class="overflow-x-auto -mx-1 mb-2">
+      <div class="flex gap-2 px-1 pb-2">
         <button
           v-for="c in CATEGORIES"
           :key="c.value"
-          class="px-3 py-1.5 rounded-full text-sm whitespace-nowrap transition"
+          class="px-3 py-1.5 rounded-full text-sm whitespace-nowrap font-zen transition"
           :class="
             category === c.value
-              ? 'bg-peach-300 text-cream-900 font-medium shadow-soft'
-              : 'bg-white/70 text-cream-700'
+              ? 'bg-peach-300 text-white font-medium shadow-soft'
+              : 'bg-white/80 text-stone-600 border border-cream-200'
           "
           @click="category = c.value"
         >
@@ -125,22 +123,22 @@ onMounted(load)
     </div>
 
     <!-- Sort -->
-    <div class="px-5 flex gap-2 mb-2">
+    <div class="flex gap-2 mb-3">
       <button
         v-for="s in SORT_OPTIONS"
         :key="s.value"
-        class="text-xs px-2 py-1 rounded-md"
-        :class="sort === s.value ? 'text-peach-700 font-medium' : 'text-cream-600'"
+        class="text-xs px-2 py-1 rounded-md font-zen"
+        :class="sort === s.value ? 'text-peach-500 font-medium' : 'text-stone-500'"
         @click="sort = s.value"
       >
         {{ s.label }}
       </button>
     </div>
 
-    <main class="px-4 space-y-3">
+    <main class="space-y-3">
       <Spinner v-if="loading" :label="t('common_loading')" />
 
-      <div v-else-if="error" class="text-center text-cream-700 py-8">
+      <div v-else-if="error" class="text-center text-stone-500 font-zen py-8">
         {{ error }}
       </div>
 
@@ -166,20 +164,20 @@ onMounted(load)
             {{ p.is_dodo ? '🌸' : categoryEmoji(p.category) }}
           </div>
           <div class="flex-1 min-w-0">
-            <div class="flex items-center gap-2 text-xs text-cream-600">
-              <span class="font-medium">{{ p.is_dodo ? t('community_dodo_editor') : p.anonymous_handle }}</span>
+            <div class="flex items-center gap-2 text-xs text-stone-500 font-zen">
+              <span class="font-medium font-mono text-[11px]">{{ p.is_dodo ? t('community_dodo_editor') : p.anonymous_handle }}</span>
               <span>·</span>
               <span>{{ relativeTime(p.published_at) }}</span>
-              <span v-if="p.is_mine" class="ml-auto text-peach-600">{{ t('community_mine_pill') }}</span>
+              <span v-if="p.is_mine" class="ml-auto text-peach-500 font-zen">{{ t('community_mine_pill') }}</span>
             </div>
-            <h3 class="font-semibold text-cream-900 mt-1 line-clamp-2">{{ p.title }}</h3>
-            <p class="text-sm text-cream-700 mt-1 line-clamp-2">{{ preview(p.body) }}</p>
-            <div class="flex items-center gap-4 mt-2 text-xs text-cream-600">
+            <h3 class="font-display font-bold text-stone-700 text-base mt-1 line-clamp-2">{{ p.title }}</h3>
+            <p class="text-sm text-stone-600 font-zen leading-relaxed mt-1 line-clamp-2">{{ preview(p.body) }}</p>
+            <div class="flex items-center gap-4 mt-2 text-xs text-stone-500 font-zen">
               <span :aria-label="`${p.like_count} 個喜歡`">♡ {{ p.like_count }}</span>
               <span :aria-label="`${p.reply_count} 則回覆`">💬 {{ p.reply_count }}</span>
               <span
                 v-if="p.has_self_harm_signal"
-                class="ml-auto text-peach-700 bg-peach-50 px-2 py-0.5 rounded"
+                class="ml-auto text-peach-500 bg-peach-50 px-2 py-0.5 rounded-full"
                 >{{ t('community_cat_support') }}</span
               >
             </div>
@@ -190,7 +188,7 @@ onMounted(load)
 
     <!-- FAB -->
     <button
-      class="fixed bottom-6 right-5 w-14 h-14 rounded-full bg-peach-400 text-white text-2xl shadow-floaty active:scale-95 transition"
+      class="fixed bottom-6 right-5 w-14 h-14 rounded-full bg-peach-gradient text-white text-2xl shadow-soft-lg active:scale-95 transition"
       :title="canPostHint ?? t('community_fab_default')"
       :aria-label="canPostHint ?? t('community_fab_label')"
       @click="router.push('/community/new')"

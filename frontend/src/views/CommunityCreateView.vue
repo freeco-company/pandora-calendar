@@ -92,10 +92,10 @@ async function submit() {
 </script>
 
 <template>
-  <div class="min-h-screen pb-32">
-    <header class="px-5 pt-5 pb-3 flex items-center justify-between">
+  <div class="min-h-screen pb-32 px-5 md:px-8 max-w-md md:max-w-2xl lg:max-w-3xl mx-auto">
+    <header class="pt-10 pb-3 flex items-center justify-between gap-2">
       <Button variant="ghost" size="sm" @click="router.back()">{{ t('community_create_back') }}</Button>
-      <h1 class="text-base font-semibold text-cream-900">{{ t('community_create_title') }}</h1>
+      <h1 class="font-display text-base font-bold text-peach-500 flex-1 text-center">{{ t('community_create_title') }}</h1>
       <Button
         variant="primary"
         size="sm"
@@ -106,44 +106,45 @@ async function submit() {
       >
     </header>
 
-    <main class="px-4 space-y-3">
-      <div v-if="gateHint" class="bg-peach-50 border-l-4 border-peach-400 p-3 rounded-xl text-sm">
-        <div class="font-medium text-cream-900">{{ t('community_create_gate_title') }}</div>
-        <div class="text-cream-800 mt-1">{{ gateHint }}</div>
+    <main class="space-y-4">
+      <div v-if="gateHint" class="bg-peach-50 border-l-4 border-peach-400 p-3 rounded-2xl text-sm font-zen">
+        <div class="font-display font-bold text-peach-500">{{ t('community_create_gate_title') }}</div>
+        <div class="text-stone-700 mt-1">{{ gateHint }}</div>
       </div>
 
-      <div v-if="moderationHint" class="bg-red-50 border-l-4 border-red-400 p-3 rounded-xl text-sm">
-        <div class="font-medium text-red-700">{{ t('community_create_moderation_title') }}</div>
-        <div class="text-red-700 mt-1">{{ moderationHint }}</div>
+      <div v-if="moderationHint" class="bg-sakura-50 border-l-4 border-sakura-400 p-3 rounded-2xl text-sm font-zen">
+        <div class="font-display font-bold text-sakura-500">{{ t('community_create_moderation_title') }}</div>
+        <div class="text-stone-700 mt-1">{{ moderationHint }}</div>
       </div>
 
-      <div v-if="errorMsg" class="text-red-600 text-sm">{{ errorMsg }}</div>
+      <div v-if="errorMsg" class="text-sakura-500 text-sm font-zen">{{ errorMsg }}</div>
 
       <!-- Category -->
       <Card tone="cream">
-        <h3 class="text-sm font-medium text-cream-800 mb-2">{{ t('community_create_section_category') }}</h3>
+        <h3 class="font-display font-bold text-peach-500 text-sm mb-3">{{ t('community_create_section_category') }}</h3>
         <div class="grid grid-cols-2 gap-2">
           <button
             v-for="c in CATEGORIES"
             :key="c.value"
-            class="text-left p-3 rounded-xl border-2 transition"
+            class="text-left p-3 rounded-2xl border-2 transition-all"
             :class="
               category === c.value
-                ? 'border-peach-400 bg-peach-50'
-                : 'border-cream-200 bg-white/70'
+                ? 'border-peach-400 bg-peach-50 shadow-soft'
+                : 'border-cream-200 bg-white hover:bg-peach-50/50'
             "
+            :aria-pressed="category === c.value"
             @click="category = c.value"
           >
-            <div class="text-xl">{{ c.emoji }}</div>
-            <div class="font-medium text-sm text-cream-900 mt-1">{{ c.label }}</div>
-            <div class="text-xs text-cream-600 mt-0.5">{{ c.hint }}</div>
+            <div class="text-xl mb-1">{{ c.emoji }}</div>
+            <div class="font-zen font-medium text-sm text-stone-700">{{ c.label }}</div>
+            <div class="text-[11px] text-stone-400 font-zen mt-0.5 leading-tight">{{ c.hint }}</div>
           </button>
         </div>
       </Card>
 
       <!-- Title -->
-      <Card>
-        <label for="community-title" class="text-sm font-medium text-cream-800">{{ t('community_create_title_label') }}</label>
+      <Card tone="plain">
+        <label for="community-title" class="font-display font-bold text-peach-500 text-sm">{{ t('community_create_title_label') }}</label>
         <input
           id="community-title"
           v-model="title"
@@ -151,14 +152,14 @@ async function submit() {
           maxlength="60"
           :placeholder="t('community_create_title_placeholder')"
           :aria-label="t('community_create_title_aria')"
-          class="mt-2 w-full px-3 py-2 rounded-xl border border-cream-200"
+          class="mt-2 w-full px-4 py-2.5 rounded-2xl border border-cream-200 bg-cream-50/40 focus:outline-none focus:border-peach-300 text-sm font-zen"
         />
-        <div class="text-xs text-cream-500 text-right mt-1">{{ titleLen }} / 60</div>
+        <div class="text-xs text-stone-400 font-zen text-right mt-1">{{ titleLen }} / 60</div>
       </Card>
 
       <!-- Body -->
-      <Card>
-        <label for="community-body" class="text-sm font-medium text-cream-800">{{ t('community_create_body_label') }}</label>
+      <Card tone="plain">
+        <label for="community-body" class="font-display font-bold text-peach-500 text-sm">{{ t('community_create_body_label') }}</label>
         <textarea
           id="community-body"
           v-model="body"
@@ -166,18 +167,18 @@ async function submit() {
           maxlength="1000"
           :placeholder="t('community_create_body_placeholder')"
           :aria-label="t('community_create_body_aria')"
-          class="mt-2 w-full px-3 py-2 rounded-xl border border-cream-200 resize-none"
+          class="mt-2 w-full px-4 py-3 rounded-2xl border border-cream-200 bg-cream-50/40 focus:outline-none focus:border-peach-300 text-sm leading-relaxed resize-none font-zen"
         />
-        <div class="flex items-center justify-between text-xs mt-1">
-          <span v-if="softWarning" class="text-peach-700 max-w-[80%]">⚠ {{ softWarning }}</span>
-          <span class="text-cream-500 ml-auto">{{ bodyLen }} / 1000</span>
+        <div class="flex items-center justify-between text-xs font-zen mt-1">
+          <span v-if="softWarning" class="text-peach-500 max-w-[80%]">⚠ {{ softWarning }}</span>
+          <span class="text-stone-400 ml-auto">{{ bodyLen }} / 1000</span>
         </div>
       </Card>
 
       <!-- Guidelines -->
-      <Card tone="cream" class="text-xs text-cream-700 leading-relaxed">
-        <div class="font-medium text-cream-900 mb-1">{{ t('community_create_guidelines_title') }}</div>
-        <ul class="list-disc pl-4 space-y-1">
+      <Card tone="cream" class="text-xs text-stone-600 leading-relaxed font-zen">
+        <div class="font-display font-bold text-peach-500 text-sm mb-2">{{ t('community_create_guidelines_title') }}</div>
+        <ul class="list-disc pl-4 space-y-1 text-stone-600">
           <li>{{ t('community_create_guideline_no_health_claim') }}</li>
           <li>{{ t('community_create_guideline_no_contact') }}</li>
           <li>{{ t('community_create_guideline_kindness') }}</li>

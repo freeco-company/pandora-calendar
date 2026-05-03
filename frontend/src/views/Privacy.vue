@@ -8,7 +8,7 @@ const { t } = useTone()
 </script>
 
 <template>
-  <div class="px-5 pt-10 pb-12 max-w-md mx-auto space-y-5">
+  <div class="px-5 md:px-8 pt-10 pb-12 max-w-md md:max-w-2xl mx-auto space-y-5">
     <button @click="router.back()" class="text-stone-500 font-zen text-sm">{{ t('common_back') }}</button>
     <header>
       <p class="font-zen text-xs text-stone-500 tracking-widest uppercase">{{ t('privacy_eyebrow') }}</p>

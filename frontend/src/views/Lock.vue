@@ -60,59 +60,70 @@ onMounted(() => {
 
 <template>
   <div
-    class="fixed inset-0 z-[100] flex flex-col items-center justify-center px-6 py-10 bg-dawn-gradient"
-    style="padding-top: env(safe-area-inset-top)"
+    class="fixed inset-0 z-[100] flex flex-col bg-dawn-gradient"
+    style="padding-top: env(safe-area-inset-top); padding-bottom: env(safe-area-inset-bottom)"
     data-test="app-lock-screen"
     role="dialog"
     aria-modal="true"
     aria-labelledby="lock-title"
   >
-    <div class="max-w-sm w-full text-center space-y-8">
-      <div class="space-y-3">
+    <!-- 上半：hero（icon + title + subtitle） -->
+    <div class="flex-1 flex flex-col items-center justify-center px-6">
+      <div class="max-w-sm w-full text-center space-y-6">
         <div
-          class="w-24 h-24 mx-auto rounded-full bg-peach-gradient flex items-center justify-center text-5xl shadow-soft"
+          class="w-32 h-32 mx-auto rounded-full bg-peach-gradient flex items-center justify-center text-7xl shadow-soft"
           aria-hidden="true"
         >
           🔒
         </div>
-        <h1 id="lock-title" class="font-display text-2xl font-bold text-peach-500">
-          {{ t('lock_title') }}
-        </h1>
-        <p class="font-zen text-sm text-stone-600 leading-relaxed">
-          {{ t('lock_subtitle') }}
-        </p>
+        <div class="space-y-3">
+          <h1
+            id="lock-title"
+            class="font-display text-3xl font-bold text-peach-500 leading-tight"
+          >
+            {{ t('lock_title') }}
+          </h1>
+          <p class="font-zen text-base text-stone-600 leading-relaxed px-2">
+            {{ t('lock_subtitle') }}
+          </p>
+        </div>
       </div>
+    </div>
 
-      <div class="space-y-3">
-        <button
-          :disabled="busy"
-          data-test="app-lock-unlock"
-          class="w-full py-4 rounded-3xl bg-peach-gradient text-white font-display font-bold text-lg shadow-soft active:scale-[0.98] transition-all disabled:opacity-60"
-          @click="tryUnlock"
-        >
-          {{ busy ? t('lock_btn_busy') : t('lock_btn_idle') }}
-        </button>
-
+    <!-- 下半：CTA（thumb-zone） -->
+    <div class="px-6 pb-6 pt-2">
+      <div class="max-w-sm w-full mx-auto space-y-3">
         <p
           v-if="errorMsg"
-          class="font-zen text-xs text-sakura-500"
+          class="font-zen text-sm text-sakura-500 text-center"
           data-test="app-lock-error"
+          role="alert"
         >
           {{ errorMsg }}
         </p>
 
         <button
-          class="w-full py-2.5 rounded-2xl text-sm font-zen text-stone-500 hover:text-peach-500 transition-colors"
+          :disabled="busy"
+          data-test="app-lock-unlock"
+          class="w-full py-4 rounded-3xl bg-peach-gradient text-white font-display font-bold text-lg shadow-soft active:scale-[0.98] transition-all disabled:opacity-60 flex items-center justify-center gap-2"
+          @click="tryUnlock"
+        >
+          <span v-if="busy" class="w-4 h-4 border-2 border-white/60 border-t-white rounded-full animate-spin" />
+          <span>{{ busy ? t('lock_btn_busy') : t('lock_btn_idle') }}</span>
+        </button>
+
+        <button
+          class="w-full py-3 rounded-2xl text-sm font-zen text-stone-500 hover:text-peach-500 transition-colors"
           data-test="app-lock-exit"
           @click="exitToLogin"
         >
           {{ t('lock_logout_btn') }}
         </button>
-      </div>
 
-      <p class="font-zen text-[11px] text-stone-400 leading-relaxed pt-4 whitespace-pre-line">
-        {{ t('lock_footer') }}
-      </p>
+        <p class="font-zen text-[11px] text-stone-400 leading-relaxed pt-2 text-center whitespace-pre-line">
+          {{ t('lock_footer') }}
+        </p>
+      </div>
     </div>
   </div>
 </template>
