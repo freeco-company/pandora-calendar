@@ -55,17 +55,9 @@ return [
     // ⚠️ Pandora Calendar 隱私紅線（CLAUDE.md）：health 資料禁止上 Sentry
     // before_send 在 SDK 收 event 前執行，scrub URL / context / extra 中的敏感欄位
     // 整段 redact 的條件：URL / breadcrumb / context 含 cycles / symptoms / bbt / pms / pregnancy
-    'before_send' => function (\Sentry\Event $event): ?\Sentry\Event {
-        return \App\Support\Sentry\HealthDataScrubber::scrub($event);
-    },
-
-    'before_send_transaction' => function (\Sentry\Event $event): ?\Sentry\Event {
-        return \App\Support\Sentry\HealthDataScrubber::scrubTransaction($event);
-    },
-
-    'before_breadcrumb' => function (\Sentry\Breadcrumb $breadcrumb): ?\Sentry\Breadcrumb {
-        return \App\Support\Sentry\HealthDataScrubber::scrubBreadcrumb($breadcrumb);
-    },
+    // Closures 不能放在 config（無法 serialize 給 config:cache）— 改在 AppServiceProvider 註冊
+    // before_send / before_send_transaction / before_breadcrumb 在 AppServiceProvider::boot() 動態 set
+    // 邏輯仍在 \App\Support\Sentry\HealthDataScrubber
 
     // @see: https://docs.sentry.io/platforms/php/guides/laravel/configuration/options/#ignore_exceptions
     // 'ignore_exceptions' => [],

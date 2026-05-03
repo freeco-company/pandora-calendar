@@ -56,6 +56,15 @@ class AppServiceProvider extends ServiceProvider
 
     public function boot(): void
     {
-        //
+        // Sentry scrubbing closures 在 boot 動態註冊（不能放 config，會擋 config:cache）
+        if (class_exists(\Sentry\SentrySdk::class) && config('sentry.dsn')) {
+            $client = \Sentry\SentrySdk::getCurrentHub()->getClient();
+            if ($client) {
+                $options = $client->getOptions();
+                $options->setBeforeSendCallback(fn (\Sentry\Event $event) => \App\Support\Sentry\HealthDataScrubber::scrub($event));
+                $options->setBeforeSendTransactionCallback(fn (\Sentry\Event $event) => \App\Support\Sentry\HealthDataScrubber::scrubTransaction($event));
+                $options->setBeforeBreadcrumbCallback(fn (\Sentry\Breadcrumb $b) => \App\Support\Sentry\HealthDataScrubber::scrubBreadcrumb($b));
+            }
+        }
     }
 }
