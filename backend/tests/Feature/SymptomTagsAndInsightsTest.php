@@ -1,6 +1,7 @@
 <?php
 
 use App\Models\BbtReading;
+use App\Models\Subscription;
 use App\Models\User;
 use Carbon\CarbonImmutable;
 use Database\Seeders\DailyInsightSeeder;
@@ -13,6 +14,20 @@ beforeEach(function () {
     $this->user = User::factory()->create();
     Sanctum::actingAs($this->user);
 });
+
+function makePremiumForBbt(User $user): void
+{
+    Subscription::create([
+        'user_id' => $user->id,
+        'platform' => 'apple',
+        'product_id' => 'calendar.premium.monthly',
+        'original_transaction_id' => 'tx-bbt-'.$user->id,
+        'starts_at' => now()->subDay(),
+        'ends_at' => now()->addMonth(),
+        'status' => 'active',
+        'auto_renew' => true,
+    ]);
+}
 
 it('returns symptom tag canonical grouped', function () {
     $res = $this->getJson('/api/v1/symptom-tags');
@@ -42,6 +57,7 @@ it('returns daily insight by phase + offset', function () {
 });
 
 it('detects bbt biphasic shift', function () {
+    makePremiumForBbt($this->user);
     $today = CarbonImmutable::today();
     // 6 天 baseline 36.4，之後 5 天 36.7（>coverline 36.5）
     foreach (range(0, 5) as $i) {
@@ -68,6 +84,7 @@ it('detects bbt biphasic shift', function () {
 });
 
 it('returns no shift with insufficient bbt data', function () {
+    makePremiumForBbt($this->user);
     $res = $this->getJson('/api/v1/bbt/biphasic');
     $res->assertOk()
         ->assertJsonPath('data.has_shift', false);

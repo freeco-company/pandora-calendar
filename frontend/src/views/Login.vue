@@ -2,6 +2,7 @@
 import { ref } from 'vue'
 import { useRouter } from 'vue-router'
 import { demoLogin, platformLogin, platformRegister, platformOauthUrl } from '../api'
+import { isLockEnabled, lock } from '../composables/useAppLock'
 import Card from '../components/ui/Card.vue'
 import Button from '../components/ui/Button.vue'
 import Character from '../components/Character.vue'
@@ -22,12 +23,18 @@ const demoUsers = [
   { name: '阿伶', detail: '26 天週期', email: 'demo-aling@pandora-calendar.test' },
 ]
 
+function maybeArmLock() {
+  // 登入完成後，如果用戶之前啟用過 App 鎖，立刻設旗標讓 App.vue 拉起 Lock overlay
+  if (isLockEnabled()) lock()
+}
+
 async function pickDemo(addr: string) {
   loading.value = true
   activeEmail.value = addr
   error.value = null
   try {
     await demoLogin(addr)
+    maybeArmLock()
     router.push('/calendar')
   } catch (e: any) {
     error.value = e?.response?.data?.message ?? '登入失敗'
@@ -46,6 +53,7 @@ async function submitLogin() {
   error.value = null
   try {
     await platformLogin(email.value.trim(), password.value)
+    maybeArmLock()
     router.push('/calendar')
   } catch (e: any) {
     error.value = e?.response?.data?.detail ?? e?.response?.data?.error ?? '登入失敗'

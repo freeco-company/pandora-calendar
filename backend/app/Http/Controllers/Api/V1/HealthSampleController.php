@@ -21,6 +21,7 @@ class HealthSampleController extends Controller
             return response()->json([
                 'error' => 'premium_required',
                 'message' => 'HealthKit / Health Connect 整合是 Premium 功能。',
+                'paywall_redirect' => '/subscription',
             ], 402);
         }
 

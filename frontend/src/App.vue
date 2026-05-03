@@ -1,16 +1,91 @@
 <script setup lang="ts">
-import { computed } from 'vue'
+import { computed, onMounted, onUnmounted, ref, watch } from 'vue'
 import { useRoute } from 'vue-router'
+import { App as CapacitorApp, type AppState } from '@capacitor/app'
+import { Capacitor } from '@capacitor/core'
 import { getToken } from './api'
 import { useSfx } from './lib/sound'
+import {
+  isLockEnabled,
+  isLocked,
+  lock,
+  markActive,
+  shouldLockOnResume,
+} from './composables/useAppLock'
 import XpToast from './components/XpToast.vue'
 import LevelUpModal from './components/LevelUpModal.vue'
 import AchievementToast from './components/AchievementToast.vue'
 import PetOnboardingModal from './components/PetOnboardingModal.vue'
+import LockView from './views/Lock.vue'
 
 const route = useRoute()
-const showTabBar = computed(() => !!getToken() && route.path !== '/login')
+const showTabBar = computed(
+  () => !!getToken() && route.path !== '/login' && !locked.value,
+)
 const sfx = useSfx()
+
+// === Lock state ===
+const locked = ref(false)
+
+function refreshLockState() {
+  locked.value = !!getToken() && isLockEnabled() && isLocked()
+}
+
+function handleAppStateChange(state: AppState) {
+  if (state.isActive) {
+    // 從背景回前景
+    if (getToken() && shouldLockOnResume()) {
+      lock()
+    }
+    refreshLockState()
+  } else {
+    // 進背景時記下時間，下次回來才能算 grace
+    markActive()
+  }
+}
+
+let appStateSub: { remove: () => void } | null = null
+
+onMounted(async () => {
+  // 啟動時：若已啟用鎖且有 token，要求驗證一次
+  if (getToken() && isLockEnabled()) {
+    lock()
+  } else {
+    markActive()
+  }
+  refreshLockState()
+
+  if (Capacitor.isNativePlatform()) {
+    appStateSub = await CapacitorApp.addListener('appStateChange', handleAppStateChange)
+  } else {
+    // Web fallback：用 visibilitychange 模擬（dev 友善，雖然 plugin 不可用）
+    document.addEventListener('visibilitychange', visibilityHandler)
+  }
+})
+
+function visibilityHandler() {
+  if (document.visibilityState === 'visible') {
+    if (getToken() && shouldLockOnResume()) lock()
+    refreshLockState()
+  } else {
+    markActive()
+  }
+}
+
+onUnmounted(() => {
+  appStateSub?.remove()
+  document.removeEventListener('visibilitychange', visibilityHandler)
+})
+
+function onUnlocked() {
+  refreshLockState()
+}
+
+// 路由變化時重新評估（涵蓋登入後跳 /calendar 的場景）
+watch(
+  () => route.path,
+  () => refreshLockState(),
+)
 
 function tabClick() {
   sfx.play('ui_tap')
@@ -75,5 +150,8 @@ function tabClick() {
     <LevelUpModal />
     <AchievementToast />
     <PetOnboardingModal v-if="showTabBar" />
+
+    <!-- App lock overlay：擋住 router-view，必須驗證才放行 -->
+    <LockView v-if="locked" @unlocked="onUnlocked" />
   </div>
 </template>

@@ -26,6 +26,7 @@ class InsightController extends Controller
             return response()->json([
                 'error' => 'premium_required',
                 'message' => 'PMS 模式分析是 Premium 功能。',
+                'paywall_redirect' => '/subscription',
             ], 402);
         }
 

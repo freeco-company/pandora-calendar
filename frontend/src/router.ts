@@ -29,6 +29,14 @@ const routes: RouteRecordRaw[] = [
   { path: '/partner/:token', component: () => import('./views/PartnerPublicView.vue'), meta: { public: true } },
   { path: '/privacy', component: () => import('./views/Privacy.vue'), meta: { public: true } },
   { path: '/terms', component: () => import('./views/Terms.vue'), meta: { public: true } },
+  // Wave 1 — 衛教 / 安全資訊不擋未登入用戶；FAQ 同理（防爬蟲也方便客服分享連結）
+  { path: '/faq', component: () => import('./views/FaqView.vue'), meta: { public: true } },
+  { path: '/health-check', component: () => import('./views/MedicalSafetyView.vue'), meta: { public: true } },
+  { path: '/feedback', component: () => import('./views/FeedbackView.vue') },
+  { path: '/year-review/:year?', component: () => import('./views/YearReviewView.vue'), meta: { hideTabBar: true } },
+  { path: '/subscription/cancel', component: () => import('./views/CancelInterceptView.vue') },
+  // Lock deep-link fallback（biometric 失敗時跳這裡）
+  { path: '/lock', component: () => import('./views/Lock.vue'), meta: { hideTabBar: true, public: true } },
 ]
 
 export const router = createRouter({

@@ -41,6 +41,7 @@ class PregnancyController extends Controller
             return response()->json([
                 'error' => 'premium_required',
                 'message' => '孕期模式是 Premium 功能。',
+                'paywall_redirect' => '/subscription',
             ], 402);
         }
 

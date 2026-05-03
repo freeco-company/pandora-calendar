@@ -482,3 +482,137 @@ export const PushApi = {
     api.post('/v1/me/push/subscribe', sub),
   unsubscribe: (endpoint: string) => api.post('/v1/me/push/unsubscribe', { endpoint }),
 }
+
+// =====================================================================
+// Wave 1: export / year-review / faq / feedback / medical-safety / churn
+// =====================================================================
+
+/**
+ * Premium endpoint 失敗時，後端會回 402/403 + body { paywall_redirect: '/paywall' }。
+ * 把它包成可被 view 攔截的 error，讓上層自動 router.push('/paywall')。
+ */
+export class PaywallRequiredError extends Error {
+  paywallRedirect: string
+  constructor(redirect: string) {
+    super('Premium required')
+    this.name = 'PaywallRequiredError'
+    this.paywallRedirect = redirect
+  }
+}
+
+function unwrapPremium<T>(p: Promise<T>): Promise<T> {
+  return p.catch((err) => {
+    const status = err?.response?.status
+    const redirect = err?.response?.data?.paywall_redirect
+    if ((status === 402 || status === 403) && typeof redirect === 'string') {
+      throw new PaywallRequiredError(redirect)
+    }
+    throw err
+  })
+}
+
+export interface ExportLink {
+  download_url: string
+  expires_at: string
+}
+
+export const ExportApi = {
+  pdf: (params?: { from?: string; to?: string }) =>
+    unwrapPremium(api.post<{ data: ExportLink }>('/v1/export/pdf', params ?? {})),
+  csv: (params?: { from?: string; to?: string }) =>
+    unwrapPremium(api.post<{ data: ExportLink }>('/v1/export/csv', params ?? {})),
+}
+
+export interface YearReviewCard {
+  id: string
+  title: string
+  subtitle?: string | null
+  body: string
+  emoji: string
+  sort: number
+}
+
+export const YearReviewApi = {
+  show: (year: number) =>
+    unwrapPremium(
+      api.get<{ data: { cards: YearReviewCard[]; year: number; insufficient?: boolean } }>(
+        `/v1/year-review/${year}`,
+      ),
+    ),
+}
+
+export type FeedbackCategory = 'bug' | 'feature' | 'content' | 'other'
+
+export interface FeedbackPayload {
+  category: FeedbackCategory
+  message: string
+  app_version?: string
+  device_info?: string
+}
+
+export const FeedbackApi = {
+  submit: (payload: FeedbackPayload) => api.post('/v1/feedback', payload),
+}
+
+export interface FaqItem {
+  q: string
+  a: string
+  related_links?: Array<{ label: string; href: string; external?: boolean }>
+}
+
+export interface FaqGroup {
+  category: 'usage' | 'privacy' | 'subscription' | 'health' | string
+  category_label: string
+  items: FaqItem[]
+}
+
+export const FaqApi = {
+  list: () => api.get<{ data: FaqGroup[] }>('/v1/faq'),
+}
+
+export type MedicalUrgency = 'low' | 'medium' | 'high'
+export type MedicalContext =
+  | 'period_late'
+  | 'heavy_flow'
+  | 'severe_cramps'
+  | 'irregular'
+  | 'spotting'
+
+export interface MedicalEvaluation {
+  urgency: MedicalUrgency
+  action: string
+  message: string
+  suggest_test: boolean
+  find_doctor_url: string | null
+}
+
+export const MedicalSafetyApi = {
+  evaluate: (params: { context: MedicalContext; days_late?: number }) =>
+    api.get<{ data: MedicalEvaluation }>('/v1/medical-safety/evaluate', { params }),
+}
+
+export interface ChurnInterceptReason {
+  code: string
+  label: string
+  offer_kind: 'pause' | 'discount' | 'feedback' | 'privacy' | 'feature_promise' | 'none'
+}
+
+export interface ChurnInterceptPauseOption {
+  months: number
+  label: string
+}
+
+export interface ChurnInterceptData {
+  reasons: ChurnInterceptReason[]
+  pause_options: ChurnInterceptPauseOption[]
+  win_back: { headline: string; body: string; pause_default_months: number }
+  discount?: { percent: number; valid_days: number; copy: string } | null
+}
+
+export const SubscriptionFlowApi = {
+  churnIntercept: () => api.get<{ data: ChurnInterceptData }>('/v1/subscription/churn-intercept'),
+  pause: (months: number, reason: string) =>
+    api.post<{ data: { resume_at: string } }>('/v1/subscription/pause', { months, reason }),
+  cancelFeedback: (reason: string, message?: string) =>
+    api.post('/v1/subscription/cancel-feedback', { reason, message }),
+}

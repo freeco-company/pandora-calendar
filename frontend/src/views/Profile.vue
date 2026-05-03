@@ -10,7 +10,15 @@ import Character from '../components/Character.vue'
 import { useSfx } from '../lib/sound'
 import { getPet, savePet } from '../lib/character'
 import { getCurrentLevel, getCurrentXp } from '../lib/gamification'
-import { JourneyApi, type JourneyData } from '../api'
+import { JourneyApi, type JourneyData, ExportApi, PaywallRequiredError } from '../api'
+import {
+  isLockEnabled,
+  setLockEnabled,
+  isBiometricAvailable,
+  verify,
+  type BiometricAvailability,
+} from '../composables/useAppLock'
+import { Capacitor } from '@capacitor/core'
 
 const router = useRouter()
 const user = getStoredUser()
@@ -63,8 +71,71 @@ const levelProgressPct = computed(() => {
   return Math.min(100, Math.round((journey.value.progress_in_level / need) * 100))
 })
 
+// === 生物辨識鎖（安全與隱私） ===
+const isNative = Capacitor.isNativePlatform()
+const lockEnabled = ref(isLockEnabled())
+const lockBusy = ref(false)
+const lockMessage = ref<string | null>(null)
+const biometricInfo = ref<BiometricAvailability>({ available: false, reason: 'web' })
+
+const lockUnsupportedHint = computed(() => {
+  if (!isNative) return null // Web：整個 toggle 不顯示
+  if (biometricInfo.value.available) return null
+  switch (biometricInfo.value.reason) {
+    case 'not_enrolled':
+      return '妳的裝置還沒設定 Face ID / 指紋，請先到系統設定建立'
+    case 'no_hardware':
+      return '妳的裝置不支援生物辨識'
+    default:
+      return '目前無法使用生物辨識，請稍後再試'
+  }
+})
+
+async function toggleLock() {
+  if (lockBusy.value) return
+  lockBusy.value = true
+  lockMessage.value = null
+  const turningOn = !lockEnabled.value
+  try {
+    if (turningOn) {
+      // 先驗證一次確認可用，失敗回滾不存
+      const ok = await verify('啟用 App 鎖定')
+      if (!ok) {
+        lockMessage.value = '驗證未通過，沒有啟用鎖定'
+        lockEnabled.value = false
+        return
+      }
+      setLockEnabled(true)
+      lockEnabled.value = true
+      lockMessage.value = '✓ 已啟用 App 鎖定'
+      sfx.play('correct')
+    } else {
+      // 關閉前也驗證一次（避免別人拿到手機就關掉）
+      const ok = await verify('關閉 App 鎖定')
+      if (!ok) {
+        lockMessage.value = '驗證未通過，鎖定維持開啟'
+        lockEnabled.value = true
+        return
+      }
+      setLockEnabled(false)
+      lockEnabled.value = false
+      lockMessage.value = '已關閉 App 鎖定'
+    }
+  } finally {
+    lockBusy.value = false
+  }
+}
+
 onMounted(async () => {
   ent.load()
+  if (isNative) {
+    biometricInfo.value = await isBiometricAvailable()
+    // 如果硬體變得不可用（例如重置 Face ID），自動關掉避免卡死
+    if (!biometricInfo.value.available && lockEnabled.value) {
+      setLockEnabled(false)
+      lockEnabled.value = false
+    }
+  }
   try {
     const res = await JourneyApi.show()
     journey.value = res.data.data
@@ -112,6 +183,52 @@ async function doLogout() {
 const deleteConfirmText = ref('')
 const deleteLoading = ref(false)
 const deleteError = ref<string | null>(null)
+
+// === 資料匯出 ===
+const exportBusy = ref<'pdf' | 'csv' | null>(null)
+const exportMsg = ref<string | null>(null)
+
+async function doExport(kind: 'pdf' | 'csv') {
+  if (exportBusy.value) return
+  exportBusy.value = kind
+  exportMsg.value = null
+  try {
+    const res = kind === 'pdf' ? await ExportApi.pdf() : await ExportApi.csv()
+    const url = res.data.data.download_url
+    sfx.play('correct')
+    exportMsg.value = '✓ 已產生下載連結'
+    window.open(url, '_blank', 'noopener,noreferrer')
+  } catch (e) {
+    if (e instanceof PaywallRequiredError) {
+      router.push(e.paywallRedirect || '/me/premium')
+      return
+    }
+    exportMsg.value = '匯出失敗，請稍後再試'
+    sfx.play('wrong')
+  } finally {
+    exportBusy.value = null
+  }
+}
+
+// === 訂閱狀態顯示 ===
+const subStatus = computed(() => {
+  const d = ent.data
+  if (!d) return null
+  if (!d.premium) return { kind: 'free' as const }
+  // pause 狀態：後端可能用 paused / premium_until 過期等表達；先以 premium_until 計算剩餘天數作呈現
+  const until = d.premium_until
+  if (until) {
+    const ms = new Date(until).getTime() - Date.now()
+    const days = Math.max(0, Math.ceil(ms / 86400000))
+    return { kind: 'active' as const, until, daysLeft: days, autoRenew: d.auto_renew }
+  }
+  return { kind: 'active' as const, until: null, daysLeft: null, autoRenew: d.auto_renew }
+})
+
+function goCancel() {
+  sfx.play('ui_open')
+  router.push('/subscription/cancel')
+}
 
 async function confirmDeleteData() {
   if (deleteConfirmText.value !== '刪除') {
@@ -373,6 +490,157 @@ async function confirmDeleteData() {
         </button>
       </label>
       <p v-if="pushMessage" class="font-zen text-[11px] text-stone-500">{{ pushMessage }}</p>
+    </Card>
+
+    <!-- 安全與隱私 -->
+    <Card v-if="isNative" tone="cream" class="space-y-3" data-test="security-card">
+      <h3 class="font-display font-bold text-peach-500 text-sm">安全與隱私</h3>
+
+      <label
+        class="flex items-center justify-between"
+        :class="biometricInfo.available ? 'cursor-pointer' : 'cursor-not-allowed opacity-60'"
+      >
+        <div class="pr-3">
+          <p class="font-zen text-sm text-stone-700">開啟 Face ID / 指紋鎖</p>
+          <p class="font-zen text-[11px] text-stone-500 mt-1 leading-relaxed">
+            鎖定後，App 進入背景超過 30 秒會要求重新驗證。妳的資料只會在妳的裝置上加密。
+          </p>
+        </div>
+        <button
+          :disabled="!biometricInfo.available || lockBusy"
+          data-test="lock-toggle"
+          class="relative w-12 h-7 rounded-full transition-colors shrink-0 disabled:opacity-50"
+          :class="lockEnabled ? 'bg-peach-400' : 'bg-stone-300'"
+          :aria-pressed="lockEnabled"
+          @click="toggleLock"
+        >
+          <span
+            class="absolute top-0.5 left-0.5 w-6 h-6 bg-white rounded-full shadow transition-transform"
+            :class="lockEnabled ? 'translate-x-5' : ''"
+          />
+        </button>
+      </label>
+
+      <p
+        v-if="lockUnsupportedHint"
+        class="font-zen text-[11px] text-sakura-500"
+        data-test="lock-unsupported-hint"
+      >
+        {{ lockUnsupportedHint }}
+      </p>
+      <p v-if="lockMessage" class="font-zen text-[11px] text-stone-500">{{ lockMessage }}</p>
+
+    </Card>
+
+    <!-- 資料匯出（Premium，所有平台都顯示）-->
+    <Card tone="plain" class="space-y-3" data-test="export-card">
+      <div>
+        <h3 class="font-display font-bold text-peach-500 text-sm">資料匯出</h3>
+        <p class="font-zen text-[11px] text-stone-500 leading-relaxed mt-1">
+          匯出妳的完整週期 / 症狀紀錄，可以分享給醫師參考。Premium 功能。
+        </p>
+      </div>
+      <div class="flex gap-2">
+        <Button
+          size="sm"
+          variant="secondary"
+          :loading="exportBusy === 'pdf'"
+          :disabled="!!exportBusy"
+          data-test="export-pdf"
+          @click="doExport('pdf')"
+        >
+          📄 PDF
+        </Button>
+        <Button
+          size="sm"
+          variant="secondary"
+          :loading="exportBusy === 'csv'"
+          :disabled="!!exportBusy"
+          data-test="export-csv"
+          @click="doExport('csv')"
+        >
+          📊 CSV
+        </Button>
+      </div>
+      <p v-if="exportMsg" class="font-zen text-[11px] text-stone-500">{{ exportMsg }}</p>
+    </Card>
+
+    <!-- 我的訂閱 -->
+    <Card v-if="subStatus" tone="plain" class="space-y-3" data-test="subscription-card">
+      <div class="flex items-center justify-between">
+        <h3 class="font-display font-bold text-peach-500 text-sm">我的訂閱</h3>
+        <span
+          v-if="subStatus.kind === 'active'"
+          class="text-[10px] font-zen bg-peach-100 text-peach-600 px-2 py-0.5 rounded-full"
+        >
+          進行中
+        </span>
+        <span
+          v-else
+          class="text-[10px] font-zen bg-stone-100 text-stone-500 px-2 py-0.5 rounded-full"
+        >
+          免費版
+        </span>
+      </div>
+
+      <template v-if="subStatus.kind === 'active'">
+        <div class="bg-cream-50 rounded-2xl p-3 space-y-1">
+          <p class="font-zen text-[11px] text-stone-500">下次續訂 / 到期</p>
+          <p class="font-zen text-sm text-stone-700">
+            {{ subStatus.until ? new Date(subStatus.until).toLocaleDateString('zh-TW') : '—' }}
+            <span v-if="subStatus.daysLeft !== null" class="text-stone-400 text-[11px]">
+              （還有 {{ subStatus.daysLeft }} 天）
+            </span>
+          </p>
+          <p class="font-zen text-[11px] text-stone-500 pt-1">
+            自動續訂：{{ subStatus.autoRenew ? '開啟' : '關閉' }}
+          </p>
+        </div>
+        <Button variant="ghost" size="sm" full data-test="cancel-subscription" @click="goCancel">
+          取消訂閱
+        </Button>
+      </template>
+
+      <template v-else>
+        <p class="font-zen text-xs text-stone-500 leading-relaxed">
+          升級到 Premium 解鎖：年度回顧 / 資料匯出 / PMS 模式分析 / 朵朵深度建議
+        </p>
+        <Button size="sm" full @click="router.push('/me/premium')">看看 Premium</Button>
+      </template>
+    </Card>
+
+    <!-- 幫助 -->
+    <Card tone="plain" :padded="false" class="overflow-hidden" data-test="help-card">
+      <div class="px-5 py-3 border-b border-cream-100">
+        <h3 class="font-display font-bold text-peach-500 text-sm">幫助</h3>
+      </div>
+      <RouterLink
+        to="/faq"
+        data-test="link-faq"
+        class="flex items-center justify-between px-5 py-4 hover:bg-peach-50 transition-colors border-b border-cream-100"
+        @click="sfx.play('ui_tap')"
+      >
+        <span class="font-zen text-peach-500 text-sm">💡 常見問題</span>
+        <span class="text-stone-400">→</span>
+      </RouterLink>
+      <RouterLink
+        to="/health-check"
+        data-test="link-health-check"
+        class="flex items-center justify-between px-5 py-4 hover:bg-peach-50 transition-colors border-b border-cream-100"
+        @click="sfx.play('ui_tap')"
+      >
+        <span class="font-zen text-peach-500 text-sm">🌸 身體狀況自我評估</span>
+        <span class="text-stone-400">→</span>
+      </RouterLink>
+      <RouterLink
+        to="/feedback"
+        data-test="link-feedback"
+        class="flex items-center justify-between px-5 py-4 hover:bg-peach-50 transition-colors"
+        @click="sfx.play('ui_tap')"
+      >
+        <span class="font-zen text-peach-500 text-sm">💌 給朵朵的話</span>
+        <span class="text-stone-400">→</span>
+      </RouterLink>
     </Card>
 
     <Card tone="plain" class="space-y-2 text-sm">

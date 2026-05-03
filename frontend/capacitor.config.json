@@ -25,6 +25,11 @@
   "plugins": {
     "App": {
       "_comment": "Custom URL scheme pandoracalendar:// 給 OAuth callback 用 — Pandora Core /v1/auth/oauth/{provider}/callback 在 mobile 模式應 redirect 到 pandoracalendar://oauth/callback?token=...，App 用 listenForLaunchUrl 接住"
+    },
+    "BiometricAuth": {
+      "androidMaxAttempts": 3,
+      "androidBiometryStrength": "weak",
+      "iosFallbackTitle": "使用密碼"
     }
   }
 }

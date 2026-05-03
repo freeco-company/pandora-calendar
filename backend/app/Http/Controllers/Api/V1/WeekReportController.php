@@ -23,6 +23,7 @@ class WeekReportController extends Controller
             return response()->json([
                 'error' => 'premium_required',
                 'message' => '每週報告是 Premium 功能。',
+                'paywall_redirect' => '/subscription',
             ], 402);
         }
 
@@ -46,7 +47,11 @@ class WeekReportController extends Controller
     public function generate(Request $request): JsonResponse
     {
         if (! $this->gate->isPremium($request->user())) {
-            return response()->json(['error' => 'premium_required'], 402);
+            return response()->json([
+                'error' => 'premium_required',
+                'message' => '每週報告是 Premium 功能。',
+                'paywall_redirect' => '/subscription',
+            ], 402);
         }
 
         $report = $this->generator->generate($request->user());

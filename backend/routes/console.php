@@ -35,3 +35,12 @@ Schedule::command('push:send-daily-reminders')
     ->timezone('Asia/Taipei')
     ->withoutOverlapping()
     ->runInBackground();
+
+/*
+| Daily — 清掉 7 天前的 user data export 檔（PDF / CSV）。
+*/
+Schedule::command('exports:purge --days=7')
+    ->dailyAt('03:30')
+    ->timezone('Asia/Taipei')
+    ->withoutOverlapping()
+    ->runInBackground();

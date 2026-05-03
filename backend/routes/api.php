@@ -35,6 +35,17 @@ Route::post('/v1/internal/webhooks/identity', \App\Http\Controllers\Api\V1\Inter
 // P2-9 Partner share — public anonymous view by token（無 auth）
 Route::get('/v1/partner/{token}', [\App\Http\Controllers\Api\V1\PartnerShareController::class, 'publicView']);
 
+// FAQ — 公開（無 auth），cache 1h
+Route::get('/v1/faq', [\App\Http\Controllers\Api\V1\FaqController::class, 'index']);
+
+// 取消挽留文案 — 公開（無 auth，前端取消頁面進去就 fetch；不含 PII）
+Route::get('/v1/subscription/churn-intercept', [\App\Http\Controllers\Api\V1\SubscriptionController::class, 'churnIntercept']);
+
+// Signed export download — 嚴格驗 user_id + signature
+Route::get('/v1/exports/{userId}/{filename}', [\App\Http\Controllers\Api\V1\ExportController::class, 'download'])
+    ->middleware('auth.platform')
+    ->name('export.download');
+
 // P1 ADR-007 — auth proxy 到 Pandora Core（不存 password / refresh token 在本機）
 // throttle:5,1 = 5 req/min/IP，PC 自己也擋一次但 calendar 站前面也擋（defense-in-depth）
 Route::prefix('v1/auth')->group(function () {
@@ -163,6 +174,24 @@ Route::middleware(['auth.platform'])->prefix('v1')->group(function () {
     // Push subscription
     Route::post('/me/push/subscribe', [\App\Http\Controllers\Api\V1\PushSubscriptionController::class, 'subscribe']);
     Route::post('/me/push/unsubscribe', [\App\Http\Controllers\Api\V1\PushSubscriptionController::class, 'unsubscribe']);
+
+    // 資料匯出（Premium）
+    Route::post('/export/pdf', [\App\Http\Controllers\Api\V1\ExportController::class, 'pdf']);
+    Route::post('/export/csv', [\App\Http\Controllers\Api\V1\ExportController::class, 'csv']);
+
+    // 年度回顧（Premium）
+    Route::get('/year-review/{year}', [\App\Http\Controllers\Api\V1\YearReviewController::class, 'show'])
+        ->whereNumber('year');
+
+    // In-app feedback
+    Route::post('/feedback', [\App\Http\Controllers\Api\V1\FeedbackController::class, 'store']);
+
+    // 醫療安全決策樹
+    Route::get('/medical-safety/evaluate', [\App\Http\Controllers\Api\V1\MedicalSafetyController::class, 'evaluate']);
+
+    // 訂閱挽留 / 暫停
+    Route::post('/subscription/pause', [\App\Http\Controllers\Api\V1\SubscriptionController::class, 'pause']);
+    Route::post('/subscription/cancel-feedback', [\App\Http\Controllers\Api\V1\SubscriptionController::class, 'cancelFeedback']);
 });
 
 // Phase 0 demo helper（dev / testing only）

@@ -44,6 +44,7 @@ class DodoController extends Controller
                 'error' => $gate->reason,
                 'message' => $gate->message,
                 'upgrade_to' => 'calendar.premium.monthly',
+                'paywall_redirect' => '/subscription',
             ], 402);
         }
 
