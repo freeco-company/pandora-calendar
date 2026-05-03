@@ -96,6 +96,29 @@ function tabClick() {
   // tab_select：軟 pop + light haptic
   _click.play('choice_select')
 }
+
+// 全局 click delegate — 任何 button / a / [role=button] / [data-clickable] click 都自動播 tap
+// 已有 v-sound directive 的會 fire 兩次 → 用 dataset flag 跳過，避免重音
+function globalClickSound(ev: MouseEvent) {
+  const target = ev.target as HTMLElement | null
+  if (!target) return
+  // 找最近的可點擊容器
+  const clickable = target.closest(
+    'button, a, [role="button"], [role="tab"], [role="checkbox"], [role="radio"], [data-clickable], summary, label[for], input[type="checkbox"], input[type="radio"], select',
+  ) as HTMLElement | null
+  if (!clickable) return
+  if (clickable.dataset.skipSound === '1') return
+  // disabled 不播
+  if (clickable.hasAttribute('disabled') || (clickable as HTMLButtonElement).disabled) return
+  _click.play('ui_tap')
+}
+
+onMounted(() => {
+  document.addEventListener('click', globalClickSound, { capture: true })
+})
+onUnmounted(() => {
+  document.removeEventListener('click', globalClickSound, { capture: true } as any)
+})
 </script>
 
 <template>

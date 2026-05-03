@@ -32,13 +32,14 @@ onUnmounted(() => window.removeEventListener('pandora:xp', onXp))
     <div
       v-for="item in queue"
       :key="item.id"
-      class="animate-slidein px-4 py-3 flex items-center gap-3 min-w-[200px] bg-peach-gradient text-white shadow-soft-lg rounded-3xl backdrop-blur-sm"
+      class="animate-slidein px-4 py-3 flex items-center gap-3 min-w-[200px] bg-gradient-to-br from-peach-500 to-sakura-500 text-white shadow-lg rounded-3xl ring-2 ring-white/40"
+      style="text-shadow: 0 1px 3px rgba(80,40,30,0.35);"
       data-test="xp-toast"
     >
-      <Icon name="sparkle" size="lg" animated decorative class="text-white" />
+      <Icon name="sparkle" size="lg" animated decorative class="text-white drop-shadow" />
       <div class="leading-tight">
-        <p class="font-display font-bold text-lg">+{{ item.amount }} XP</p>
-        <p v-if="item.reason" class="text-xs opacity-90 font-zen">{{ item.reason }}</p>
+        <p class="font-zen font-bold text-lg">+{{ item.amount }} XP</p>
+        <p v-if="item.reason" class="text-xs text-white/95 font-zen">{{ item.reason }}</p>
       </div>
     </div>
   </div>

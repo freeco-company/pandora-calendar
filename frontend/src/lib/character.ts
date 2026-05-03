@@ -30,6 +30,7 @@ export type Mood =
 
 export type Outfit =
   | 'none'
+  // Level / Achievement / Streak / Premium 既有 12 件
   | 'ribbon'
   | 'witch_hat'
   | 'fp_crown'
@@ -42,11 +43,39 @@ export type Outfit =
   | 'fp_apron_premium'
   | 'angel_wings'
   | 'starry_cape'
+  // 2026-05-03 擴充 21 件（對齊 OutfitCatalog）
+  | 'flower_crown'
+  | 'headband'
+  | 'graduate_cap'
+  | 'detective_hat'
+  | 'rainbow_cape'
+  | 'sparkle_pin'
+  | 'star_clip'
+  | 'moon_tiara'
+  | 'thermometer_charm'
+  | 'pearl_necklace'
+  | 'sage_robe'
+  | 'partner_bracelet'
+  | 'cherry_blossom_kimono'
+  | 'summer_yukata'
+  | 'autumn_maple'
+  | 'lunar_new_year'
+  | 'mid_autumn'
+  | 'moon_phase_charm'
+  | 'zodiac_robe'
+  | 'fp_scarf_silk'
+  | 'fp_diamond_collar'
 
 export const OUTFITS: Outfit[] = [
   'ribbon', 'witch_hat', 'fp_crown', 'fp_chef', 'straw_hat', 'sakura',
   'sunglasses', 'winter_scarf', 'chef_apron', 'fp_apron_premium',
   'angel_wings', 'starry_cape',
+  'flower_crown', 'headband', 'graduate_cap', 'detective_hat', 'rainbow_cape',
+  'sparkle_pin', 'star_clip', 'moon_tiara',
+  'thermometer_charm', 'pearl_necklace', 'sage_robe', 'partner_bracelet',
+  'cherry_blossom_kimono', 'summer_yukata', 'autumn_maple', 'lunar_new_year', 'mid_autumn',
+  'moon_phase_charm', 'zodiac_robe',
+  'fp_scarf_silk', 'fp_diamond_collar',
 ]
 
 const ANCHOR_BASE = '/character/anchors'
@@ -118,6 +147,28 @@ const OUTFIT_ANCHOR: Record<Exclude<Outfit, 'none'>, OutfitMeta> = {
   fp_apron_premium: { anchor: 'chest_y', scale: 0.46 },
   angel_wings: { anchor: 'back_y', scale: 1.0, behind: true, opacity: 0.9 },
   starry_cape: { anchor: 'back_y', scale: 0.92, behind: true, opacity: 0.92 },
+  // === 2026-05-03 擴充 ===
+  flower_crown: { anchor: 'head_top', offset_px: -8, scale: 0.42 },
+  headband: { anchor: 'head_top', offset_px: -2, scale: 0.4 },
+  graduate_cap: { anchor: 'head_top', offset_px: -22, scale: 0.46 },
+  detective_hat: { anchor: 'head_top', offset_px: -22, scale: 0.5 },
+  rainbow_cape: { anchor: 'back_y', scale: 1.0, behind: true, opacity: 0.92 },
+  sparkle_pin: { anchor: 'head_top', offset_px: -2, scale: 0.22 },
+  star_clip: { anchor: 'head_top', offset_px: -4, scale: 0.28 },
+  moon_tiara: { anchor: 'head_top', offset_px: -14, scale: 0.4 },
+  thermometer_charm: { anchor: 'neck_y', scale: 0.22 },
+  pearl_necklace: { anchor: 'neck_y', scale: 0.46 },
+  sage_robe: { anchor: 'back_y', scale: 1.0, behind: true, opacity: 0.95 },
+  partner_bracelet: { anchor: 'chest_y', scale: 0.4 },
+  cherry_blossom_kimono: { anchor: 'back_y', scale: 1.0, behind: true, opacity: 0.95 },
+  summer_yukata: { anchor: 'back_y', scale: 1.0, behind: true, opacity: 0.95 },
+  autumn_maple: { anchor: 'back_y', scale: 0.92, behind: true, opacity: 0.92 },
+  lunar_new_year: { anchor: 'back_y', scale: 1.0, behind: true, opacity: 0.95 },
+  mid_autumn: { anchor: 'head_top', offset_px: -16, scale: 0.4 },
+  moon_phase_charm: { anchor: 'neck_y', scale: 0.46 },
+  zodiac_robe: { anchor: 'back_y', scale: 1.0, behind: true, opacity: 0.95 },
+  fp_scarf_silk: { anchor: 'neck_y', scale: 0.46 },
+  fp_diamond_collar: { anchor: 'neck_y', scale: 0.42 },
 }
 
 const OUTFIT_SRC: Record<Exclude<Outfit, 'none'>, string> = {
@@ -133,6 +184,27 @@ const OUTFIT_SRC: Record<Exclude<Outfit, 'none'>, string> = {
   fp_apron_premium: 'outfit_fp_apron_premium_overlay.svg',
   angel_wings: 'outfit_angel_wings_overlay.svg',
   starry_cape: 'outfit_starry_cape_overlay.svg',
+  flower_crown: 'outfit_flower_crown_overlay.svg',
+  headband: 'outfit_headband_overlay.svg',
+  graduate_cap: 'outfit_graduate_cap_overlay.svg',
+  detective_hat: 'outfit_detective_hat_overlay.svg',
+  rainbow_cape: 'outfit_rainbow_cape_overlay.svg',
+  sparkle_pin: 'outfit_sparkle_pin_overlay.svg',
+  star_clip: 'outfit_star_clip_overlay.svg',
+  moon_tiara: 'outfit_moon_tiara_overlay.svg',
+  thermometer_charm: 'outfit_thermometer_charm_overlay.svg',
+  pearl_necklace: 'outfit_pearl_necklace_overlay.svg',
+  sage_robe: 'outfit_sage_robe_overlay.svg',
+  partner_bracelet: 'outfit_partner_bracelet_overlay.svg',
+  cherry_blossom_kimono: 'outfit_cherry_blossom_kimono_overlay.svg',
+  summer_yukata: 'outfit_summer_yukata_overlay.svg',
+  autumn_maple: 'outfit_autumn_maple_overlay.svg',
+  lunar_new_year: 'outfit_lunar_new_year_overlay.svg',
+  mid_autumn: 'outfit_mid_autumn_overlay.svg',
+  moon_phase_charm: 'outfit_moon_phase_charm_overlay.svg',
+  zodiac_robe: 'outfit_zodiac_robe_overlay.svg',
+  fp_scarf_silk: 'outfit_fp_scarf_silk_overlay.svg',
+  fp_diamond_collar: 'outfit_fp_diamond_collar_overlay.svg',
 }
 
 const MOOD_BADGE: Record<Mood, string | null> = {

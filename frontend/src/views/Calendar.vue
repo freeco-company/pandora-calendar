@@ -405,6 +405,7 @@ function goPet() {
       <div
         v-if="detailDate"
         class="fixed inset-0 z-[70] bg-stone-900/40 backdrop-blur-sm flex items-end sm:items-center justify-center p-4 md:hidden"
+        style="padding-bottom: calc(env(safe-area-inset-bottom) + 6.5rem);"
         @click.self="detailDate = null"
         data-test="day-detail-modal"
       >

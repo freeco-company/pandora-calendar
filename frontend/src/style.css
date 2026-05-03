@@ -51,10 +51,10 @@ body {
  *   radius   → 12 (sm) / 16 (md) / 24 (lg / hero)
  */
 
-/* Typography helpers — 對齊「emotional moments 用 display, 一般 UI 用 zen」 */
-.heading-1 { @apply font-display text-2xl md:text-3xl font-bold text-peach-500 leading-tight; }
-.heading-2 { @apply font-display text-xl font-bold text-peach-500 leading-tight; }
-.heading-3 { @apply font-display text-base font-bold text-peach-500; }
+/* Typography helpers — 對齊 pandora-meal: 全 heading 用 zen + dark stone (不用 peach + display) */
+.heading-1 { @apply font-zen text-2xl md:text-3xl font-bold text-stone-800 leading-tight; }
+.heading-2 { @apply font-zen text-xl font-bold text-stone-800 leading-tight; }
+.heading-3 { @apply font-zen text-base font-bold text-stone-700; }
 .eyebrow   { @apply font-zen text-[11px] uppercase tracking-widest text-stone-500; }
 .text-body { @apply font-zen text-sm text-stone-700 leading-relaxed; }
 .text-caption { @apply font-zen text-xs text-stone-500; }
@@ -87,29 +87,17 @@ body {
  * 核心 body 仍用 Zen Kaku（易讀），這些 class 限關鍵場合用。
  */
 
-/* 朵朵對白氣泡 — 圓潤卡通感，但不過大 */
-.text-dodo-bubble { @apply font-cute text-base leading-relaxed; }
-
-/* 寵物名稱大字 / hero 副標 */
-.text-pet-name { @apply font-cute text-2xl leading-tight; }
-.text-hero-sub { @apply font-cute text-base text-peach-500; }
-
-/* 慶祝 toast 標題 / achievement 名稱 */
-.text-celebrate { @apply font-cute text-lg leading-tight; }
-.text-achievement-name { @apply font-cute text-base; }
-
-/* 年回顧 / pattern report hero 標題 */
-.text-report-hero { @apply font-cute text-3xl leading-tight; }
-
-/* daily action title（10 字大字） */
-.text-action-title { @apply font-cute text-xl leading-tight; }
-
-/* 數字類（streak / Lv） */
-.text-streak-num { @apply font-pop text-3xl tabular-nums; }
-.text-level-num { @apply font-pop text-2xl tabular-nums; }
-
-/* empty state 友善小字 */
-.text-empty-friendly { @apply font-pop text-sm text-stone-500; }
+/* 既有 utility class — 全部 fallback 用 font-zen + dark stone（對齊 meal 視覺） */
+.text-dodo-bubble { @apply font-zen text-base leading-relaxed text-stone-700; }
+.text-pet-name { @apply font-zen text-2xl font-bold leading-tight text-stone-800; }
+.text-hero-sub { @apply font-zen text-base text-stone-600; }
+.text-celebrate { @apply font-zen text-lg font-bold leading-tight text-stone-800; }
+.text-achievement-name { @apply font-zen text-base font-bold text-stone-800; }
+.text-report-hero { @apply font-zen text-3xl font-bold leading-tight text-stone-800; }
+.text-action-title { @apply font-zen text-xl font-bold leading-tight text-stone-800; }
+.text-streak-num { @apply font-zen text-3xl font-bold tabular-nums text-stone-800; }
+.text-level-num { @apply font-zen text-2xl font-bold tabular-nums text-stone-800; }
+.text-empty-friendly { @apply font-zen text-sm text-stone-500; }
 
 /* ===== Spring transitions ===== */
 .transition-spring {
