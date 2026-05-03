@@ -6,8 +6,10 @@ import Card from '../components/ui/Card.vue'
 import Button from '../components/ui/Button.vue'
 import Spinner from '../components/ui/Spinner.vue'
 import EmptyState from '../components/ui/EmptyState.vue'
+import { useTone } from '../composables/useTone'
 
 const router = useRouter()
+const { t } = useTone()
 const rows = ref<BbtRow[]>([])
 const loading = ref(true)
 const saving = ref(false)
@@ -33,14 +35,14 @@ async function save() {
     await BbtApi.store(measuredOn.value, temperature.value)
     await load()
   } catch (e: any) {
-    error.value = e?.response?.data?.errors?.temperature_c?.[0] ?? '存檔失敗'
+    error.value = e?.response?.data?.errors?.temperature_c?.[0] ?? t('bbt_save_failed')
   } finally {
     saving.value = false
   }
 }
 
 async function remove(id: number) {
-  if (!confirm('確定刪除這筆體溫？')) return
+  if (!confirm(t('bbt_delete_confirm'))) return
   await BbtApi.destroy(id)
   await load()
 }
@@ -66,19 +68,19 @@ const points = computed(() => {
 
 <template>
   <div class="px-5 md:px-8 pt-10 pb-12 max-w-md md:max-w-2xl lg:max-w-3xl mx-auto space-y-5">
-    <button @click="router.back()" class="text-stone-500 font-zen text-sm">← 返回</button>
+    <button @click="router.back()" class="text-stone-500 font-zen text-sm">{{ t('common_back') }}</button>
 
     <header>
-      <p class="font-zen text-xs text-stone-500 tracking-widest uppercase">BBT</p>
-      <h1 class="font-display text-2xl font-bold text-peach-500 mt-0.5">基礎體溫</h1>
-      <p class="font-zen text-[12px] text-stone-500 mt-1">每天起床後測一次，雙相曲線能幫朵朵更準預測排卵。</p>
+      <p class="font-zen text-xs text-stone-500 tracking-widest uppercase">{{ t('bbt_eyebrow') }}</p>
+      <h1 class="font-display text-2xl font-bold text-peach-500 mt-0.5">{{ t('bbt_title') }}</h1>
+      <p class="font-zen text-[12px] text-stone-500 mt-1">{{ t('bbt_blurb') }}</p>
     </header>
 
     <Card tone="plain" class="space-y-3">
-      <h3 class="font-display font-bold text-peach-500 text-sm">記今天的體溫</h3>
+      <h3 class="font-display font-bold text-peach-500 text-sm">{{ t('bbt_section_today') }}</h3>
       <div class="grid grid-cols-2 gap-3">
         <label class="block text-sm font-zen">
-          <span class="text-stone-500 text-[11px]">日期</span>
+          <span class="text-stone-500 text-[11px]">{{ t('bbt_field_date') }}</span>
           <input
             v-model="measuredOn"
             type="date"
@@ -86,7 +88,7 @@ const points = computed(() => {
           />
         </label>
         <label class="block text-sm font-zen">
-          <span class="text-stone-500 text-[11px]">體溫 °C</span>
+          <span class="text-stone-500 text-[11px]">{{ t('bbt_field_temp') }}</span>
           <input
             v-model.number="temperature"
             type="number"
@@ -98,11 +100,11 @@ const points = computed(() => {
         </label>
       </div>
       <p v-if="error" class="text-xs text-sakura-500 font-zen">{{ error }}</p>
-      <Button full variant="primary" :loading="saving" @click="save">記下</Button>
+      <Button full variant="primary" :loading="saving" @click="save">{{ t('bbt_save_btn') }}</Button>
     </Card>
 
     <Card tone="plain">
-      <h3 class="font-display font-bold text-peach-500 text-sm mb-3">過去 60 天</h3>
+      <h3 class="font-display font-bold text-peach-500 text-sm mb-3">{{ t('bbt_section_60d') }}</h3>
       <Spinner v-if="loading" size="sm" />
       <template v-else-if="rows.length">
         <svg :viewBox="`0 0 ${W} ${H}`" class="w-full h-32">
@@ -125,19 +127,19 @@ const points = computed(() => {
           />
         </svg>
         <p class="text-[11px] text-stone-400 text-center font-zen mt-2">
-          虛線 = 36.7°C 排卵後常見高溫線
+          {{ t('bbt_axis_hint') }}
         </p>
       </template>
       <EmptyState
         v-else
         icon="🌡️"
-        title="還沒記錄體溫"
-        subtitle="連續 14 天記錄就會出現雙相曲線。"
+        :title="t('bbt_empty_title')"
+        :subtitle="t('bbt_empty_subtitle')"
       />
     </Card>
 
     <Card tone="plain" v-if="rows.length">
-      <h3 class="font-display font-bold text-peach-500 text-sm mb-3">最近紀錄</h3>
+      <h3 class="font-display font-bold text-peach-500 text-sm mb-3">{{ t('bbt_section_recent') }}</h3>
       <ul class="text-sm font-zen divide-y divide-cream-200">
         <li
           v-for="r in rows.slice().reverse().slice(0, 14)"
@@ -149,7 +151,7 @@ const points = computed(() => {
           <button
             @click="remove(r.id)"
             class="text-stone-300 hover:text-sakura-500 text-sm"
-            aria-label="刪除"
+            :aria-label="t('bbt_delete_aria')"
           >×</button>
         </li>
       </ul>

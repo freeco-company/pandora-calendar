@@ -4,6 +4,7 @@ namespace App\Http\Controllers\Api\V1\Internal;
 
 use App\Http\Controllers\Controller;
 use App\Models\User;
+use App\Support\Sentry\SentryHelper;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Cache;
@@ -35,12 +36,24 @@ class GamificationWebhookController extends Controller
         $payload = (array) ($request->json('payload') ?? $request->all());
 
         if ($uuid === '') {
+            SentryHelper::captureMessage(
+                'gamification webhook missing user_uuid in payload',
+                'warning',
+                'webhook.gamification',
+                ['stage' => 'payload_schema', 'event_type' => $eventType]
+            );
+
             return response()->json(['error' => 'missing user_uuid'], 422);
         }
 
         $user = User::where('identity_uuid', $uuid)->first();
         if ($user === null) {
             Log::info('[GamificationWebhook] unknown user', ['uuid' => $uuid, 'event_type' => $eventType]);
+            // 預期會有：calendar 用戶尚未首次登入時 publisher 已 fire；breadcrumb 即可
+            SentryHelper::addBreadcrumb('webhook.gamification', 'unknown user', [
+                'event_type' => $eventType,
+                'user_uuid' => $uuid,
+            ]);
 
             return response()->json(['error' => 'user not found', 'uuid' => $uuid], 404);
         }
@@ -78,6 +91,12 @@ class GamificationWebhookController extends Controller
                     'event_type' => $eventType,
                     'event_id' => $request->json('event_id'),
                 ]);
+                SentryHelper::captureMessage(
+                    "gamification webhook unhandled event_type: {$eventType}",
+                    'warning',
+                    'webhook.gamification',
+                    ['stage' => 'dispatch', 'event_type' => $eventType]
+                );
 
                 return response()->json([
                     'status' => 'ignored',

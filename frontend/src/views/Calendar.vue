@@ -7,6 +7,7 @@ import EmptyState from '../components/ui/EmptyState.vue'
 import Character from '../components/Character.vue'
 import CalendarGamificationStrip from '../components/CalendarGamificationStrip.vue'
 import TodayActionCard from '../components/TodayActionCard.vue'
+import ProtocolInsightBanner from '../components/ProtocolInsightBanner.vue'
 import { getPet, moodForPhase } from '../lib/character'
 import { useTone } from '../composables/useTone'
 import { useRouter } from 'vue-router'
@@ -211,6 +212,9 @@ function goPet() {
 
     <!-- Gamification strip: pet / streak / quest / milestone -->
     <CalendarGamificationStrip :phase="rhythm?.phase ?? null" />
+
+    <!-- 朵朵主動報「我發現 X 對妳 work」— 沒 insight 不 render -->
+    <ProtocolInsightBanner />
 
     <TodayActionCard class="mb-6" :compact="true" />
 

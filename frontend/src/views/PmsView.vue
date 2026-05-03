@@ -6,8 +6,10 @@ import Card from '../components/ui/Card.vue'
 import Button from '../components/ui/Button.vue'
 import Spinner from '../components/ui/Spinner.vue'
 import EmptyState from '../components/ui/EmptyState.vue'
+import { useTone } from '../composables/useTone'
 
 const router = useRouter()
+const { t } = useTone()
 const pattern = ref<PmsPattern | null>(null)
 const loading = ref(true)
 const blocked = ref(false)
@@ -33,53 +35,53 @@ onMounted(async () => {
 <template>
   <div class="px-5 pt-8 pb-6 max-w-md mx-auto space-y-4">
     <button @click="router.push('/me')" class="font-zen text-sm text-peach-500 hover:text-peach-400">
-      ← 回我的
+      {{ t('common_back_to_me') }}
     </button>
 
     <header>
-      <p class="font-zen text-xs text-stone-500 tracking-widest uppercase">Premium</p>
-      <h1 class="font-display text-2xl font-bold text-peach-500 mt-0.5">PMS 模式分析</h1>
-      <p class="font-zen text-sm text-stone-500 mt-1">朵朵看見妳常見的經前訊號</p>
+      <p class="font-zen text-xs text-stone-500 tracking-widest uppercase">{{ t('pms_eyebrow') }}</p>
+      <h1 class="font-display text-2xl font-bold text-peach-500 mt-0.5">{{ t('pms_title') }}</h1>
+      <p class="font-zen text-sm text-stone-500 mt-1">{{ t('pms_subtitle') }}</p>
     </header>
 
-    <Spinner v-if="loading" label="載入中..." />
+    <Spinner v-if="loading" :label="t('pms_loading')" />
 
     <Card v-else-if="blocked" tone="lavender" class="text-center space-y-3">
       <div class="text-4xl">💎</div>
-      <p class="font-zen text-stone-700">PMS 模式分析是 Premium 功能</p>
-      <Button variant="primary" sfx="ui_open" @click="router.push('/me/premium')">看看 Premium</Button>
+      <p class="font-zen text-stone-700">{{ t('pms_blocked_blurb') }}</p>
+      <Button variant="primary" sfx="ui_open" @click="router.push('/me/premium')">{{ t('pms_blocked_cta') }}</Button>
     </Card>
 
     <EmptyState
       v-else-if="!pattern"
       :show-dodo="true"
-      title="朵朵還在認識妳"
-      subtitle="記錄滿 6 次以上經前症狀後就能算出妳的 pattern。"
+      :title="t('pms_empty_title')"
+      :subtitle="t('pms_empty_subtitle')"
     />
 
     <template v-else>
       <Card tone="cream" class="space-y-3">
         <p class="text-xs text-stone-500 font-zen">
-          基於最近 {{ pattern.sample_cycles }} 個週期 · 信心度
+          {{ t('pms_meta_basis', { n: pattern.sample_cycles }) }}
           <span :class="pattern.confidence === 'high' ? 'text-sage-500' : 'text-peach-400'" class="font-semibold">
-            {{ pattern.confidence === 'high' ? '高' : '低' }}
+            {{ pattern.confidence === 'high' ? t('pms_confidence_high') : t('pms_confidence_low') }}
           </span>
         </p>
-        <h3 class="font-display font-bold text-peach-500 text-base">妳經前最常出現的訊號</h3>
+        <h3 class="font-display font-bold text-peach-500 text-base">{{ t('pms_top_title') }}</h3>
         <ul class="space-y-2.5">
           <li
-            v-for="t in pattern.top_symptoms"
-            :key="t"
+            v-for="sym in pattern.top_symptoms"
+            :key="sym"
             class="flex justify-between items-center text-sm font-zen"
           >
-            <span class="text-stone-700">{{ tagLabels[t] || t }}</span>
+            <span class="text-stone-700">{{ tagLabels[sym] || sym }}</span>
             <span class="text-[11px] bg-peach-100 text-peach-500 font-semibold px-2.5 py-1 rounded-full">
-              出現 {{ pattern.symptom_counts[t] }} 次
+              {{ t('pms_count_suffix', { n: pattern.symptom_counts[sym] }) }}
             </span>
           </li>
         </ul>
       </Card>
-      <p class="text-xs text-stone-400 text-center font-zen">朵朵會在下次經前提早提醒妳照顧自己。</p>
+      <p class="text-xs text-stone-400 text-center font-zen">{{ t('pms_footer') }}</p>
     </template>
   </div>
 </template>

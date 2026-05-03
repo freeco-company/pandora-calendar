@@ -11,22 +11,24 @@ import Card from '../components/ui/Card.vue'
 import Button from '../components/ui/Button.vue'
 import Spinner from '../components/ui/Spinner.vue'
 import EmptyState from '../components/ui/EmptyState.vue'
+import { useTone } from '../composables/useTone'
 
 const router = useRouter()
+const { t } = useTone()
 
-const CATEGORIES: Array<{ value: CommunityCategory | 'all'; label: string; emoji: string }> = [
-  { value: 'all', label: '全部', emoji: '🌷' },
-  { value: 'question', label: '想問', emoji: '❓' },
-  { value: 'experience', label: '分享', emoji: '✨' },
-  { value: 'tip', label: '小撇步', emoji: '💡' },
-  { value: 'support', label: '陪伴', emoji: '🤍' },
-]
+const CATEGORIES = computed<Array<{ value: CommunityCategory | 'all'; label: string; emoji: string }>>(() => [
+  { value: 'all', label: t('community_cat_all'), emoji: '🌷' },
+  { value: 'question', label: t('community_cat_question'), emoji: '❓' },
+  { value: 'experience', label: t('community_cat_experience'), emoji: '✨' },
+  { value: 'tip', label: t('community_cat_tip'), emoji: '💡' },
+  { value: 'support', label: t('community_cat_support'), emoji: '🤍' },
+])
 
-const SORT_OPTIONS: Array<{ value: CommunitySort; label: string }> = [
-  { value: 'latest', label: '最新' },
-  { value: 'hot', label: '最熱' },
-  { value: 'mine', label: '我的' },
-]
+const SORT_OPTIONS = computed<Array<{ value: CommunitySort; label: string }>>(() => [
+  { value: 'latest', label: t('community_sort_latest') },
+  { value: 'hot', label: t('community_sort_hot') },
+  { value: 'mine', label: t('community_sort_mine') },
+])
 
 const category = ref<CommunityCategory | 'all'>('all')
 const sort = ref<CommunitySort>('latest')
@@ -53,7 +55,7 @@ async function load() {
     const { data } = await CommunityApi.list(params)
     posts.value = data.data
   } catch {
-    error.value = '社群暫時開不起來，等一下再試試。'
+    error.value = t('community_load_failed')
   } finally {
     loading.value = false
   }
@@ -78,12 +80,12 @@ function relativeTime(iso: string | null): string {
   if (!iso) return ''
   const diff = Date.now() - new Date(iso).getTime()
   const min = Math.floor(diff / 60000)
-  if (min < 1) return '剛剛'
-  if (min < 60) return `${min} 分鐘前`
+  if (min < 1) return t('community_time_just_now')
+  if (min < 60) return t('community_time_min_ago', { n: min })
   const hr = Math.floor(min / 60)
-  if (hr < 24) return `${hr} 小時前`
+  if (hr < 24) return t('community_time_hr_ago', { n: hr })
   const day = Math.floor(hr / 24)
-  if (day < 30) return `${day} 天前`
+  if (day < 30) return t('community_time_day_ago', { n: day })
   return new Date(iso).toLocaleDateString('zh-TW')
 }
 
@@ -95,11 +97,11 @@ onMounted(load)
   <div class="min-h-screen pb-24">
     <header class="px-5 pt-5 pb-3">
       <div class="flex items-center justify-between">
-        <h1 class="text-xl font-semibold text-cream-900">社群問板</h1>
-        <Button variant="ghost" size="sm" @click="router.back()">返回</Button>
+        <h1 class="text-xl font-semibold text-cream-900">{{ t('community_list_title') }}</h1>
+        <Button variant="ghost" size="sm" @click="router.back()">{{ t('btn_back') }}</Button>
       </div>
       <p class="text-xs text-cream-700 mt-1">
-        匿名分享、互相陪伴。請對自己和朋友溫柔一點。
+        {{ t('community_list_subtitle') }}
       </p>
     </header>
 
@@ -136,7 +138,7 @@ onMounted(load)
     </div>
 
     <main class="px-4 space-y-3">
-      <Spinner v-if="loading" label="載入中..." />
+      <Spinner v-if="loading" :label="t('common_loading')" />
 
       <div v-else-if="error" class="text-center text-cream-700 py-8">
         {{ error }}
@@ -144,8 +146,8 @@ onMounted(load)
 
       <EmptyState
         v-else-if="filtered.length === 0"
-        :title="sort === 'mine' ? '妳還沒有發過文' : '目前沒有貼文'"
-        :subtitle="sort === 'mine' ? '想分享什麼嗎？點右下角加號開始。' : '當第一個分享的人吧。'"
+        :title="sort === 'mine' ? t('community_empty_mine_title') : t('community_empty_title')"
+        :subtitle="sort === 'mine' ? t('community_empty_mine_subtitle') : t('community_empty_subtitle')"
         show-dodo
       />
 
@@ -165,10 +167,10 @@ onMounted(load)
           </div>
           <div class="flex-1 min-w-0">
             <div class="flex items-center gap-2 text-xs text-cream-600">
-              <span class="font-medium">{{ p.is_dodo ? '朵朵小編' : p.anonymous_handle }}</span>
+              <span class="font-medium">{{ p.is_dodo ? t('community_dodo_editor') : p.anonymous_handle }}</span>
               <span>·</span>
               <span>{{ relativeTime(p.published_at) }}</span>
-              <span v-if="p.is_mine" class="ml-auto text-peach-600">妳的</span>
+              <span v-if="p.is_mine" class="ml-auto text-peach-600">{{ t('community_mine_pill') }}</span>
             </div>
             <h3 class="font-semibold text-cream-900 mt-1 line-clamp-2">{{ p.title }}</h3>
             <p class="text-sm text-cream-700 mt-1 line-clamp-2">{{ preview(p.body) }}</p>
@@ -178,7 +180,7 @@ onMounted(load)
               <span
                 v-if="p.has_self_harm_signal"
                 class="ml-auto text-peach-700 bg-peach-50 px-2 py-0.5 rounded"
-                >陪伴</span
+                >{{ t('community_cat_support') }}</span
               >
             </div>
           </div>
@@ -189,8 +191,8 @@ onMounted(load)
     <!-- FAB -->
     <button
       class="fixed bottom-6 right-5 w-14 h-14 rounded-full bg-peach-400 text-white text-2xl shadow-floaty active:scale-95 transition"
-      :title="canPostHint ?? '發新文'"
-      :aria-label="canPostHint ?? '發新貼文'"
+      :title="canPostHint ?? t('community_fab_default')"
+      :aria-label="canPostHint ?? t('community_fab_label')"
       @click="router.push('/community/new')"
     >
       ＋

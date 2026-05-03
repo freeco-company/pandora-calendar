@@ -3,6 +3,7 @@
 namespace App\Services\Identity;
 
 use App\Models\User;
+use App\Support\Sentry\SentryHelper;
 use Lcobucci\JWT\Token\Plain;
 
 /**
@@ -30,13 +31,25 @@ class IdentityClient
      */
     public function resolveFromJwt(string $bearerToken): ?array
     {
-        $verified = $this->verifier->verify($bearerToken);
+        try {
+            $verified = $this->verifier->verify($bearerToken);
+        } catch (\Throwable $e) {
+            // verifier 預期回 null 而非 throw，但若意外 throw → 報
+            SentryHelper::captureException($e, 'oauth', [
+                'stage' => 'jwt_verify',
+            ]);
+            return null;
+        }
+
         if ($verified === null) {
+            // verifier 自己內部 log；不報 — 預期的 token 過期 / 簽名錯算 user error
+            SentryHelper::addBreadcrumb('oauth.jwt', 'jwt verify returned null', []);
             return null;
         }
 
         $uuid = $verified->claims()->get('sub');
         if (! is_string($uuid) || $uuid === '') {
+            SentryHelper::captureMessage('JWT missing sub claim', 'warning', 'oauth', []);
             return null;
         }
 

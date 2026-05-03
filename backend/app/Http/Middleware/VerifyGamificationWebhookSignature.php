@@ -3,6 +3,7 @@
 namespace App\Http\Middleware;
 
 use App\Models\GamificationWebhookNonce;
+use App\Support\Sentry\SentryHelper;
 use Closure;
 use Illuminate\Database\QueryException;
 use Illuminate\Http\Request;
@@ -43,6 +44,13 @@ class VerifyGamificationWebhookSignature
         $signature = (string) $request->header('X-Pandora-Signature', '');
 
         if ($timestamp === '' || $nonce === '' || $signature === '') {
+            SentryHelper::captureMessage(
+                'gamification webhook missing signature headers',
+                'warning',
+                'webhook.gamification',
+                ['stage' => 'header_check']
+            );
+
             return response()->json(['error' => 'missing signature headers'], 401);
         }
 
@@ -50,21 +58,49 @@ class VerifyGamificationWebhookSignature
         try {
             $ts = Carbon::parse($timestamp);
         } catch (\Exception) {
+            SentryHelper::captureMessage(
+                'gamification webhook invalid timestamp',
+                'warning',
+                'webhook.gamification',
+                ['stage' => 'timestamp_parse']
+            );
+
             return response()->json(['error' => 'invalid timestamp'], 401);
         }
         if (abs(Carbon::now()->diffInSeconds($ts, false)) > $window) {
+            SentryHelper::captureMessage(
+                'gamification webhook timestamp out of window',
+                'warning',
+                'webhook.gamification',
+                ['stage' => 'timestamp']
+            );
+
             return response()->json(['error' => 'timestamp out of window'], 401);
         }
 
         $body = $request->getContent();
         $expected = 'sha256='.hash_hmac('sha256', "{$timestamp}.{$nonce}.{$body}", $secret);
         if (! hash_equals($expected, $signature)) {
+            SentryHelper::captureMessage(
+                'gamification webhook HMAC mismatch',
+                'warning',
+                'webhook.gamification',
+                ['stage' => 'hmac']
+            );
+
             return response()->json(['error' => 'signature mismatch'], 401);
         }
 
         $eventId = (string) ($request->json('event_id') ?? '');
         $eventType = (string) ($request->json('event_type') ?? '');
         if ($eventId === '' || $eventType === '') {
+            SentryHelper::captureMessage(
+                'gamification webhook missing event_id or event_type',
+                'warning',
+                'webhook.gamification',
+                ['stage' => 'payload_schema']
+            );
+
             return response()->json(['error' => 'missing event_id or event_type'], 422);
         }
 

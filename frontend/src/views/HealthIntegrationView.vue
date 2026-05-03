@@ -1,6 +1,30 @@
 <script setup lang="ts">
 import { onMounted, reactive, ref, computed } from 'vue'
+import { useRouter } from 'vue-router'
 import { useHealthKit, type HealthDataType, type SyncResult } from '../composables/useHealthKit'
+import { ReflectionApi, type HealthReflection } from '../api'
+import { useTone } from '../composables/useTone'
+
+const { t } = useTone()
+const router = useRouter()
+const reflection = ref<HealthReflection | null>(null)
+const reflectionLoading = ref(true)
+
+async function loadReflection() {
+  reflectionLoading.value = true
+  try {
+    const r = await ReflectionApi.today()
+    reflection.value = r.data.data
+  } catch {
+    reflection.value = null
+  } finally {
+    reflectionLoading.value = false
+  }
+}
+
+function gotoActionToday() {
+  router.push('/me/action-today')
+}
 
 const {
   lastSyncedAt,
@@ -53,17 +77,17 @@ const enabledKinds = computed<HealthDataType[]>(() =>
 )
 
 const platformLabel = computed(() => {
-  if (!platform.available) return '此裝置不支援'
-  return platform.platform === 'ios' ? 'HealthKit（iOS）' : 'Health Connect（Android）'
+  if (!platform.available) return t('health_platform_unsupported')
+  return platform.platform === 'ios' ? t('health_platform_ios') : t('health_platform_android')
 })
 
 const lastSyncedLabel = computed(() => {
-  if (!lastSyncedAt.value) return '尚未同步過'
+  if (!lastSyncedAt.value) return t('health_last_sync_never')
   try {
     const d = new Date(lastSyncedAt.value)
-    return `上次同步：${d.toLocaleString('zh-TW', { hour12: false })}`
+    return t('health_last_sync_prefix', { at: d.toLocaleString('zh-TW', { hour12: false }) })
   } catch {
-    return '上次同步：—'
+    return t('health_last_sync_unknown')
   }
 })
 
@@ -79,13 +103,13 @@ async function refreshAvailability() {
 
 async function handleAuthAndSync() {
   if (!available.value) {
-    lastError.value = '此功能需要在 iOS / Android App 中使用'
+    lastError.value = t('health_web_only')
     return
   }
   const types: HealthDataType[] = [...enabledKinds.value]
   if (toggles.menstrual_flow) types.push('menstrual_flow')
   if (types.length === 0) {
-    lastError.value = '請至少開啟一項要同步的資料'
+    lastError.value = t('health_must_pick_one')
     return
   }
   const granted = await requestAuth(types)
@@ -103,27 +127,73 @@ async function handleSyncMenstrualToHealth() {
   }
 }
 
-const KIND_META: Record<HealthDataType, { label: string; emoji: string; desc: string }> = {
-  bbt: { label: '基礎體溫 (BBT)', emoji: '🌡', desc: '每天醒來的基礎體溫，幫助朵朵更準確預測排卵期' },
-  steps: { label: '步數', emoji: '👟', desc: '日常活動量，作為體力曲線參考' },
-  sleep: { label: '睡眠時數', emoji: '🌙', desc: '了解睡眠跟妳週期的關聯' },
-  menstrual_flow: { label: '同步經期到 Apple Health / Health Connect', emoji: '🩸', desc: '把妳在月曆記錄的經期寫回系統健康 App，跨 App 共用' },
-}
+const KIND_META = computed<Record<HealthDataType, { label: string; emoji: string; desc: string }>>(() => ({
+  bbt: { label: t('health_kind_bbt_label'), emoji: '🌡', desc: t('health_kind_bbt_desc') },
+  steps: { label: t('health_kind_steps_label'), emoji: '👟', desc: t('health_kind_steps_desc') },
+  sleep: { label: t('health_kind_sleep_label'), emoji: '🌙', desc: t('health_kind_sleep_desc') },
+  menstrual_flow: { label: t('health_kind_menstrual_label'), emoji: '🩸', desc: t('health_kind_menstrual_desc') },
+}))
 
 onMounted(() => {
   loadToggles()
   refreshAvailability()
+  loadReflection()
+})
+
+const reflectionSeverityClass = computed(() => {
+  const s = reflection.value?.severity
+  if (s === 'heads_up') return 'bg-[#fce8e0] border-[#f5b89e]'
+  if (s === 'notice') return 'bg-[#fdf3dc] border-[#ecc97a]'
+  return 'bg-[#e7f0fa] border-[#b8d0e8]'
 })
 </script>
 
 <template>
   <div class="min-h-screen bg-[#fbf6ee] pb-32">
     <header class="sticky top-0 z-10 bg-[#fbf6ee]/95 backdrop-blur border-b border-[#e8dcc6] px-4 py-3 flex items-center gap-3">
-      <button class="text-[#7a6649] text-sm" @click="$router.back()">← 返回</button>
-      <h1 class="text-base font-semibold text-[#3d2f1f]">健康資料同步</h1>
+      <button class="text-[#7a6649] text-sm" @click="$router.back()">{{ t('health_back') }}</button>
+      <h1 class="text-base font-semibold text-[#3d2f1f]">{{ t('health_title') }}</h1>
     </header>
 
     <main class="px-4 py-5 space-y-4 max-w-md mx-auto">
+      <!-- 朵朵當天反饋（reflection）— Premium-only，後端 402 → reflection.value 為 null 自動隱藏 -->
+      <section
+        v-if="reflectionLoading"
+        class="rounded-2xl px-4 py-3 bg-[#f5ecdc] text-[#7a6649] text-sm text-center"
+        data-test="reflection-loading"
+      >
+        {{ t('reflection_loading') }}
+      </section>
+      <section
+        v-else-if="reflection"
+        class="rounded-2xl border px-4 py-3"
+        :class="reflectionSeverityClass"
+        data-test="reflection-card"
+      >
+        <div class="flex items-start gap-2">
+          <span class="text-2xl shrink-0" aria-hidden="true">🌸</span>
+          <div class="flex-1 min-w-0">
+            <p class="text-[11px] tracking-wide text-stone-500 mb-1">{{ t('dodo_say') }}</p>
+            <p class="text-[15px] leading-relaxed text-stone-800 font-medium">{{ reflection.message }}</p>
+            <button
+              type="button"
+              class="mt-2 text-[12px] underline text-[#7a6649]"
+              data-test="reflection-cta"
+              @click="gotoActionToday"
+            >
+              {{ t('reflection_cta_action') }}
+            </button>
+          </div>
+        </div>
+      </section>
+      <section
+        v-else
+        class="rounded-2xl px-4 py-3 bg-white border border-[#ece2cf] text-[#9b8763] text-xs text-center"
+        data-test="reflection-empty"
+      >
+        {{ t('reflection_empty') }}
+      </section>
+
       <!-- 平台 banner -->
       <section
         class="rounded-2xl p-4"
@@ -139,13 +209,13 @@ onMounted(() => {
           <span class="text-2xl">{{ checking ? '⏳' : available ? '✅' : '📱' }}</span>
           <div class="flex-1">
             <p class="font-medium">
-              <template v-if="checking">正在偵測裝置…</template>
-              <template v-else-if="available">妳的裝置支援 {{ platformLabel }}</template>
-              <template v-else-if="platform.platform === 'web'">此功能需要在 iOS / Android App 中使用</template>
-              <template v-else>此裝置不支援自動同步，仍可手動記錄</template>
+              <template v-if="checking">{{ t('health_detecting') }}</template>
+              <template v-else-if="available">{{ t('health_supported', { platform: platformLabel }) }}</template>
+              <template v-else-if="platform.platform === 'web'">{{ t('health_web_only') }}</template>
+              <template v-else>{{ t('health_unsupported_manual') }}</template>
             </p>
             <p v-if="!available && !checking" class="text-xs mt-1 opacity-80">
-              {{ platform.reason ?? '請開啟 App 並確認系統健康 App 已啟用' }}
+              {{ platform.reason ?? t('health_unsupported_default_reason') }}
             </p>
           </div>
         </div>
@@ -170,7 +240,7 @@ onMounted(() => {
               class="sr-only peer"
               :checked="toggles[kind]"
               :disabled="!available"
-              :aria-label="`啟用 ${KIND_META[kind].label} 同步`"
+              :aria-label="t('health_toggle_aria', { label: KIND_META[kind].label })"
               @change="(toggles[kind] = ($event.target as HTMLInputElement).checked), saveToggles()"
             />
             <div
@@ -192,8 +262,8 @@ onMounted(() => {
           :disabled="!available || syncing"
           @click="handleAuthAndSync"
         >
-          <span v-if="syncing">同步中…</span>
-          <span v-else>立刻同步最近 7 天</span>
+          <span v-if="syncing">{{ t('health_syncing') }}</span>
+          <span v-else>{{ t('health_sync_now') }}</span>
         </button>
 
         <button
@@ -201,7 +271,7 @@ onMounted(() => {
           class="mt-2 w-full rounded-2xl py-2.5 text-sm text-[#7a6649] border border-[#e0d4ba] bg-white"
           @click="handleSyncMenstrualToHealth"
         >
-          將今天記錄為經期寫回系統健康
+          {{ t('health_write_today') }}
         </button>
 
         <p class="text-xs text-[#9b8763] mt-2 text-center">{{ lastSyncedLabel }}</p>
@@ -209,13 +279,13 @@ onMounted(() => {
 
       <!-- result 顯示 -->
       <section v-if="totalImported > 0 || Object.keys(lastResults).length > 0" class="bg-white rounded-2xl px-4 py-3 border border-[#ece2cf]">
-        <p class="text-sm font-medium text-[#3d2f1f] mb-2">本次同步結果</p>
+        <p class="text-sm font-medium text-[#3d2f1f] mb-2">{{ t('health_result_title') }}</p>
         <ul class="text-xs text-[#7a6649] space-y-1">
           <li v-for="(r, k) in lastResults" :key="k">
-            <span class="font-medium">{{ KIND_META[k as HealthDataType].label }}：</span>
-            匯入 {{ r?.imported ?? 0 }} 筆
-            <span v-if="(r?.duplicates ?? 0) > 0" class="opacity-70">（重複 {{ r?.duplicates }}）</span>
-            <span v-if="(r?.errors?.length ?? 0) > 0" class="text-[#b85c2e]">·{{ r?.errors?.length }} 個錯誤</span>
+            <span class="font-medium">{{ t('health_result_kind_prefix', { label: KIND_META[k as HealthDataType].label }) }}</span>
+            {{ t('health_result_imported', { n: r?.imported ?? 0 }) }}
+            <span v-if="(r?.duplicates ?? 0) > 0" class="opacity-70">{{ t('health_result_duplicates', { n: r?.duplicates ?? 0 }) }}</span>
+            <span v-if="(r?.errors?.length ?? 0) > 0" class="text-[#b85c2e]">{{ t('health_result_errors', { n: r?.errors?.length ?? 0 }) }}</span>
           </li>
         </ul>
       </section>
@@ -231,14 +301,14 @@ onMounted(() => {
           class="mt-2 text-xs underline opacity-80"
           @click="(lastError = null), handleAuthAndSync()"
         >
-          再試一次
+          {{ t('health_retry') }}
         </button>
       </section>
 
       <!-- 隱私說明 -->
       <section class="rounded-2xl bg-[#f5ecdc]/60 px-4 py-3 text-xs text-[#7a6649] leading-relaxed">
-        <p class="font-medium text-[#3d2f1f] mb-1">🔒 隱私說明</p>
-        <p>資料只在妳的裝置上處理，雲端只儲存週期相關統計（不包含原始 GPS / 心率細節）。妳隨時可以在系統設定關閉授權，月曆會自動回到手動記錄模式。</p>
+        <p class="font-medium text-[#3d2f1f] mb-1">{{ t('health_privacy_title') }}</p>
+        <p>{{ t('health_privacy_blurb') }}</p>
       </section>
     </main>
   </div>

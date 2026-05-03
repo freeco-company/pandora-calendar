@@ -130,6 +130,12 @@ Route::middleware(['auth.platform'])->prefix('v1')->group(function () {
 
     Route::post('/health-samples/import', [HealthSampleController::class, 'importBatch'])->middleware('throttle:30,1');
     Route::post('/health-samples/sync', [HealthSampleController::class, 'import'])->middleware('throttle:30,1');
+    Route::get('/health-samples/reflection/today', [HealthSampleController::class, 'reflectionToday']);
+
+    // Protocol insight — 朵朵主動報「我發現 X 對妳 work」
+    Route::get('/protocol-insights/active', [\App\Http\Controllers\Api\V1\ProtocolInsightController::class, 'active']);
+    Route::post('/protocol-insights/{key}/dismiss', [\App\Http\Controllers\Api\V1\ProtocolInsightController::class, 'dismiss'])
+        ->where('key', '[A-Za-z0-9:_\-]+');
 
     Route::get('/pregnancy/current', [PregnancyController::class, 'current']);
     Route::post('/pregnancy', [PregnancyController::class, 'start']);
@@ -179,9 +185,11 @@ Route::middleware(['auth.platform'])->prefix('v1')->group(function () {
     Route::post('/me/partner-share', [\App\Http\Controllers\Api\V1\PartnerShareController::class, 'enable']);
     Route::delete('/me/partner-share', [\App\Http\Controllers\Api\V1\PartnerShareController::class, 'disable']);
 
-    // Push subscription
+    // Push subscription（web-push + native iOS/Android）
     Route::post('/me/push/subscribe', [\App\Http\Controllers\Api\V1\PushSubscriptionController::class, 'subscribe']);
     Route::post('/me/push/unsubscribe', [\App\Http\Controllers\Api\V1\PushSubscriptionController::class, 'unsubscribe']);
+    Route::get('/me/push/subscriptions', [\App\Http\Controllers\Api\V1\PushSubscriptionController::class, 'index']);
+    Route::post('/me/push/test', [\App\Http\Controllers\Api\V1\PushSubscriptionController::class, 'test']);
 
     // 資料匯出（Premium）
     Route::post('/export/pdf', [\App\Http\Controllers\Api\V1\ExportController::class, 'pdf']);

@@ -4,6 +4,7 @@ namespace App\Http\Controllers\Api\V1;
 
 use App\Http\Controllers\Controller;
 use App\Services\Identity\IdentityClient;
+use App\Support\Sentry\SentryHelper;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Http;
@@ -93,12 +94,33 @@ class AuthController extends Controller
                 ->acceptJson()
                 ->{$method}(rtrim($base, '/').$path, $body);
         } catch (\Throwable $e) {
+            SentryHelper::captureException($e, 'oauth', [
+                'stage' => 'forward',
+                'pc_path' => $path,
+                'method' => $method,
+                // 不送 $body — 含 password / refresh_token
+            ]);
             return response()->json(['error' => 'identity_unreachable', 'detail' => $e->getMessage()], 502);
         }
 
         $json = $resp->json();
         if (! is_array($json)) {
             $json = ['raw' => (string) $resp->body()];
+        }
+
+        // PC 5xx → unexpected (4xx 是 user-input error，不報)
+        if ($resp->status() >= 500) {
+            SentryHelper::captureMessage(
+                "Pandora Core forward 5xx: {$resp->status()} {$path}",
+                'error',
+                'oauth',
+                [
+                    'stage' => 'forward',
+                    'pc_path' => $path,
+                    'method' => $method,
+                    'status' => $resp->status(),
+                ],
+            );
         }
 
         return response()->json($json, $resp->status());

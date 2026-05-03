@@ -2,6 +2,7 @@
 
 namespace App\Services\Subscription\Google;
 
+use App\Support\Sentry\SentryHelper;
 use Illuminate\Http\Client\Factory as HttpFactory;
 use Illuminate\Support\Facades\Cache;
 
@@ -49,6 +50,19 @@ class GooglePlayAccessTokenProvider
     }
 
     private function fetchAndCache(): string
+    {
+        try {
+            return $this->doFetchAndCache();
+        } catch (\Throwable $e) {
+            SentryHelper::captureException($e, 'iap', [
+                'platform' => 'google',
+                'stage' => 'token_exchange',
+            ]);
+            throw $e;
+        }
+    }
+
+    private function doFetchAndCache(): string
     {
         [$clientEmail, $privateKey] = $this->loadServiceAccount();
 

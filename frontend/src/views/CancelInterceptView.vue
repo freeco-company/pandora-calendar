@@ -13,10 +13,12 @@ import Button from '../components/ui/Button.vue'
 import Spinner from '../components/ui/Spinner.vue'
 import { useEntitlementsStore } from '../stores/entitlements'
 import { useSfx } from '../lib/sound'
+import { useTone } from '../composables/useTone'
 
 const router = useRouter()
 const sfx = useSfx()
 const ent = useEntitlementsStore()
+const { t } = useTone()
 
 type Step = 1 | 2 | 3 | 4
 
@@ -38,7 +40,7 @@ async function load() {
     const res = await SubscriptionFlowApi.churnIntercept()
     data.value = res.data.data
   } catch {
-    error.value = '載入失敗，請稍後再試'
+    error.value = t('cancel_load_failed')
   } finally {
     loading.value = false
   }
@@ -52,7 +54,7 @@ function pickReason(r: ChurnInterceptReason) {
 
 function nextStep() {
   if (!selectedReason.value) {
-    stepError.value = '先告訴朵朵一個原因'
+    stepError.value = t('cancel_step1_pick_one')
     return
   }
   sfx.play('ui_open')
@@ -65,12 +67,12 @@ async function pause(months: number) {
   stepError.value = null
   try {
     const res = await SubscriptionFlowApi.pause(months, selectedReason.value.code)
-    successMsg.value = `已暫停到 ${res.data.data.resume_at}，朵朵會再陪妳回來`
+    successMsg.value = t('cancel_pause_resumed', { date: res.data.data.resume_at })
     sfx.play('correct')
     await ent.load()
     setTimeout(() => router.push('/me'), 2000)
   } catch {
-    stepError.value = '暫停失敗，請稍後再試'
+    stepError.value = t('cancel_pause_failed')
     sfx.play('wrong')
   } finally {
     busy.value = false
@@ -79,7 +81,7 @@ async function pause(months: number) {
 
 async function submitFeatureFeedback() {
   if (!featureMessage.value.trim() || featureMessage.value.trim().length < 10) {
-    stepError.value = '至少寫 10 個字，朵朵才能聽懂'
+    stepError.value = t('cancel_feature_min')
     return
   }
   busy.value = true
@@ -94,7 +96,7 @@ async function submitFeatureFeedback() {
     sfx.play('correct')
     step.value = 3
   } catch {
-    stepError.value = '送出失敗，請稍後再試'
+    stepError.value = t('cancel_feature_send_failed')
   } finally {
     busy.value = false
   }
@@ -124,7 +126,7 @@ async function confirmCancel() {
     else url = 'https://js-store.com.tw/account/subscription'
     window.location.href = url
   } catch {
-    stepError.value = '操作失敗，請稍後再試'
+    stepError.value = t('cancel_op_failed')
     busy.value = false
   }
 }
@@ -138,15 +140,15 @@ const offerKind = computed(() => selectedReason.value?.offer_kind ?? 'none')
 <template>
   <div class="px-5 pt-10 pb-10 max-w-md mx-auto space-y-5">
     <header class="space-y-1">
-      <button class="text-xs text-stone-500 font-zen mb-2" @click="router.back()">← 返回</button>
-      <p class="font-zen text-[11px] text-stone-400">第 {{ step }} / 4 步</p>
+      <button class="text-xs text-stone-500 font-zen mb-2" @click="router.back()">{{ t('common_back') }}</button>
+      <p class="font-zen text-[11px] text-stone-400">{{ t('cancel_step_indicator', { step }) }}</p>
     </header>
 
-    <Spinner v-if="loading" label="朵朵翻翻紀錄中…" />
+    <Spinner v-if="loading" :label="t('cancel_loading')" />
     <div v-else-if="error">
       <Card tone="plain" class="text-center space-y-3">
         <p class="font-zen text-sm text-stone-600">{{ error }}</p>
-        <Button @click="load">再試一次</Button>
+        <Button @click="load">{{ t('common_retry_short') }}</Button>
       </Card>
     </div>
 
@@ -155,9 +157,9 @@ const offerKind = computed(() => selectedReason.value?.offer_kind ?? 'none')
       <template v-if="step === 1">
         <Card tone="cream" class="text-center space-y-3">
           <div class="text-5xl">🥺</div>
-          <h1 class="font-display text-2xl font-bold text-peach-500">妳要離開了嗎？</h1>
+          <h1 class="font-display text-2xl font-bold text-peach-500">{{ t('cancel_step1_title') }}</h1>
           <p class="font-zen text-sm text-stone-600 leading-relaxed">
-            朵朵想知道原因，讓我有機會做得更好
+            {{ t('cancel_step1_blurb') }}
           </p>
         </Card>
 
@@ -179,7 +181,7 @@ const offerKind = computed(() => selectedReason.value?.offer_kind ?? 'none')
           <p v-if="stepError" class="font-zen text-xs text-sakura-500 pt-1">{{ stepError }}</p>
         </Card>
 
-        <Button full size="lg" :disabled="!selectedReason" @click="nextStep">下一步</Button>
+        <Button full size="lg" :disabled="!selectedReason" @click="nextStep">{{ t('cancel_step1_next') }}</Button>
       </template>
 
       <!-- Step 2: 依 reason 顯示挽留 offer -->
@@ -189,9 +191,9 @@ const offerKind = computed(() => selectedReason.value?.offer_kind ?? 'none')
         <!-- too_expensive / 暫停 + 折扣 -->
         <template v-if="offerKind === 'pause' || offerKind === 'discount'">
           <Card tone="cream" class="space-y-3">
-            <h2 class="font-display text-xl font-bold text-peach-500">先暫停一下，怎麼樣？</h2>
+            <h2 class="font-display text-xl font-bold text-peach-500">{{ t('cancel_pause_title') }}</h2>
             <p class="font-zen text-sm text-stone-600 leading-relaxed">
-              暫停期間妳不會被扣款，紀錄都保留。隨時想回來都可以。
+              {{ t('cancel_pause_blurb') }}
             </p>
             <div class="grid grid-cols-3 gap-2 pt-2">
               <button
@@ -211,32 +213,32 @@ const offerKind = computed(() => selectedReason.value?.offer_kind ?? 'none')
 
           <Card v-if="data.discount" tone="peach" class="space-y-2 text-center">
             <p class="font-display text-xl font-bold text-white">
-              或者，{{ data.discount.percent }}% 折扣
+              {{ t('cancel_discount_or', { percent: data.discount.percent }) }}
             </p>
             <p class="font-zen text-sm text-white/90 leading-relaxed">{{ data.discount.copy }}</p>
-            <p class="font-zen text-[11px] text-white/70">{{ data.discount.valid_days }} 天內有效</p>
+            <p class="font-zen text-[11px] text-white/70">{{ t('cancel_discount_valid', { days: data.discount.valid_days }) }}</p>
           </Card>
         </template>
 
         <!-- missing_feature / feedback -->
         <template v-else-if="offerKind === 'feedback' || offerKind === 'feature_promise'">
           <Card tone="cream" class="space-y-3">
-            <h2 class="font-display text-xl font-bold text-peach-500">告訴朵朵妳想要什麼</h2>
+            <h2 class="font-display text-xl font-bold text-peach-500">{{ t('cancel_feature_title') }}</h2>
             <p class="font-zen text-sm text-stone-600 leading-relaxed">
-              妳缺的功能，可能朵朵正在做。直接告訴我，下次更新就有可能看到。
+              {{ t('cancel_feature_blurb') }}
             </p>
-            <label for="cancel-feature-message" class="sr-only">妳希望朵朵能做到的功能</label>
+            <label for="cancel-feature-message" class="sr-only">{{ t('cancel_feature_aria') }}</label>
             <textarea
               id="cancel-feature-message"
               v-model="featureMessage"
               rows="5"
               maxlength="2000"
-              placeholder="妳希望朵朵能做到的…"
-              aria-label="妳希望朵朵能做到的功能"
+              :placeholder="t('cancel_feature_placeholder')"
+              :aria-label="t('cancel_feature_aria')"
               class="w-full px-4 py-3 rounded-2xl border border-cream-200 bg-white focus:outline-none focus:border-peach-300 font-zen text-sm leading-relaxed resize-none"
             />
             <Button full :loading="busy" :disabled="busy" @click="submitFeatureFeedback">
-              送給朵朵
+              {{ t('cancel_feature_send') }}
             </Button>
           </Card>
         </template>
@@ -244,32 +246,32 @@ const offerKind = computed(() => selectedReason.value?.offer_kind ?? 'none')
         <!-- privacy_concern -->
         <template v-else-if="offerKind === 'privacy'">
           <Card tone="cream" class="space-y-3">
-            <h2 class="font-display text-xl font-bold text-peach-500">妳的資料只屬於妳</h2>
+            <h2 class="font-display text-xl font-bold text-peach-500">{{ t('cancel_privacy_title') }}</h2>
             <p class="font-zen text-sm text-stone-600 leading-relaxed">
-              我們不賣資料、不放廣告、不分享給第三方。妳隨時可以匯出或刪除。
+              {{ t('cancel_privacy_blurb') }}
             </p>
             <ul class="font-zen text-sm text-stone-600 space-y-1.5 pl-1">
-              <li>🔒 端到端加密儲存</li>
-              <li>📥 妳可以匯出 PDF / CSV 完整紀錄</li>
-              <li>🗑 妳可以一鍵刪除全部資料</li>
+              <li>{{ t('cancel_privacy_bullet_e2e') }}</li>
+              <li>{{ t('cancel_privacy_bullet_export') }}</li>
+              <li>{{ t('cancel_privacy_bullet_delete') }}</li>
             </ul>
             <div class="flex flex-col gap-2 pt-1">
-              <Button variant="secondary" full @click="router.push('/me')">前往匯出資料</Button>
-              <Button variant="secondary" full @click="router.push('/privacy')">看隱私政策</Button>
+              <Button variant="secondary" full @click="router.push('/me')">{{ t('cancel_privacy_export_btn') }}</Button>
+              <Button variant="secondary" full @click="router.push('/privacy')">{{ t('cancel_privacy_policy_btn') }}</Button>
             </div>
           </Card>
         </template>
 
         <Card v-else tone="cream" class="space-y-3 text-center">
-          <p class="font-display text-lg font-bold text-peach-500">朵朵會繼續努力</p>
+          <p class="font-display text-lg font-bold text-peach-500">{{ t('cancel_other_title') }}</p>
           <p class="font-zen text-sm text-stone-600">
-            謝謝妳曾經給朵朵機會陪妳。
+            {{ t('cancel_other_blurb') }}
           </p>
         </Card>
 
         <p v-if="stepError" class="text-center font-zen text-xs text-sakura-500">{{ stepError }}</p>
 
-        <Button variant="ghost" full @click="goWinBack">我還是要取消</Button>
+        <Button variant="ghost" full @click="goWinBack">{{ t('cancel_still_cancel') }}</Button>
       </template>
 
       <!-- Step 3: win_back -->
@@ -284,10 +286,10 @@ const offerKind = computed(() => selectedReason.value?.offer_kind ?? 'none')
 
         <Card tone="plain" class="space-y-3">
           <p class="font-display font-bold text-peach-500 text-sm text-center">
-            最後一個選項：先暫停 {{ data.win_back.pause_default_months }} 個月
+            {{ t('cancel_step3_pause_title', { months: data.win_back.pause_default_months }) }}
           </p>
           <p class="font-zen text-xs text-stone-500 text-center leading-relaxed">
-            不用扣款，紀錄都保留。妳之後想回來，朵朵就在這。
+            {{ t('cancel_step3_pause_blurb') }}
           </p>
           <Button
             full
@@ -296,9 +298,9 @@ const offerKind = computed(() => selectedReason.value?.offer_kind ?? 'none')
             :disabled="busy"
             @click="pause(data.win_back.pause_default_months)"
           >
-            好，先暫停 {{ data.win_back.pause_default_months }} 個月
+            {{ t('cancel_step3_pause_btn', { months: data.win_back.pause_default_months }) }}
           </Button>
-          <Button variant="ghost" full @click="reallyCancel">不了，我要取消訂閱</Button>
+          <Button variant="ghost" full @click="reallyCancel">{{ t('cancel_step3_really_cancel') }}</Button>
         </Card>
 
         <p v-if="stepError" class="text-center font-zen text-xs text-sakura-500">{{ stepError }}</p>
@@ -308,14 +310,13 @@ const offerKind = computed(() => selectedReason.value?.offer_kind ?? 'none')
       <template v-else-if="step === 4">
         <Card tone="plain" class="space-y-3">
           <h2 class="font-display text-xl font-bold text-peach-500 text-center">
-            最後一步
+            {{ t('cancel_step4_title') }}
           </h2>
           <p class="font-zen text-sm text-stone-600 leading-relaxed">
-            訂閱由 {{ Capacitor.getPlatform() === 'ios' ? 'Apple' : Capacitor.getPlatform() === 'android' ? 'Google' : '平台' }}
-            管理，朵朵這邊只能記錄妳的回饋。下一步會把妳帶到訂閱設定，妳在那邊按取消即可。
+            {{ t('cancel_step4_platform_blurb', { platform: Capacitor.getPlatform() === 'ios' ? 'Apple' : Capacitor.getPlatform() === 'android' ? 'Google' : '平台' }) }}
           </p>
           <p class="font-zen text-xs text-stone-500 leading-relaxed">
-            妳的紀錄不會被刪除。隨時可以再開啟訂閱。
+            {{ t('cancel_step4_records_safe') }}
           </p>
           <Button
             full
@@ -325,9 +326,9 @@ const offerKind = computed(() => selectedReason.value?.offer_kind ?? 'none')
             :disabled="busy"
             @click="confirmCancel"
           >
-            前往訂閱設定取消
+            {{ t('cancel_step4_go_settings') }}
           </Button>
-          <Button variant="ghost" full @click="step = 1">再想想</Button>
+          <Button variant="ghost" full @click="step = 1">{{ t('cancel_step4_reconsider') }}</Button>
         </Card>
         <p v-if="stepError" class="text-center font-zen text-xs text-sakura-500">{{ stepError }}</p>
       </template>

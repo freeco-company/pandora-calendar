@@ -6,6 +6,7 @@ use App\Models\Subscription;
 use App\Models\SubscriptionEvent;
 use App\Models\User;
 use App\Services\Subscription\Google\GooglePlayAccessTokenProvider;
+use App\Support\Sentry\SentryHelper;
 use Carbon\CarbonImmutable;
 use Illuminate\Http\Client\Factory as HttpFactory;
 use Illuminate\Support\Facades\DB;
@@ -28,6 +29,22 @@ class IapVerifier
     ) {}
 
     public function verifyApple(User $user, string $receiptData, string $productId): Subscription
+    {
+        try {
+            return $this->doVerifyApple($user, $receiptData, $productId);
+        } catch (\Throwable $e) {
+            SentryHelper::captureException($e, 'iap', [
+                'platform' => self::PLATFORM_APPLE,
+                'product_id' => $productId,
+                'user_uuid' => $user->identity_uuid,
+                // 不送 receipt_data（含 transaction history），只送 hash 識別
+                'receipt_hash' => substr(hash('sha256', $receiptData), 0, 16),
+            ]);
+            throw $e;
+        }
+    }
+
+    private function doVerifyApple(User $user, string $receiptData, string $productId): Subscription
     {
         $sharedSecret = config('pandora.subscription.apple_iap_shared_secret');
 
@@ -85,6 +102,22 @@ class IapVerifier
     }
 
     public function verifyGoogle(User $user, string $purchaseToken, string $productId, string $packageName): Subscription
+    {
+        try {
+            return $this->doVerifyGoogle($user, $purchaseToken, $productId, $packageName);
+        } catch (\Throwable $e) {
+            SentryHelper::captureException($e, 'iap', [
+                'platform' => self::PLATFORM_GOOGLE,
+                'product_id' => $productId,
+                'package_name' => $packageName,
+                'user_uuid' => $user->identity_uuid,
+                'purchase_token_hash' => substr(hash('sha256', $purchaseToken), 0, 16),
+            ]);
+            throw $e;
+        }
+    }
+
+    private function doVerifyGoogle(User $user, string $purchaseToken, string $productId, string $packageName): Subscription
     {
         $serviceAccountJson = config('pandora.subscription.google_play_service_account_json');
 

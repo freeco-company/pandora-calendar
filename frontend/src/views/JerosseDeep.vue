@@ -14,8 +14,10 @@ import { CommerceApi, type ProductLink } from '../api'
 import Card from '../components/ui/Card.vue'
 import Spinner from '../components/ui/Spinner.vue'
 import EmptyState from '../components/ui/EmptyState.vue'
+import { useTone } from '../composables/useTone'
 
 const router = useRouter()
+const { t } = useTone()
 const links = ref<ProductLink[]>([])
 const gatePassed = ref(false)
 const loading = ref(true)
@@ -34,20 +36,20 @@ onMounted(async () => {
 <template>
   <div class="px-5 pt-8 pb-6 max-w-md mx-auto space-y-4">
     <button @click="router.push('/me')" class="font-zen text-sm text-peach-500 hover:text-peach-400">
-      ← 回我的
+      {{ t('jerosse_back') }}
     </button>
 
     <header>
-      <h1 class="font-display text-2xl font-bold text-peach-500">婕樂纖會員專區</h1>
-      <p class="font-zen text-sm text-stone-500 mt-1">為長期使用月曆 + 婕樂纖會員的妳開的角落</p>
+      <h1 class="font-display text-2xl font-bold text-peach-500">{{ t('jerosse_title') }}</h1>
+      <p class="font-zen text-sm text-stone-500 mt-1">{{ t('jerosse_subtitle') }}</p>
     </header>
 
-    <Spinner v-if="loading" label="載入中..." />
+    <Spinner v-if="loading" :label="t('jerosse_loading')" />
 
     <Card v-else-if="!gatePassed" tone="plain" class="text-center space-y-2 text-sm text-stone-600">
-      <p class="font-zen">這個區域目前對妳還沒開通。</p>
+      <p class="font-zen">{{ t('jerosse_gate_failed_title') }}</p>
       <p class="text-xs text-stone-400 font-zen leading-relaxed">
-        條件：在婕樂纖商店有過 1 次以上消費 · 訂閱 Premium · 月曆連用 ≥ 90 天
+        {{ t('jerosse_gate_conditions') }}
       </p>
     </Card>
 
@@ -65,14 +67,14 @@ onMounted(async () => {
           rel="noopener"
           class="inline-block text-sm text-peach-500 underline font-zen hover:text-peach-400"
         >
-          看看商品 →
+          {{ t('jerosse_view_product') }}
         </a>
       </Card>
       <EmptyState
         v-if="!links.length"
         :show-dodo="true"
-        title="最近沒有要特別建議的商品"
-        subtitle="朵朵只在妳真的需要時才提。"
+        :title="t('jerosse_empty_title')"
+        :subtitle="t('jerosse_empty_subtitle')"
       />
     </template>
   </div>

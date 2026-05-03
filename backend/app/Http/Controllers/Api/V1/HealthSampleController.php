@@ -4,6 +4,7 @@ namespace App\Http\Controllers\Api\V1;
 
 use App\Http\Controllers\Controller;
 use App\Services\Health\HealthSampleImporter;
+use App\Services\Health\HealthSampleReflection;
 use App\Services\Subscription\FeatureGate;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
@@ -13,8 +14,27 @@ class HealthSampleController extends Controller
 {
     public function __construct(
         private readonly HealthSampleImporter $importer,
+        private readonly HealthSampleReflection $reflection,
         private readonly FeatureGate $gate,
     ) {}
+
+    /**
+     * GET /api/v1/health-samples/reflection/today — 朵朵口吻的當天健康反饋（Premium）。
+     */
+    public function reflectionToday(Request $request): JsonResponse
+    {
+        if (! $this->gate->isPremium($request->user())) {
+            return response()->json([
+                'error' => 'premium_required',
+                'message' => 'HealthKit 反饋是 Premium 功能。',
+                'paywall_redirect' => '/subscription',
+            ], 402);
+        }
+
+        $insight = $this->reflection->reflectToday((int) $request->user()->id);
+
+        return response()->json(['data' => $insight]);
+    }
 
     /**
      * 新版 import endpoint：依 kind 分派（前端 useHealthKit composable 用）。

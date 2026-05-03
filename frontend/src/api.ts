@@ -1,4 +1,5 @@
 import axios from 'axios'
+import * as Sentry from '@sentry/capacitor'
 import { ref } from 'vue'
 
 const API_BASE = (import.meta.env.VITE_API_BASE as string) ?? 'http://localhost:8000/api'
@@ -94,12 +95,34 @@ api.interceptors.response.use(
   (resp) => resp,
   async (error) => {
     const original = error.config
+    const status: number | undefined = error.response?.status
+    const url: string = String(original?.url ?? '')
+
+    // Sentry 觀測：5xx 報錯（不附 response body — 可能含 health data），4xx 留 breadcrumb，401 不報
+    if (status !== undefined) {
+      if (status >= 500) {
+        // 不附 response.data — 後端錯誤訊息可能 echo back 用戶輸入或 cycle / symptom 資料
+        Sentry.captureMessage(`API ${status} ${original?.method?.toUpperCase() ?? 'GET'} ${redactUrl(url)}`, 'error')
+      } else if (status >= 400 && status !== 401) {
+        // 4xx (除 401) → breadcrumb only；401 是 token 過期 / refresh path 預期事件
+        Sentry.addBreadcrumb({
+          category: 'api.4xx',
+          level: 'warning',
+          message: `${status} ${redactUrl(url)}`,
+          data: {},
+        })
+      }
+    } else if (error.message) {
+      // network error / timeout → message
+      Sentry.captureMessage(`API network error ${redactUrl(url)}: ${error.message}`, 'warning')
+    }
+
     // 跳過 auth/* 自己 — refresh 失敗不要遞迴 refresh
     if (
-      error.response?.status === 401 &&
+      status === 401 &&
       original &&
       !original._retry &&
-      !String(original.url ?? '').includes('/v1/auth/')
+      !url.includes('/v1/auth/')
     ) {
       original._retry = true
       const newToken = await attemptRefresh()
@@ -111,6 +134,30 @@ api.interceptors.response.use(
     return Promise.reject(error)
   },
 )
+
+// health-route 在 URL 出現 → redact 整段（不要把 /cycles/123 / /symptoms/x 送 Sentry）
+const HEALTH_URL_SEGMENTS = [
+  '/cycles',
+  '/symptoms',
+  '/symptom-tags',
+  '/bbt',
+  '/pms',
+  '/pregnancy',
+  '/body-rhythm',
+  '/bodyrhythm',
+  '/dodo/checkin',
+  '/insights',
+  '/onboarding',
+]
+
+function redactUrl(u: string): string {
+  if (!u) return '[empty]'
+  const lower = u.toLowerCase()
+  for (const seg of HEALTH_URL_SEGMENTS) {
+    if (lower.includes(seg)) return '[health-route]'
+  }
+  return u
+}
 
 /**
  * Phase 0 demo helper（dev/testing only — 後端 abort 在 production）。
@@ -478,9 +525,18 @@ export const PartnerApi = {
 }
 
 export const PushApi = {
-  subscribe: (sub: PushSubscriptionJSON & { platform?: string }) =>
+  subscribe: (sub: (PushSubscriptionJSON & { platform?: string }) | { platform: 'ios' | 'android'; device_token: string }) =>
     api.post('/v1/me/push/subscribe', sub),
-  unsubscribe: (endpoint: string) => api.post('/v1/me/push/unsubscribe', { endpoint }),
+  unsubscribe: (target: { endpoint?: string; device_token?: string }) =>
+    api.post('/v1/me/push/unsubscribe', target),
+  list: () =>
+    api.get<{ data: Array<{ id: number; platform: string; last_used_at: string | null; created_at: string | null }> }>(
+      '/v1/me/push/subscriptions',
+    ),
+  test: () =>
+    api.post<{ data: { count: number; results: Array<{ platform: string; ok: boolean; reason: string | null }> } }>(
+      '/v1/me/push/test',
+    ),
 }
 
 // =====================================================================
@@ -668,14 +724,53 @@ export interface ProtocolByPhase {
   luteal: ProtocolEntry[]
 }
 
+export interface ProtocolInsight {
+  insight_key: string
+  message: string
+  action_cta: string | null
+  source:
+    | 'specific_action_works'
+    | 'type_responds'
+    | 'recurring_phase_symptom'
+    | string
+}
+
+export interface DailyActionTodayResponse {
+  data: DailyAction | null
+  message?: string
+  protocol_insight: ProtocolInsight | null
+}
+
 export const ActionApi = {
-  today: () => api.get<{ data: DailyAction | null }>('/v1/actions/today'),
+  today: () => api.get<DailyActionTodayResponse>('/v1/actions/today'),
   complete: (id: number) => api.post<ActionCompleteResponse>(`/v1/actions/${id}/complete`),
   feedback: (id: number, feedback: ActionFeedback, body_note?: string) =>
     api.post<ActionFeedbackResponse>(`/v1/actions/${id}/feedback`, { feedback, body_note }),
   history: (days = 30) =>
     api.get<{ data: ActionHistoryRow[] }>('/v1/actions/history', { params: { days } }),
   protocol: () => unwrapPremium(api.get<{ data: ProtocolByPhase }>('/v1/actions/protocol')),
+}
+
+// ===== Health reflection (Premium) =====
+export interface HealthReflection {
+  message: string
+  suggested_action_type: 'sleep' | 'move' | 'eat' | 'relax' | 'track' | 'learn' | 'connect' | string
+  severity: 'info' | 'notice' | 'heads_up' | string
+  source: string
+}
+
+export const ReflectionApi = {
+  today: () =>
+    unwrapPremium(api.get<{ data: HealthReflection | null }>('/v1/health-samples/reflection/today')),
+}
+
+// ===== Protocol insight surfacing =====
+export const ProtocolInsightApi = {
+  active: () => api.get<{ data: ProtocolInsight | null }>('/v1/protocol-insights/active'),
+  dismiss: (key: string) =>
+    api.post<{ data: { dismissed: true; insight_key: string; dismissed_at: string | null } }>(
+      `/v1/protocol-insights/${encodeURIComponent(key)}/dismiss`,
+    ),
 }
 
 export interface PatternReportSummary {

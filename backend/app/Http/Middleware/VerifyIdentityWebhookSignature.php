@@ -3,6 +3,7 @@
 namespace App\Http\Middleware;
 
 use App\Models\IdentityWebhookNonce;
+use App\Support\Sentry\SentryHelper;
 use Closure;
 use Illuminate\Database\QueryException;
 use Illuminate\Http\Request;
@@ -35,17 +36,39 @@ class VerifyIdentityWebhookSignature
         $signature = (string) $request->header('X-Pandora-Signature', '');
 
         if ($eventId === '' || $timestamp === '' || $signature === '') {
+            SentryHelper::captureMessage(
+                'identity webhook missing signature headers',
+                'warning',
+                'webhook.identity',
+                ['stage' => 'header_check']
+            );
+
             return response()->json(['error' => 'missing signature headers'], 401);
         }
 
         $window = (int) config('services.pandora_core.webhook_window_seconds', 300);
         if (abs(time() - (int) $timestamp) > $window) {
+            SentryHelper::captureMessage(
+                'identity webhook timestamp out of window',
+                'warning',
+                'webhook.identity',
+                ['stage' => 'timestamp', 'event_id' => $eventId]
+            );
+
             return response()->json(['error' => 'timestamp out of window'], 401);
         }
 
         $body = $request->getContent();
         $expected = hash_hmac('sha256', "{$timestamp}.{$eventId}.{$body}", $secret);
         if (! hash_equals($expected, $signature)) {
+            SentryHelper::captureMessage(
+                'identity webhook HMAC mismatch',
+                'warning',
+                'webhook.identity',
+                ['stage' => 'hmac', 'event_id' => $eventId]
+                // 不 attach body — 可能含 PC payload
+            );
+
             return response()->json(['error' => 'signature mismatch'], 401);
         }
 

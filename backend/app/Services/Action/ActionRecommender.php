@@ -6,6 +6,7 @@ use App\Models\DailyActionRecommendation;
 use App\Models\UserActionProtocol;
 use App\Services\Calendar\BodyRhythmCalculator;
 use App\Services\Calendar\CyclePredictor;
+use App\Services\Health\HealthSampleReflection;
 use Carbon\CarbonImmutable;
 
 /**
@@ -36,6 +37,7 @@ class ActionRecommender
     public function __construct(
         private readonly CyclePredictor $predictor,
         private readonly BodyRhythmCalculator $rhythmCalc,
+        private readonly ?HealthSampleReflection $reflection = null,
     ) {}
 
     public function recommendForToday(int $userId, ?CarbonImmutable $today = null): ?DailyActionRecommendation
@@ -89,6 +91,15 @@ class ActionRecommender
 
         $fatigueByType = $this->fatigueByType($userId, $today, $cards);
 
+        // Health reflection 給的 type 加權（強優先級 +0.25）— 例如黃體期睡不夠 → sleep type 優先
+        $healthBoostType = null;
+        if ($this->reflection !== null) {
+            $reflected = $this->reflection->reflectToday($userId, $today);
+            if ($reflected !== null && ! empty($reflected['suggested_action_type'])) {
+                $healthBoostType = (string) $reflected['suggested_action_type'];
+            }
+        }
+
         $scored = [];
         foreach ($candidates as $key => $card) {
             $score = 0.5;
@@ -100,6 +111,10 @@ class ActionRecommender
             $type = (string) ($card['type'] ?? '');
             if ($type !== '' && ($fatigueByType[$type] ?? 0) >= 7) {
                 $score -= 0.3;
+            }
+
+            if ($healthBoostType !== null && $type === $healthBoostType) {
+                $score += 0.25;
             }
 
             $score += mt_rand(0, 100) / 1000;

@@ -10,7 +10,9 @@ import Card from '../components/ui/Card.vue'
 import Spinner from '../components/ui/Spinner.vue'
 import Character from '../components/Character.vue'
 import { getPet } from '../lib/character'
+import { useTone } from '../composables/useTone'
 
+const { t } = useTone()
 const router = useRouter()
 const data = ref<JourneyData | null>(null)
 const achievements = ref<AchievementRow[]>([])
@@ -26,9 +28,9 @@ const RARITY_COLOR: Record<string, string> = {
   epic: 'border-lavender-200 bg-lavender-50',
   legendary: 'border-peach-300 bg-peach-50 ring-2 ring-peach-200',
 }
-const RARITY_LABEL: Record<string, string> = {
-  common: '一般', rare: '稀有', epic: '史詩', legendary: '傳說',
-}
+const RARITY_LABEL = computed<Record<string, string>>(() => ({
+  common: t('journey_rarity_common'), rare: t('journey_rarity_rare'), epic: t('journey_rarity_epic'), legendary: t('journey_rarity_legendary'),
+}))
 const TIER_COLOR: Record<string, string> = {
   bronze: 'text-amber-700',
   silver: 'text-stone-500',
@@ -69,23 +71,23 @@ async function equip(code: string) {
     equippedCode.value = code
     outfits.value = outfits.value.map((o) => ({ ...o, equipped: o.unlocked && o.code === code }))
   } catch (e: any) {
-    alert(e?.response?.data?.error === 'outfit_locked' ? '這件還沒解鎖喔' : '裝備失敗')
+    alert(e?.response?.data?.error === 'outfit_locked' ? t('journey_outfit_locked_msg') : t('journey_outfit_equip_failed'))
   }
 }
 </script>
 
 <template>
   <div class="px-5 md:px-8 pt-10 pb-12 max-w-md md:max-w-3xl lg:max-w-4xl mx-auto space-y-5">
-    <button @click="router.back()" class="text-stone-500 font-zen text-sm">← 返回</button>
+    <button @click="router.back()" class="text-stone-500 font-zen text-sm">{{ t('common_back') }}</button>
 
     <header class="text-center">
-      <p class="font-zen text-xs text-stone-500 tracking-widest uppercase">Journey</p>
+      <p class="font-zen text-xs text-stone-500 tracking-widest uppercase">{{ t('journey_eyebrow') }}</p>
       <h1 class="font-display text-2xl font-bold text-peach-500 mt-0.5">
-        {{ user?.display_name ?? user?.name ?? '朋友' }} 的旅程
+        {{ t('journey_title', { name: user?.display_name ?? user?.name ?? t('profile_greeting_default') }) }}
       </h1>
     </header>
 
-    <Spinner v-if="loading" label="朵朵在算..." />
+    <Spinner v-if="loading" :label="t('common_loading_dodo')" />
 
     <template v-else-if="data">
       <!-- 寵物 + Lv 進度 -->
@@ -110,8 +112,7 @@ async function equip(code: string) {
           />
         </div>
         <p class="font-zen text-[12px] text-stone-500">
-          {{ data.progress_in_level }} / {{ data.need_for_next_level }} XP
-          · 累積 {{ data.total_xp }} XP
+          {{ t('journey_total_xp', { cur: data.progress_in_level, need: data.need_for_next_level, total: data.total_xp }) }}
         </p>
       </Card>
 
@@ -119,22 +120,22 @@ async function equip(code: string) {
       <Card tone="plain" class="space-y-2.5">
         <h3 class="font-display font-bold text-peach-500 text-base flex items-center gap-2">
           <span>🔥</span>
-          <span>連勝</span>
+          <span>{{ t('journey_streak_title') }}</span>
           <span class="font-display text-2xl text-sakura-500">{{ data.streak_days }}</span>
-          <span class="font-zen text-[12px] text-stone-500 self-end pb-1">天</span>
+          <span class="font-zen text-[12px] text-stone-500 self-end pb-1">{{ t('journey_streak_unit') }}</span>
         </h3>
         <div class="grid grid-cols-3 gap-2 text-center text-sm font-zen">
           <div class="bg-cream-50 rounded-2xl py-3">
             <p class="font-display text-lg text-peach-500 font-bold">{{ data.last_30_days.cycles_logged }}</p>
-            <p class="text-[11px] text-stone-500">經期記錄</p>
+            <p class="text-[11px] text-stone-500">{{ t('journey_stat_cycles') }}</p>
           </div>
           <div class="bg-cream-50 rounded-2xl py-3">
             <p class="font-display text-lg text-peach-500 font-bold">{{ data.last_30_days.symptoms_logged }}</p>
-            <p class="text-[11px] text-stone-500">症狀記錄</p>
+            <p class="text-[11px] text-stone-500">{{ t('journey_stat_symptoms') }}</p>
           </div>
           <div class="bg-cream-50 rounded-2xl py-3">
             <p class="font-display text-lg text-peach-500 font-bold">{{ data.last_30_days.dodo_checkins }}</p>
-            <p class="text-[11px] text-stone-500">朵朵 check-in</p>
+            <p class="text-[11px] text-stone-500">{{ t('journey_stat_checkins') }}</p>
           </div>
         </div>
       </Card>
@@ -142,7 +143,7 @@ async function equip(code: string) {
       <!-- 成就（badge SVG） -->
       <Card tone="plain" class="space-y-3">
         <div class="flex items-baseline justify-between">
-          <h3 class="font-display font-bold text-peach-500 text-base">成就徽章</h3>
+          <h3 class="font-display font-bold text-peach-500 text-base">{{ t('journey_section_achievements') }}</h3>
           <p class="font-zen text-[11px] text-stone-500">{{ unlockedAchievements.length }} / {{ achievements.length }}</p>
         </div>
 
@@ -163,7 +164,7 @@ async function equip(code: string) {
 
         <!-- 待解（灰階 + 進度提示） -->
         <details v-if="lockedAchievements.length" class="pt-2 border-t border-cream-100">
-          <summary class="font-zen text-[12px] text-stone-500 cursor-pointer">待解鎖 {{ lockedAchievements.length }} 項</summary>
+          <summary class="font-zen text-[12px] text-stone-500 cursor-pointer">{{ t('journey_locked_count_a', { n: lockedAchievements.length }) }}</summary>
           <div class="mt-3 grid grid-cols-3 gap-3">
             <div
               v-for="a in lockedAchievements"
@@ -183,7 +184,7 @@ async function equip(code: string) {
       <!-- Outfit 解鎖牆 -->
       <Card tone="plain" class="space-y-3">
         <div class="flex items-baseline justify-between">
-          <h3 class="font-display font-bold text-peach-500 text-base">寵物裝扮</h3>
+          <h3 class="font-display font-bold text-peach-500 text-base">{{ t('journey_section_outfits') }}</h3>
           <p class="font-zen text-[11px] text-stone-500">{{ unlockedOutfits.length }} / {{ outfits.length }}</p>
         </div>
 
@@ -204,19 +205,19 @@ async function equip(code: string) {
               <p class="font-zen text-[12px] text-stone-700 truncate font-bold">{{ o.name }}</p>
               <p class="font-zen text-[10px] text-stone-400">{{ RARITY_LABEL[o.rarity] }}</p>
             </div>
-            <span v-if="o.equipped" class="text-[10px] text-peach-500 font-bold">✓ 穿著</span>
+            <span v-if="o.equipped" class="text-[10px] text-peach-500 font-bold">{{ t('journey_outfit_equipped') }}</span>
           </button>
           <button
             v-if="equippedCode !== 'none'"
             @click="equip('none')"
             class="border border-stone-200 bg-cream-50 rounded-2xl p-3 text-stone-500 font-zen text-xs hover:bg-cream-100"
           >
-            脫掉裝扮
+            {{ t('journey_outfit_take_off') }}
           </button>
         </div>
 
         <details v-if="lockedOutfits.length" class="pt-2 border-t border-cream-100">
-          <summary class="font-zen text-[12px] text-stone-500 cursor-pointer">待解鎖 {{ lockedOutfits.length }} 件</summary>
+          <summary class="font-zen text-[12px] text-stone-500 cursor-pointer">{{ t('journey_locked_count_o', { n: lockedOutfits.length }) }}</summary>
           <div class="mt-3 grid grid-cols-2 gap-2">
             <div
               v-for="o in lockedOutfits"

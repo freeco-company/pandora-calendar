@@ -4,16 +4,18 @@ import { useRouter } from 'vue-router'
 import { CommunityApi, type CommunityCategory } from '../api'
 import Card from '../components/ui/Card.vue'
 import Button from '../components/ui/Button.vue'
+import { useTone } from '../composables/useTone'
 
 const router = useRouter()
+const { t } = useTone()
 
-const CATEGORIES: Array<{ value: CommunityCategory; label: string; emoji: string; hint: string }> =
+const CATEGORIES = computed<Array<{ value: CommunityCategory; label: string; emoji: string; hint: string }>>(() =>
   [
-    { value: 'question', label: '想問', emoji: '❓', hint: '有問題想請大家幫忙看' },
-    { value: 'experience', label: '分享', emoji: '✨', hint: '我自己的經驗' },
-    { value: 'tip', label: '小撇步', emoji: '💡', hint: '推薦給其他朋友的方法' },
-    { value: 'support', label: '陪伴', emoji: '🤍', hint: '想找人聊聊' },
-  ]
+    { value: 'question', label: t('community_create_cat_question_label'), emoji: '❓', hint: t('community_create_cat_question_hint') },
+    { value: 'experience', label: t('community_create_cat_experience_label'), emoji: '✨', hint: t('community_create_cat_experience_hint') },
+    { value: 'tip', label: t('community_create_cat_tip_label'), emoji: '💡', hint: t('community_create_cat_tip_hint') },
+    { value: 'support', label: t('community_create_cat_support_label'), emoji: '🤍', hint: t('community_create_cat_support_hint') },
+  ])
 
 const category = ref<CommunityCategory>('experience')
 const title = ref('')
@@ -50,9 +52,9 @@ const SOFT_RED_FLAGS: string[] = [
 ]
 const softWarning = computed<string | null>(() => {
   const combined = (title.value + '\n' + body.value).toLowerCase()
-  const hits = SOFT_RED_FLAGS.filter((t) => combined.includes(t.toLowerCase()))
+  const hits = SOFT_RED_FLAGS.filter((term) => combined.includes(term.toLowerCase()))
   if (hits.length === 0) return null
-  return `提醒：「${hits.slice(0, 3).join('、')}」這類用字可能違反社群規範（含推銷或健康宣稱）。換種說法會更好喔。`
+  return t('community_create_soft_warning', { terms: hits.slice(0, 3).join('、') })
 })
 
 async function submit() {
@@ -79,9 +81,9 @@ async function submit() {
       const d = ax.response.data
       if (d?.gate?.hint) gateHint.value = d.gate.hint
       else if (d?.moderation?.hint) moderationHint.value = d.moderation.hint
-      else errorMsg.value = d?.message ?? '無法送出'
+      else errorMsg.value = d?.message ?? t('community_create_blocked')
     } else {
-      errorMsg.value = '送出失敗，請稍後再試。'
+      errorMsg.value = t('community_create_send_failed')
     }
   } finally {
     submitting.value = false
@@ -92,26 +94,26 @@ async function submit() {
 <template>
   <div class="min-h-screen pb-32">
     <header class="px-5 pt-5 pb-3 flex items-center justify-between">
-      <Button variant="ghost" size="sm" @click="router.back()">‹ 取消</Button>
-      <h1 class="text-base font-semibold text-cream-900">新貼文</h1>
+      <Button variant="ghost" size="sm" @click="router.back()">{{ t('community_create_back') }}</Button>
+      <h1 class="text-base font-semibold text-cream-900">{{ t('community_create_title') }}</h1>
       <Button
         variant="primary"
         size="sm"
         :disabled="!valid"
         :loading="submitting"
         @click="submit"
-        >送出</Button
+        >{{ t('community_create_send') }}</Button
       >
     </header>
 
     <main class="px-4 space-y-3">
       <div v-if="gateHint" class="bg-peach-50 border-l-4 border-peach-400 p-3 rounded-xl text-sm">
-        <div class="font-medium text-cream-900">還不能發文</div>
+        <div class="font-medium text-cream-900">{{ t('community_create_gate_title') }}</div>
         <div class="text-cream-800 mt-1">{{ gateHint }}</div>
       </div>
 
       <div v-if="moderationHint" class="bg-red-50 border-l-4 border-red-400 p-3 rounded-xl text-sm">
-        <div class="font-medium text-red-700">這篇內容暫時無法發布</div>
+        <div class="font-medium text-red-700">{{ t('community_create_moderation_title') }}</div>
         <div class="text-red-700 mt-1">{{ moderationHint }}</div>
       </div>
 
@@ -119,7 +121,7 @@ async function submit() {
 
       <!-- Category -->
       <Card tone="cream">
-        <h3 class="text-sm font-medium text-cream-800 mb-2">分類</h3>
+        <h3 class="text-sm font-medium text-cream-800 mb-2">{{ t('community_create_section_category') }}</h3>
         <div class="grid grid-cols-2 gap-2">
           <button
             v-for="c in CATEGORIES"
@@ -141,14 +143,14 @@ async function submit() {
 
       <!-- Title -->
       <Card>
-        <label for="community-title" class="text-sm font-medium text-cream-800">標題</label>
+        <label for="community-title" class="text-sm font-medium text-cream-800">{{ t('community_create_title_label') }}</label>
         <input
           id="community-title"
           v-model="title"
           type="text"
           maxlength="60"
-          placeholder="一句話說重點"
-          aria-label="貼文標題"
+          :placeholder="t('community_create_title_placeholder')"
+          :aria-label="t('community_create_title_aria')"
           class="mt-2 w-full px-3 py-2 rounded-xl border border-cream-200"
         />
         <div class="text-xs text-cream-500 text-right mt-1">{{ titleLen }} / 60</div>
@@ -156,14 +158,14 @@ async function submit() {
 
       <!-- Body -->
       <Card>
-        <label for="community-body" class="text-sm font-medium text-cream-800">內容</label>
+        <label for="community-body" class="text-sm font-medium text-cream-800">{{ t('community_create_body_label') }}</label>
         <textarea
           id="community-body"
           v-model="body"
           rows="8"
           maxlength="1000"
-          placeholder="分享妳的故事 / 問題 / 想法。記得溫柔對待自己和朋友。"
-          aria-label="貼文內容"
+          :placeholder="t('community_create_body_placeholder')"
+          :aria-label="t('community_create_body_aria')"
           class="mt-2 w-full px-3 py-2 rounded-xl border border-cream-200 resize-none"
         />
         <div class="flex items-center justify-between text-xs mt-1">
@@ -174,12 +176,12 @@ async function submit() {
 
       <!-- Guidelines -->
       <Card tone="cream" class="text-xs text-cream-700 leading-relaxed">
-        <div class="font-medium text-cream-900 mb-1">社群規範</div>
+        <div class="font-medium text-cream-900 mb-1">{{ t('community_create_guidelines_title') }}</div>
         <ul class="list-disc pl-4 space-y-1">
-          <li>不分享健康宣稱、推銷或商業連結（會自動被擋）</li>
-          <li>不分享 Email、電話、Line ID 等聯絡方式</li>
-          <li>溫柔對待彼此，不批評不評斷</li>
-          <li>緊急狀況請聯絡專業協助（1925 / 1995）</li>
+          <li>{{ t('community_create_guideline_no_health_claim') }}</li>
+          <li>{{ t('community_create_guideline_no_contact') }}</li>
+          <li>{{ t('community_create_guideline_kindness') }}</li>
+          <li>{{ t('community_create_guideline_emergency') }}</li>
         </ul>
       </Card>
     </main>

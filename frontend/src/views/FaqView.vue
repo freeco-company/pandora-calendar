@@ -7,9 +7,11 @@ import EmptyState from '../components/ui/EmptyState.vue'
 import Card from '../components/ui/Card.vue'
 import Button from '../components/ui/Button.vue'
 import { useSfx } from '../lib/sound'
+import { useTone } from '../composables/useTone'
 
 const router = useRouter()
 const sfx = useSfx()
+const { t } = useTone()
 
 const loading = ref(true)
 const error = ref<string | null>(null)
@@ -30,7 +32,7 @@ async function load() {
     const res = await FaqApi.list()
     groups.value = res.data.data ?? []
   } catch {
-    error.value = '載入失敗，請再試一次'
+    error.value = t('faq_load_failed')
   } finally {
     loading.value = false
   }
@@ -55,26 +57,26 @@ onMounted(load)
         class="text-xs text-stone-500 font-zen mb-2"
         @click="router.back()"
       >
-        ← 返回
+        {{ t('common_back') }}
       </button>
-      <h1 class="font-display text-2xl font-bold text-peach-500">常見問題</h1>
+      <h1 class="font-display text-2xl font-bold text-peach-500">{{ t('faq_title') }}</h1>
       <p class="font-zen text-xs text-stone-500">
-        找不到答案？可以直接告訴朵朵，我會記得。
+        {{ t('faq_subtitle') }}
       </p>
     </header>
 
-    <Spinner v-if="loading" label="朵朵翻翻筆記中…" />
+    <Spinner v-if="loading" :label="t('faq_loading')" />
 
     <div v-else-if="error" class="space-y-3">
       <EmptyState icon="🌸" :title="error" />
-      <Button full @click="load">再試一次</Button>
+      <Button full @click="load">{{ t('common_retry_short') }}</Button>
     </div>
 
     <EmptyState
       v-else-if="!groups.length"
       show-dodo
-      title="還沒整理好"
-      subtitle="朵朵還在準備 FAQ，先幫妳保留位置"
+      :title="t('faq_empty_title')"
+      :subtitle="t('faq_empty_subtitle')"
     />
 
     <div v-else class="space-y-4">
@@ -144,11 +146,11 @@ onMounted(load)
       </Card>
 
       <Card tone="cream" class="text-center space-y-3">
-        <p class="font-display text-base font-bold text-peach-500">找不到答案？</p>
+        <p class="font-display text-base font-bold text-peach-500">{{ t('faq_no_answer_title') }}</p>
         <p class="font-zen text-xs text-stone-500">
-          直接告訴朵朵妳遇到的狀況，我會記得也會回覆妳
+          {{ t('faq_no_answer_subtitle') }}
         </p>
-        <Button full @click="router.push('/feedback')">給朵朵的話 →</Button>
+        <Button full @click="router.push('/feedback')">{{ t('faq_no_answer_cta') }}</Button>
       </Card>
     </div>
   </div>

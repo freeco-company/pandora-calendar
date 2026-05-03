@@ -3,6 +3,7 @@
 namespace App\Services\AI\Providers;
 
 use App\Services\AI\LLMProvider;
+use App\Support\Sentry\SentryHelper;
 use Illuminate\Support\Facades\Http;
 use Illuminate\Support\Facades\Log;
 use Throwable;
@@ -52,12 +53,35 @@ class ClaudeProvider implements LLMProvider
                     'body' => mb_substr((string) $response->body(), 0, 500),
                 ]);
 
+                $status = $response->status();
+                if ($status >= 500) {
+                    SentryHelper::captureMessage(
+                        "Claude http {$status}",
+                        'warning',
+                        'llm',
+                        ['provider' => 'claude', 'status' => $status, 'model' => $model]
+                    );
+                } else {
+                    SentryHelper::addBreadcrumb('llm.fail', 'claude http error', [
+                        'provider' => 'claude',
+                        'status' => $status,
+                        'model' => $model,
+                    ]);
+                }
+
                 return null;
             }
 
             // Anthropic Messages API: content is array of blocks, take first text block
             $blocks = $response->json('content');
             if (! is_array($blocks)) {
+                SentryHelper::captureMessage(
+                    'Claude 200 but content is not array',
+                    'warning',
+                    'llm',
+                    ['provider' => 'claude', 'model' => $model]
+                );
+
                 return null;
             }
 
@@ -73,6 +97,10 @@ class ClaudeProvider implements LLMProvider
             return null;
         } catch (Throwable $e) {
             Log::warning('llm.claude.exception', ['msg' => $e->getMessage()]);
+            SentryHelper::captureException($e, 'llm', [
+                'provider' => 'claude',
+                'model' => $model,
+            ]);
 
             return null;
         }

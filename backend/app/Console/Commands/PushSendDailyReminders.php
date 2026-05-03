@@ -8,12 +8,10 @@ use App\Models\PushSubscription;
 use App\Models\User;
 use App\Services\Calendar\BodyRhythmCalculator;
 use App\Services\Calendar\CyclePredictor;
+use App\Services\Push\PushDispatcher;
 use Carbon\CarbonImmutable;
 use Illuminate\Console\Command;
 use Illuminate\Support\Facades\Cache;
-use Illuminate\Support\Facades\Log;
-use Minishlink\WebPush\Subscription;
-use Minishlink\WebPush\WebPush;
 
 /**
  * 每天早上 8:00 跑一次：對 push_opted_in=true 的用戶，依據今日 phase + streak 寄推播。
@@ -33,12 +31,9 @@ use Minishlink\WebPush\WebPush;
  *   - 每用戶每天最多 max_per_user_per_day 個 push（global config）
  *   - 隨機從 variants 池抽 1 個（normal vs inclusive 依 user.preferences.inclusive_mode）
  *   - 用戶 push_opted_in=true 才送
- *   - en locale 暫 fallback 到 zh-TW（待 PM 拍板英文版）
  *
- * 需要 env：
- *   - PUSH_VAPID_SUBJECT="mailto:support@js-store.com.tw"
- *   - PUSH_VAPID_PUBLIC_KEY (base64url)
- *   - PUSH_VAPID_PRIVATE_KEY (base64url)
+ * 真正寄送透過 PushDispatcher 路由到 web/iOS/Android channel；
+ * 缺 credential 時對應 channel 變 noop，不報錯。
  */
 class PushSendDailyReminders extends Command
 {
@@ -49,46 +44,30 @@ class PushSendDailyReminders extends Command
     public function __construct(
         private readonly CyclePredictor $predictor,
         private readonly BodyRhythmCalculator $calc,
+        private readonly PushDispatcher $dispatcher,
     ) {
         parent::__construct();
     }
 
     public function handle(): int
     {
-        $vapidSubject = (string) env('PUSH_VAPID_SUBJECT', '');
-        $vapidPublic = (string) env('PUSH_VAPID_PUBLIC_KEY', '');
-        $vapidPrivate = (string) env('PUSH_VAPID_PRIVATE_KEY', '');
-
-        if ($vapidSubject === '' || $vapidPublic === '' || $vapidPrivate === '') {
-            $this->error('VAPID keys 未設定（PUSH_VAPID_SUBJECT / _PUBLIC_KEY / _PRIVATE_KEY）');
-            $this->info('用 `php artisan push:vapid-keygen` 產一份');
-
-            return self::FAILURE;
-        }
-
         $dry = (bool) $this->option('dry-run');
-
-        $webPush = new WebPush([
-            'VAPID' => [
-                'subject' => $vapidSubject,
-                'publicKey' => $vapidPublic,
-                'privateKey' => $vapidPrivate,
-            ],
-        ]);
 
         $today = CarbonImmutable::today();
         $maxPerDay = (int) config('push-templates.global.max_per_user_per_day', 2);
         $sent = 0;
         $skipped = 0;
+        $failed = 0;
 
         User::query()
             ->where('push_opted_in', true)
             ->whereHas('pushSubscriptions', fn ($q) => $q)
             ->cursor()
-            ->each(function (User $u) use ($webPush, $today, $maxPerDay, &$sent, &$skipped, $dry) {
+            ->each(function (User $u) use ($today, $maxPerDay, &$sent, &$skipped, &$failed, $dry) {
                 $messages = $this->messagesFor($u, $today);
                 if (empty($messages)) {
                     $skipped++;
+
                     return;
                 }
 
@@ -96,32 +75,30 @@ class PushSendDailyReminders extends Command
                 $messages = array_slice($messages, 0, $maxPerDay);
 
                 foreach ($messages as $msg) {
-                    $payload = json_encode([
-                        'title' => $msg['title'],
-                        'body' => $msg['body'],
-                        'tag' => 'pandora-calendar-' . $msg['branch'] . '-' . $today->toDateString(),
+                    $data = [
+                        'tag' => 'pandora-calendar-'.$msg['branch'].'-'.$today->toDateString(),
                         'url' => '/#/dodo',
-                    ]);
+                        'branch' => $msg['branch'],
+                    ];
 
                     foreach (PushSubscription::query()->where('user_id', $u->id)->get() as $sub) {
                         if ($dry) {
-                            $this->line(" [dry] uuid={$u->identity_uuid} branch={$msg['branch']} → {$msg['title']}");
+                            $this->line(" [dry] uuid={$u->identity_uuid} platform={$sub->platform} branch={$msg['branch']} → {$msg['title']}");
+
                             continue;
                         }
-                        $webPush->queueNotification(
-                            Subscription::create([
-                                'endpoint' => $sub->endpoint,
-                                'publicKey' => $sub->p256dh,
-                                'authToken' => $sub->auth,
-                            ]),
-                            $payload,
-                        );
+                        $r = $this->dispatcher->dispatch($sub, $msg['title'], $msg['body'], $data);
+                        if ($r['ok']) {
+                            $sent++;
+                        } else {
+                            $failed++;
+                        }
                     }
 
-                    // mark cooldown
+                    // mark cooldown（不論 send 成功與否，避免 retry storm）
                     if (! $dry) {
                         $cooldownHours = (int) data_get(
-                            config('push-templates.branches.' . $msg['branch']),
+                            config('push-templates.branches.'.$msg['branch']),
                             'cooldown_hours',
                             24,
                         );
@@ -131,23 +108,10 @@ class PushSendDailyReminders extends Command
                             now()->addHours($cooldownHours),
                         );
                     }
-                    $sent++;
                 }
             });
 
-        if (! $dry) {
-            foreach ($webPush->flush() as $report) {
-                if (! $report->isSuccess()) {
-                    $reason = $report->getReason();
-                    Log::warning('[Push] failed', ['reason' => $reason, 'endpoint' => $report->getEndpoint()]);
-                    if (in_array($report->getResponse()?->getStatusCode(), [404, 410], true)) {
-                        PushSubscription::query()->where('endpoint', $report->getEndpoint())->delete();
-                    }
-                }
-            }
-        }
-
-        $this->info("sent={$sent} skipped={$skipped}".($dry ? ' (dry)' : ''));
+        $this->info("sent={$sent} failed={$failed} skipped={$skipped}".($dry ? ' (dry)' : ''));
 
         return self::SUCCESS;
     }
@@ -219,7 +183,7 @@ class PushSendDailyReminders extends Command
         // 去重 + cooldown 過濾
         $messages = [];
         foreach (array_unique($candidates) as $branch) {
-            $branchCfg = config('push-templates.branches.' . $branch);
+            $branchCfg = config('push-templates.branches.'.$branch);
             if (! $branchCfg || ! ($branchCfg['enabled'] ?? false)) {
                 continue;
             }

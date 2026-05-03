@@ -9,6 +9,10 @@ use App\Services\Conversion\HttpConversionPublisher;
 use App\Services\Gamification\GamificationPublisher;
 use App\Services\Gamification\NoopGamificationPublisher;
 use App\Services\Gamification\HttpGamificationPublisher;
+use App\Services\Push\ApnsChannel;
+use App\Services\Push\FcmChannel;
+use App\Services\Push\PushDispatcher;
+use App\Services\Push\WebPushChannel;
 use Illuminate\Http\Client\Factory as HttpFactory;
 use Illuminate\Support\ServiceProvider;
 
@@ -43,6 +47,29 @@ class AppServiceProvider extends ServiceProvider
 
             return new AnonymousHandle((string) $secret);
         });
+
+        // Push channels — pluggable, env-driven。缺 credential → channel.isConfigured()=false → noop。
+        $this->app->singleton(FcmChannel::class, fn () => new FcmChannel(
+            (string) config('push.fcm.project_id', ''),
+            (string) config('push.fcm.credentials_path', ''),
+        ));
+        $this->app->singleton(ApnsChannel::class, fn () => new ApnsChannel(
+            (string) config('push.apns.team_id', ''),
+            (string) config('push.apns.key_id', ''),
+            (string) config('push.apns.private_key_path', ''),
+            (string) config('push.apns.bundle_id', ''),
+            (bool) config('push.apns.sandbox', false),
+        ));
+        $this->app->singleton(WebPushChannel::class, fn () => new WebPushChannel(
+            (string) config('push.webpush.subject', ''),
+            (string) config('push.webpush.public_key', ''),
+            (string) config('push.webpush.private_key', ''),
+        ));
+        $this->app->singleton(PushDispatcher::class, fn ($app) => new PushDispatcher(
+            $app->make(FcmChannel::class),
+            $app->make(ApnsChannel::class),
+            $app->make(WebPushChannel::class),
+        ));
 
         $this->app->bind(ConversionPublisher::class, function ($app) {
             $url = config('pandora.conversion.base_url');

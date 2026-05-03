@@ -2,6 +2,7 @@
 
 namespace App\Services\Subscription\Apple;
 
+use App\Support\Sentry\SentryHelper;
 use Illuminate\Support\Facades\Cache;
 use Illuminate\Support\Facades\Log;
 
@@ -35,6 +36,21 @@ class AppleJwsVerifier
 
     /** @return array decoded payload */
     public function verifyAndDecode(string $signedPayload): array
+    {
+        try {
+            return $this->doVerifyAndDecode($signedPayload);
+        } catch (AppleJwsVerifyException $e) {
+            SentryHelper::captureException($e, 'iap', [
+                'platform' => 'apple',
+                'stage' => 'jws_verify',
+                'payload_hash' => substr(hash('sha256', $signedPayload), 0, 16),
+            ]);
+            throw $e;
+        }
+    }
+
+    /** @return array decoded payload */
+    private function doVerifyAndDecode(string $signedPayload): array
     {
         $parts = explode('.', $signedPayload);
         if (count($parts) !== 3) {
@@ -96,10 +112,10 @@ class AppleJwsVerifier
     {
         $data = $payload['data'] ?? [];
         if (! empty($data['signedTransactionInfo'])) {
-            $data['transactionInfo'] = $this->verifyAndDecode($data['signedTransactionInfo']);
+            $data['transactionInfo'] = $this->doVerifyAndDecode($data['signedTransactionInfo']);
         }
         if (! empty($data['signedRenewalInfo'])) {
-            $data['renewalInfo'] = $this->verifyAndDecode($data['signedRenewalInfo']);
+            $data['renewalInfo'] = $this->doVerifyAndDecode($data['signedRenewalInfo']);
         }
         $payload['data'] = $data;
 

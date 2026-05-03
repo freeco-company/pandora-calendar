@@ -7,6 +7,7 @@ use App\Models\DailyActionRecommendation;
 use App\Models\UserActionProtocol;
 use App\Services\Action\ActionFeedbackProcessor;
 use App\Services\Action\ActionRecommender;
+use App\Services\Action\ProtocolInsightSurfacer;
 use App\Services\Subscription\FeatureGate;
 use Carbon\CarbonImmutable;
 use Illuminate\Http\JsonResponse;
@@ -23,6 +24,7 @@ class DailyActionController extends Controller
     public function __construct(
         private readonly ActionRecommender $recommender,
         private readonly ActionFeedbackProcessor $feedbackProcessor,
+        private readonly ProtocolInsightSurfacer $insightSurfacer,
         private readonly FeatureGate $gate,
     ) {}
 
@@ -31,14 +33,27 @@ class DailyActionController extends Controller
         $user = $request->user();
         $rec = $this->recommender->recommendForToday($user->id);
 
+        // 同一個 endpoint 順帶帶出 protocol insight（前端一個 call 拿兩件事）
+        $insight = $this->insightSurfacer->activeFor((int) $user->id);
+        $insightPayload = $insight === null ? null : [
+            'insight_key' => $insight['insight_key'],
+            'message' => $insight['message'],
+            'action_cta' => $insight['action_cta'] ?? null,
+            'source' => $insight['source'],
+        ];
+
         if (! $rec) {
             return response()->json([
                 'data' => null,
                 'message' => '今天沒有特別建議的行動，做妳本來會做的事就好。',
+                'protocol_insight' => $insightPayload,
             ]);
         }
 
-        return response()->json(['data' => $this->present($rec)]);
+        return response()->json([
+            'data' => $this->present($rec),
+            'protocol_insight' => $insightPayload,
+        ]);
     }
 
     public function complete(Request $request, int $recId): JsonResponse

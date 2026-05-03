@@ -3,6 +3,7 @@
 namespace App\Services\AI\Providers;
 
 use App\Services\AI\LLMProvider;
+use App\Support\Sentry\SentryHelper;
 use Illuminate\Support\Facades\Http;
 use Illuminate\Support\Facades\Log;
 use Throwable;
@@ -57,14 +58,48 @@ class OpenAIProvider implements LLMProvider
                     'body' => mb_substr((string) $response->body(), 0, 500),
                 ]);
 
+                $status = $response->status();
+                if ($status >= 500) {
+                    // 5xx = unexpected upstream, capture
+                    SentryHelper::captureMessage(
+                        "OpenAI http {$status}",
+                        'warning',
+                        'llm',
+                        ['provider' => 'openai', 'status' => $status, 'model' => $model]
+                    );
+                } else {
+                    // 4xx = predictable (rate limit / auth / bad payload) → breadcrumb only
+                    SentryHelper::addBreadcrumb('llm.fail', 'openai http error', [
+                        'provider' => 'openai',
+                        'status' => $status,
+                        'model' => $model,
+                    ]);
+                }
+
                 return null;
             }
 
             $text = $response->json('choices.0.message.content');
 
-            return is_string($text) && trim($text) !== '' ? trim($text) : null;
+            if (! is_string($text) || trim($text) === '') {
+                // 200 but unparseable → unexpected
+                SentryHelper::captureMessage(
+                    'OpenAI 200 but empty / unparseable content',
+                    'warning',
+                    'llm',
+                    ['provider' => 'openai', 'model' => $model]
+                );
+
+                return null;
+            }
+
+            return trim($text);
         } catch (Throwable $e) {
             Log::warning('llm.openai.exception', ['msg' => $e->getMessage()]);
+            SentryHelper::captureException($e, 'llm', [
+                'provider' => 'openai',
+                'model' => $model,
+            ]);
 
             return null;
         }

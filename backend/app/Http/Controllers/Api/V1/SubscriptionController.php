@@ -8,6 +8,7 @@ use App\Models\SubscriptionPauseRequest;
 use App\Services\Subscription\EcpayClient;
 use App\Services\Subscription\EntitlementResolver;
 use App\Services\Subscription\IapVerifier;
+use App\Support\Sentry\SentryHelper;
 use Carbon\CarbonImmutable;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
@@ -113,12 +114,21 @@ class SubscriptionController extends Controller
             'reason' => ['nullable', 'string', 'max:64'],
         ]);
 
-        $req = SubscriptionPauseRequest::create([
-            'user_id' => $request->user()->id,
-            'reason' => $data['reason'] ?? null,
-            'pause_months' => $data['months'],
-            'granted_pause_until' => CarbonImmutable::today()->addMonths($data['months'])->toDateString(),
-        ]);
+        try {
+            $req = SubscriptionPauseRequest::create([
+                'user_id' => $request->user()->id,
+                'reason' => $data['reason'] ?? null,
+                'pause_months' => $data['months'],
+                'granted_pause_until' => CarbonImmutable::today()->addMonths($data['months'])->toDateString(),
+            ]);
+        } catch (\Throwable $e) {
+            SentryHelper::captureException($e, 'subscription', [
+                'action' => 'pause',
+                'user_uuid' => $request->user()->identity_uuid,
+                'months' => $data['months'],
+            ]);
+            throw $e;
+        }
 
         return response()->json([
             'data' => [

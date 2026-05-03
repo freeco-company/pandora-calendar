@@ -93,6 +93,50 @@ php artisan boost:install
 
 Boost provides your agent 15+ tools and skills that help agents build Laravel applications while following best practices.
 
+## Sentry 觀測性（wave 5）
+
+上架後第一週看到 issue 在哪 — 集中以 `App\Support\Sentry\SentryHelper` 統一介面：
+
+- `SentryHelper::captureException($e, $module, $context)` — exception + module tag + scrubbed context
+- `SentryHelper::captureMessage($msg, $level, $module, $context)` — 給「預期內但異常」（webhook HMAC fail / unhandled event_type / 5xx upstream）
+- `SentryHelper::addBreadcrumb($category, $msg, $data)` — 串軌跡（4xx / LLM fail）
+
+### 散布的 hot path
+
+| Module tag | 位置 | 觸發 |
+|---|---|---|
+| `iap` | `IapVerifier::verifyApple` / `verifyGoogle` | 商店 verify throw（status / endpoint exhaust / mismatch） |
+| `iap` | `AppleJwsVerifier::verifyAndDecode` | JWS chain / alg / signature 驗證失敗 |
+| `iap` | `GooglePlayAccessTokenProvider::fetchAndCache` | service-account JWT exchange 失敗 |
+| `oauth` | `IdentityClient::resolveFromJwt` | JWT verifier throw / sub claim 缺失（`captureMessage`） |
+| `oauth` | `AuthController::forward` | PC unreachable（exception）+ PC 5xx（`captureMessage`） |
+| `llm` | `OpenAIProvider` / `ClaudeProvider` | 5xx upstream + parse error → `captureMessage`；exception throw → `captureException`；4xx → `addBreadcrumb` only（預期 fallback） |
+| `webhook.identity` | `VerifyIdentityWebhookSignature` middleware | missing headers / timestamp out of window / HMAC mismatch |
+| `webhook.identity` | `IdentityWebhookController` | payload schema invalid / unknown event type / sync exception |
+| `webhook.gamification` | `VerifyGamificationWebhookSignature` middleware | header / timestamp / HMAC / payload schema |
+| `webhook.gamification` | `GamificationWebhookController` | unhandled event_type；unknown user → breadcrumb only |
+| `subscription` | `SubscriptionController::pause` | DB write 失敗 |
+| `dodo` | `DodoController::checkin` | gamification publish dispatch 失敗（不擋用戶寫入） |
+
+### 紅線（強制）
+
+- **Health 資料禁送 Sentry**：URL pattern → 整個 event drop（`HealthDataScrubber::scrub`）；context key 命中 cycle / symptom / mood / bbt / pms / pregnancy / temperature / weight / height → `[Filtered]`；URL-like value 命中 health-route → `[health-route]`
+- **PII 禁送**：email / phone / address / password / token 一律 redact
+- **OK 送**：`identity_uuid`（uuid 非 PII）、subscription / iap / oauth / llm 失敗 metadata、product_id / platform / status code
+
+### Frontend 對應
+
+- `frontend/src/lib/sentry.ts` — Sentry init + beforeSend / beforeBreadcrumb scrubber（與 backend 紅線一致）
+- `frontend/src/api.ts` — axios response interceptor：5xx `captureMessage`、4xx 非 401 `addBreadcrumb`、network error `captureMessage`；URL 命中 health-route 一律 `[health-route]`
+- `frontend/src/router.ts` — `afterEach` navigation breadcrumb；health route（含 `/log` `/dodo`）redact
+
+### 加新 capture 點時
+
+1. 在新 catch / fail branch import `App\Support\Sentry\SentryHelper`
+2. 選對 module tag（沿用上表類別，新增前先想是否真的不能歸入既有）
+3. context array **絕對不放** request body / response body / 任何 health 欄位 — 即使你覺得 sanitizer 會擋，也不要試。送 `*_hash` / `*_uuid` / status / product_id 即可
+4. 加完跑 `php artisan test --filter=SentryHelperTest` 確保 sanitizer 還是擋得住新 key
+
 ## Contributing
 
 Thank you for considering contributing to the Laravel framework! The contribution guide can be found in the [Laravel documentation](https://laravel.com/docs/contributions).

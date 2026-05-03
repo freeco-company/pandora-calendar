@@ -4,6 +4,7 @@ namespace App\Http\Controllers\Api\V1\Internal;
 
 use App\Http\Controllers\Controller;
 use App\Services\Identity\IdentityClient;
+use App\Support\Sentry\SentryHelper;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Log;
@@ -29,16 +30,38 @@ class IdentityWebhookController extends Controller
         $data = $request->input('data', []);
 
         if (! is_array($data) || ! isset($data['uuid']) || ! is_string($data['uuid']) || $data['uuid'] === '') {
+            SentryHelper::captureMessage(
+                'identity webhook payload missing data.uuid',
+                'warning',
+                'webhook.identity',
+                ['stage' => 'payload_schema', 'type' => $type]
+            );
+
             return response()->json(['error' => 'invalid payload: data.uuid missing'], 422);
         }
 
         if (! in_array($type, ['user.upserted', 'user.suspended', 'user.merged'], true)) {
             Log::warning('[IdentityWebhook] unknown event type', ['type' => $type]);
+            SentryHelper::captureMessage(
+                'identity webhook unknown event type',
+                'warning',
+                'webhook.identity',
+                ['stage' => 'event_type', 'type' => $type]
+            );
 
             return response()->json(['error' => "unknown event type: {$type}"], 422);
         }
 
-        $user = $this->client->syncFromPlatform($data['uuid'], $data);
+        try {
+            $user = $this->client->syncFromPlatform($data['uuid'], $data);
+        } catch (\Throwable $e) {
+            SentryHelper::captureException($e, 'webhook.identity', [
+                'stage' => 'sync',
+                'type' => $type,
+                'user_uuid' => $data['uuid'],
+            ]);
+            throw $e;
+        }
 
         return response()->json([
             'status' => 'ok',

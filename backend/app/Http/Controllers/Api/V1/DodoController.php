@@ -11,6 +11,7 @@ use App\Services\Gamification\CalendarEventCatalog;
 use App\Services\Gamification\GamificationPublisher;
 use App\Services\Gamification\IdempotencyKey;
 use App\Services\Subscription\FeatureGate;
+use App\Support\Sentry\SentryHelper;
 use Carbon\CarbonImmutable;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
@@ -67,17 +68,29 @@ class DodoController extends Controller
             ],
         );
 
-        $this->gamification->publish(
-            $user,
-            CalendarEventCatalog::DODO_CHECKIN,
-            ['mood' => $data['mood'], 'phase' => $rhythm->phase],
-            IdempotencyKey::make(
+        try {
+            $this->gamification->publish(
+                $user,
                 CalendarEventCatalog::DODO_CHECKIN,
-                $user->id,
-                $checkin->id,
-                $checkedOn->toDateString(),
-            ),
-        );
+                ['mood' => $data['mood'], 'phase' => $rhythm->phase],
+                IdempotencyKey::make(
+                    CalendarEventCatalog::DODO_CHECKIN,
+                    $user->id,
+                    $checkin->id,
+                    $checkedOn->toDateString(),
+                ),
+            );
+        } catch (\Throwable $e) {
+            // dispatch fail 不擋 user 寫入；記 Sentry 後 swallow
+            // （outbox publisher 失敗也應該被 retry，但 in-process exception 反而會 500
+            // user 看到「打卡失敗」可能誤以為資料沒寫入）
+            SentryHelper::captureException($e, 'dodo', [
+                'stage' => 'gamification_publish',
+                'event_kind' => CalendarEventCatalog::DODO_CHECKIN,
+                'user_uuid' => $user->identity_uuid,
+                // 不送 mood — 雖然 mood 不算高敏感（只 5 種值），但保守起見
+            ]);
+        }
 
         return response()->json([
             'data' => [

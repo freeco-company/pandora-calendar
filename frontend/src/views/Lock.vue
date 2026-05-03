@@ -17,6 +17,9 @@ import { useRouter } from 'vue-router'
 import { logout } from '../api'
 import { useEntitlementsStore } from '../stores/entitlements'
 import { verify, unlock } from '../composables/useAppLock'
+import { useTone } from '../composables/useTone'
+
+const { t } = useTone()
 
 const emit = defineEmits<{
   (e: 'unlocked'): void
@@ -31,12 +34,12 @@ async function tryUnlock() {
   if (busy.value) return
   busy.value = true
   errorMsg.value = null
-  const ok = await verify('解鎖潘朵拉月曆')
+  const ok = await verify(t('lock_verify_reason'))
   if (ok) {
     unlock()
     emit('unlocked')
   } else {
-    errorMsg.value = '驗證未通過，再試一次或使用裝置密碼'
+    errorMsg.value = t('lock_verify_failed')
   }
   busy.value = false
 }
@@ -73,10 +76,10 @@ onMounted(() => {
           🔒
         </div>
         <h1 id="lock-title" class="font-display text-2xl font-bold text-peach-500">
-          妳的健康記錄是私密的
+          {{ t('lock_title') }}
         </h1>
         <p class="font-zen text-sm text-stone-600 leading-relaxed">
-          請使用 Face ID / 指紋解鎖
+          {{ t('lock_subtitle') }}
         </p>
       </div>
 
@@ -87,7 +90,7 @@ onMounted(() => {
           class="w-full py-4 rounded-3xl bg-peach-gradient text-white font-display font-bold text-lg shadow-soft active:scale-[0.98] transition-all disabled:opacity-60"
           @click="tryUnlock"
         >
-          {{ busy ? '驗證中…' : '使用 Face ID / 指紋' }}
+          {{ busy ? t('lock_btn_busy') : t('lock_btn_idle') }}
         </button>
 
         <p
@@ -103,13 +106,12 @@ onMounted(() => {
           data-test="app-lock-exit"
           @click="exitToLogin"
         >
-          換朋友 · 登出
+          {{ t('lock_logout_btn') }}
         </button>
       </div>
 
-      <p class="font-zen text-[11px] text-stone-400 leading-relaxed pt-4">
-        妳的資料只儲存在妳的裝置上。<br />
-        我們不賣資料、不放廣告。
+      <p class="font-zen text-[11px] text-stone-400 leading-relaxed pt-4 whitespace-pre-line">
+        {{ t('lock_footer') }}
       </p>
     </div>
   </div>

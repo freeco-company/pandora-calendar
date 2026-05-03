@@ -7,10 +7,12 @@ import Spinner from '../components/ui/Spinner.vue'
 import EmptyState from '../components/ui/EmptyState.vue'
 import Button from '../components/ui/Button.vue'
 import { useSfx } from '../lib/sound'
+import { useTone } from '../composables/useTone'
 
 const route = useRoute()
 const router = useRouter()
 const sfx = useSfx()
+const { t } = useTone()
 
 const year = computed(() => {
   const raw = route.params.year as string | undefined
@@ -46,7 +48,7 @@ async function load() {
       router.push(e.paywallRedirect || '/me/premium')
       return
     }
-    error.value = '回顧載入失敗，朵朵正在努力'
+    error.value = t('year_review_load_failed')
   } finally {
     loading.value = false
   }
@@ -71,11 +73,11 @@ function restart() {
 
 async function share() {
   sfx.play('correct')
-  const text = `我的 ${year.value} 年潘朵拉月曆回顧 — ${current.value?.title ?? ''}`
+  const text = t('year_review_share_text', { year: year.value, title: current.value?.title ?? '' })
   const url = window.location.href
   try {
     if (navigator.share) {
-      await navigator.share({ title: '潘朵拉月曆 · 年度回顧', text, url })
+      await navigator.share({ title: t('year_review_share_title'), text, url })
       return
     }
     if (Capacitor.isNativePlatform()) {
@@ -83,14 +85,14 @@ async function share() {
       try {
         const specifier = '@capacitor/share'
         const mod: any = await import(/* @vite-ignore */ specifier)
-        await mod.Share.share({ title: '潘朵拉月曆 · 年度回顧', text, url })
+        await mod.Share.share({ title: t('year_review_share_title'), text, url })
         return
       } catch {
         /* plugin 未裝，fallback */
       }
     }
     await navigator.clipboard.writeText(`${text}\n${url}`)
-    alert('已複製到剪貼簿')
+    alert(t('year_review_copied'))
   } catch {
     /* 用戶取消 share，靜默 */
   }
@@ -128,7 +130,7 @@ onMounted(() => {
     <button
       class="absolute top-4 right-4 z-10 w-10 h-10 rounded-full bg-white/80 backdrop-blur shadow-soft flex items-center justify-center text-stone-500"
       style="top: calc(env(safe-area-inset-top) + 1rem)"
-      aria-label="關閉"
+      :aria-label="t('year_review_close')"
       @click="router.back()"
     >
       ✕
@@ -136,7 +138,7 @@ onMounted(() => {
 
     <div class="absolute top-4 left-1/2 -translate-x-1/2 z-10" style="top: calc(env(safe-area-inset-top) + 1rem)">
       <div class="px-4 py-1.5 rounded-full bg-white/80 backdrop-blur shadow-soft">
-        <p class="font-display text-xs font-bold text-peach-500">{{ year }} 年回顧</p>
+        <p class="font-display text-xs font-bold text-peach-500">{{ t('year_review_year_pill', { year }) }}</p>
       </div>
     </div>
 
@@ -155,20 +157,20 @@ onMounted(() => {
     </div>
 
     <div class="absolute inset-0 flex items-center justify-center px-6">
-      <Spinner v-if="loading" label="朵朵幫妳整理回憶中…" size="lg" />
+      <Spinner v-if="loading" :label="t('year_review_loading')" size="lg" />
 
       <div v-else-if="error" class="text-center space-y-4 max-w-sm">
-        <EmptyState icon="🌸" :title="error" subtitle="可以再試一次嗎？" />
-        <Button @click="load">再試一次</Button>
+        <EmptyState icon="🌸" :title="error" :subtitle="t('year_review_load_retry_subtitle')" />
+        <Button @click="load">{{ t('common_retry_short') }}</Button>
       </div>
 
       <div v-else-if="insufficient" class="text-center space-y-4 max-w-sm">
         <EmptyState
           show-dodo
-          title="再記錄一個月就有妳的第一份回顧"
-          subtitle="朵朵需要妳一個完整週期的資料才能整理出有意思的回顧。妳很快就會看到了。"
+          :title="t('year_review_insufficient_title')"
+          :subtitle="t('year_review_insufficient_subtitle')"
         />
-        <Button variant="secondary" @click="router.push('/calendar')">回到月曆</Button>
+        <Button variant="secondary" @click="router.push('/calendar')">{{ t('year_review_back_to_calendar') }}</Button>
       </div>
 
       <div
@@ -199,12 +201,12 @@ onMounted(() => {
       style="padding-bottom: calc(env(safe-area-inset-bottom) + 1.5rem)"
     >
       <div v-if="!isLast" class="flex gap-3 max-w-sm mx-auto">
-        <Button v-if="idx > 0" variant="secondary" @click="prev">← 上一張</Button>
-        <Button full @click="next">下一張 →</Button>
+        <Button v-if="idx > 0" variant="secondary" @click="prev">{{ t('year_review_prev') }}</Button>
+        <Button full @click="next">{{ t('year_review_next') }}</Button>
       </div>
       <div v-else class="flex flex-col gap-2 max-w-sm mx-auto">
-        <Button full @click="share">分享我的回顧</Button>
-        <Button variant="ghost" full @click="restart">再看一次</Button>
+        <Button full @click="share">{{ t('year_review_share') }}</Button>
+        <Button variant="ghost" full @click="restart">{{ t('year_review_replay') }}</Button>
       </div>
     </div>
   </div>

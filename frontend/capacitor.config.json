@@ -33,6 +33,10 @@
     },
     "CapacitorHealth": {
       "_comment": "iOS 需要在 ios/App/App/Info.plist 手動加 NSHealthShareUsageDescription / NSHealthUpdateUsageDescription（npx cap add ios 後）；Android Health Connect 需在 AndroidManifest.xml 宣告 health permissions（見 README HealthKit / Health Connect 設定 TODO）"
+    },
+    "PushNotifications": {
+      "presentationOptions": ["badge", "sound", "alert"],
+      "_comment": "iOS 需要在 ios/App/App/AppDelegate.swift 加 didRegisterForRemoteNotificationsWithDeviceToken bridging（npx cap add ios 後 plugin 會自動接管）；Android 需要在 google-services.json 設好 FCM project（從 Firebase Console 下載到 android/app/）"
     }
   }
 }

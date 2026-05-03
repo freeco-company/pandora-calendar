@@ -1,3 +1,4 @@
+import * as Sentry from '@sentry/capacitor'
 import { createRouter, createWebHashHistory, type RouteRecordRaw } from 'vue-router'
 import { getToken } from './api'
 
@@ -64,4 +65,38 @@ router.beforeEach((to) => {
   ) {
     return { path: '/onboarding' }
   }
+})
+
+// navigation breadcrumb（health route → redact）
+const ROUTER_HEALTH_SEGMENTS = [
+  '/cycles',
+  '/symptoms',
+  '/symptom-tags',
+  '/bbt',
+  '/pms',
+  '/pregnancy',
+  '/body-rhythm',
+  '/bodyrhythm',
+  '/dodo/checkin',
+  '/insights',
+  '/onboarding',
+  '/log', // Log.vue 是症狀 / 經期記錄頁
+  '/dodo', // DodoCheckin 進入頁
+]
+
+function redactRoutePath(p: string): string {
+  const lower = p.toLowerCase()
+  for (const seg of ROUTER_HEALTH_SEGMENTS) {
+    if (lower.includes(seg)) return '[health-route]'
+  }
+  return p
+}
+
+router.afterEach((to) => {
+  Sentry.addBreadcrumb({
+    category: 'navigation',
+    level: 'info',
+    message: redactRoutePath(to.path),
+    data: {},
+  })
 })

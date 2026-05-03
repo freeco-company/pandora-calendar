@@ -11,9 +11,11 @@ import Card from '../components/ui/Card.vue'
 import Button from '../components/ui/Button.vue'
 import Spinner from '../components/ui/Spinner.vue'
 import { useSfx } from '../lib/sound'
+import { useTone } from '../composables/useTone'
 
 const router = useRouter()
 const sfx = useSfx()
+const { t } = useTone()
 
 interface ContextOption {
   value: MedicalContext
@@ -23,40 +25,40 @@ interface ContextOption {
   needsDaysLate?: boolean
 }
 
-const CONTEXTS: ContextOption[] = [
+const CONTEXTS = computed<ContextOption[]>(() => [
   {
     value: 'period_late',
-    label: '經期延遲',
+    label: t('medical_safety_ctx_period_late_label'),
     emoji: '📅',
-    hint: '經期比預期晚到',
+    hint: t('medical_safety_ctx_period_late_hint'),
     needsDaysLate: true,
   },
-  { value: 'heavy_flow', label: '經血過多', emoji: '🩸', hint: '量比平常多很多 / 一小時就濕透' },
-  { value: 'severe_cramps', label: '嚴重經痛', emoji: '😖', hint: '痛到無法工作 / 止痛藥沒效' },
-  { value: 'irregular', label: '經期不規律', emoji: '🌗', hint: '時間點忽前忽後 / 跳期' },
-  { value: 'spotting', label: '經期間出血', emoji: '💧', hint: '兩次經期之間有出血' },
-]
+  { value: 'heavy_flow', label: t('medical_safety_ctx_heavy_flow_label'), emoji: '🩸', hint: t('medical_safety_ctx_heavy_flow_hint') },
+  { value: 'severe_cramps', label: t('medical_safety_ctx_severe_cramps_label'), emoji: '😖', hint: t('medical_safety_ctx_severe_cramps_hint') },
+  { value: 'irregular', label: t('medical_safety_ctx_irregular_label'), emoji: '🌗', hint: t('medical_safety_ctx_irregular_hint') },
+  { value: 'spotting', label: t('medical_safety_ctx_spotting_label'), emoji: '💧', hint: t('medical_safety_ctx_spotting_hint') },
+])
 
-const URGENCY_THEME: Record<MedicalUrgency, { bg: string; ring: string; emoji: string; label: string }> = {
+const URGENCY_THEME = computed<Record<MedicalUrgency, { bg: string; ring: string; emoji: string; label: string }>>(() => ({
   low: {
     bg: 'bg-peach-50 border-peach-200',
     ring: 'text-peach-500',
     emoji: '🌷',
-    label: '可以再觀察',
+    label: t('medical_safety_urgency_low'),
   },
   medium: {
     bg: 'bg-amber-50 border-amber-200',
     ring: 'text-amber-600',
     emoji: '🌼',
-    label: '建議留意',
+    label: t('medical_safety_urgency_medium'),
   },
   high: {
     bg: 'bg-rose-50 border-rose-200',
     ring: 'text-rose-600',
     emoji: '🚨',
-    label: '建議就醫',
+    label: t('medical_safety_urgency_high'),
   },
-}
+}))
 
 const FALLBACK_DOCTOR_URL = 'https://www.mohw.gov.tw/'
 
@@ -91,7 +93,7 @@ async function evaluate() {
     result.value = res.data.data
     sfx.play('correct')
   } catch {
-    error.value = '評估失敗，請再試一次'
+    error.value = t('medical_safety_eval_failed')
     sfx.play('wrong')
   } finally {
     loading.value = false
@@ -108,16 +110,16 @@ function back() {
 <template>
   <div class="px-5 pt-10 pb-10 max-w-md mx-auto space-y-5">
     <header class="space-y-1">
-      <button class="text-xs text-stone-500 font-zen mb-2" @click="router.back()">← 返回</button>
-      <h1 class="font-display text-2xl font-bold text-peach-500">身體狀況自我評估</h1>
+      <button class="text-xs text-stone-500 font-zen mb-2" @click="router.back()">{{ t('common_back') }}</button>
+      <h1 class="font-display text-2xl font-bold text-peach-500">{{ t('medical_safety_title') }}</h1>
       <p class="font-zen text-xs text-stone-500 leading-relaxed">
-        朵朵幫妳判斷現在的狀況需不需要進一步處理。這不取代醫師專業判斷。
+        {{ t('medical_safety_subtitle') }}
       </p>
     </header>
 
     <!-- Step 1: 選 context -->
     <Card v-if="!result" tone="plain" class="space-y-3">
-      <h2 class="font-display font-bold text-peach-500 text-sm">妳今天遇到什麼？</h2>
+      <h2 class="font-display font-bold text-peach-500 text-sm">{{ t('medical_safety_q') }}</h2>
       <div class="space-y-2">
         <button
           v-for="opt in CONTEXTS"
@@ -143,7 +145,7 @@ function back() {
     <!-- Step 2: 條件參數（days_late slider） -->
     <Card v-if="selected?.needsDaysLate && !result" tone="cream" class="space-y-3">
       <label class="block">
-        <span class="font-display font-bold text-peach-500 text-sm">已經晚了幾天？</span>
+        <span class="font-display font-bold text-peach-500 text-sm">{{ t('medical_safety_days_late_label') }}</span>
       </label>
       <div class="flex items-center gap-3">
         <input
@@ -153,16 +155,16 @@ function back() {
           max="60"
           step="1"
           class="flex-1 accent-peach-400"
-          aria-label="已延遲天數"
+          :aria-label="t('medical_safety_days_late_aria')"
         />
         <div class="px-3 py-2 rounded-2xl bg-white shadow-soft min-w-[72px] text-center">
           <p class="font-display font-bold text-peach-500 text-lg leading-none">{{ daysLate }}</p>
-          <p class="font-zen text-[10px] text-stone-400 mt-0.5">天</p>
+          <p class="font-zen text-[10px] text-stone-400 mt-0.5">{{ t('medical_safety_days_unit') }}</p>
         </div>
       </div>
     </Card>
 
-    <Spinner v-if="loading" label="朵朵思考中…" />
+    <Spinner v-if="loading" :label="t('medical_safety_thinking')" />
 
     <p v-if="error" class="text-center font-zen text-sm text-sakura-500">{{ error }}</p>
 
@@ -172,7 +174,7 @@ function back() {
       size="lg"
       @click="evaluate"
     >
-      請朵朵幫我看看
+      {{ t('medical_safety_evaluate_btn') }}
     </Button>
 
     <!-- Step 3: 結果 -->
@@ -187,7 +189,7 @@ function back() {
         <div class="flex items-center gap-3">
           <div class="text-4xl">{{ URGENCY_THEME[result.urgency].emoji }}</div>
           <div>
-            <p class="font-zen text-[11px] text-stone-500 tracking-wide uppercase">朵朵的建議</p>
+            <p class="font-zen text-[11px] text-stone-500 tracking-wide uppercase">{{ t('medical_safety_advice_eyebrow') }}</p>
             <p class="font-display font-bold text-base" :class="URGENCY_THEME[result.urgency].ring">
               {{ URGENCY_THEME[result.urgency].label }}
             </p>
@@ -197,16 +199,16 @@ function back() {
         <p class="font-zen text-sm text-stone-700 leading-relaxed">{{ result.message }}</p>
 
         <div class="bg-white/70 rounded-2xl p-3 space-y-1">
-          <p class="font-zen text-[11px] text-stone-500">建議行動</p>
+          <p class="font-zen text-[11px] text-stone-500">{{ t('medical_safety_action_label') }}</p>
           <p class="font-zen text-sm text-stone-700">{{ result.action }}</p>
         </div>
 
         <div v-if="result.suggest_test" class="bg-white/70 rounded-2xl p-3 flex items-start gap-3">
           <span class="text-2xl">🧪</span>
           <div>
-            <p class="font-zen text-sm text-stone-700 font-medium">建議使用驗孕試紙</p>
+            <p class="font-zen text-sm text-stone-700 font-medium">{{ t('medical_safety_test_label') }}</p>
             <p class="font-zen text-[11px] text-stone-500 mt-0.5">
-              藥局可購得，建議晨尿測試結果較準確
+              {{ t('medical_safety_test_hint') }}
             </p>
           </div>
         </div>
@@ -220,19 +222,19 @@ function back() {
           class="block w-full text-center py-3 rounded-full bg-white border border-peach-200 font-zen text-sm text-peach-500 hover:bg-peach-50 transition-all"
           @click="sfx.play('ui_open')"
         >
-          🏥 衛福部就醫地圖
+          {{ t('medical_safety_doctor_link') }}
         </a>
-        <Button variant="ghost" full @click="back">換個問題問朵朵</Button>
+        <Button variant="ghost" full @click="back">{{ t('medical_safety_change_q') }}</Button>
       </div>
     </Card>
 
     <!-- Disclaimer 大字 -->
     <Card tone="cream" class="text-center space-y-2">
       <p class="font-display font-bold text-peach-500 text-base leading-relaxed">
-        朵朵不是醫師，這只是參考
+        {{ t('medical_safety_disclaimer_title') }}
       </p>
       <p class="font-zen text-sm text-stone-600 leading-relaxed">
-        妳的身體妳最了解，有疑慮請務必諮詢婦產科。
+        {{ t('medical_safety_disclaimer_blurb') }}
       </p>
     </Card>
   </div>

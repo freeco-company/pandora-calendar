@@ -1,17 +1,19 @@
 <script setup lang="ts">
 import { useRouter } from 'vue-router'
 import Card from '../components/ui/Card.vue'
+import { useTone } from '../composables/useTone'
 
 const router = useRouter()
+const { t } = useTone()
 </script>
 
 <template>
   <div class="px-5 pt-10 pb-12 max-w-md mx-auto space-y-5">
-    <button @click="router.back()" class="text-stone-500 font-zen text-sm">← 返回</button>
+    <button @click="router.back()" class="text-stone-500 font-zen text-sm">{{ t('common_back') }}</button>
     <header>
-      <p class="font-zen text-xs text-stone-500 tracking-widest uppercase">Terms of Use</p>
-      <h1 class="font-display text-2xl font-bold text-peach-500 mt-0.5">使用條款</h1>
-      <p class="font-zen text-[11px] text-stone-400 mt-1">最後更新：2026-05-03</p>
+      <p class="font-zen text-xs text-stone-500 tracking-widest uppercase">{{ t('terms_eyebrow') }}</p>
+      <h1 class="font-display text-2xl font-bold text-peach-500 mt-0.5">{{ t('terms_title') }}</h1>
+      <p class="font-zen text-[11px] text-stone-400 mt-1">{{ t('terms_last_updated') }}</p>
     </header>
 
     <Card tone="plain" class="space-y-3 text-sm font-zen text-stone-700 leading-relaxed">
