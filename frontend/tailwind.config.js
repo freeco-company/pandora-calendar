@@ -30,16 +30,16 @@ export default {
           luteal: '#B59AD7',
         },
       },
-      // 對齊 pandora-meal style.css 字體階層
+      // 對齊 pandora-meal style.css 字體階層 — 全 app 數字 / 英文 / 中文皆同
+      // 紅線：禁加新字體（Mochiy / Yusei / 等），跟 meal 嚴格一致
       fontFamily: {
         display: ['"Shippori Mincho B1"', '"Noto Serif TC"', '"Noto Serif JP"', 'serif'],
         zen: ['"Zen Kaku Gothic New"', '"Noto Sans TC"', '"PingFang TC"', '-apple-system', 'sans-serif'],
         maru: ['"Zen Maru Gothic"', '"Noto Sans TC"', 'sans-serif'],
-        rounded: ['"M PLUS Rounded 1c"', '"Noto Sans TC"', 'sans-serif'],
-        // pop（更新）：手寫感可愛體 — streak 數字 / Lv 數字 / 友善小字
-        pop: ['"Yusei Magic"', '"M PLUS Rounded 1c"', '"Noto Sans TC"', 'sans-serif'],
-        // cute：超圓潤卡通風 — 朵朵對白 / 寵物名 / 慶祝 toast / achievement / hero 副標 / daily action title
-        cute: ['"Mochiy Pop One"', '"Zen Maru Gothic"', '"Noto Sans TC"', 'sans-serif'],
+        // 以下舊 key 保留 alias 給既有 utility class 用，但全部 fallback 到 zen 不分歧
+        rounded: ['"Zen Kaku Gothic New"', '"Noto Sans TC"', '"PingFang TC"', '-apple-system', 'sans-serif'],
+        pop: ['"Zen Kaku Gothic New"', '"Noto Sans TC"', '"PingFang TC"', '-apple-system', 'sans-serif'],
+        cute: ['"Zen Kaku Gothic New"', '"Noto Sans TC"', '"PingFang TC"', '-apple-system', 'sans-serif'],
         sans: ['"Zen Kaku Gothic New"', '"Noto Sans TC"', '"PingFang TC"', '-apple-system', 'sans-serif'],
       },
       boxShadow: {
