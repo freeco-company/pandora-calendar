@@ -39,8 +39,13 @@ export function useTone() {
     return inclusive.value ? zhTWInclusive : zhTW
   })
 
-  function t(key: string): string {
-    return dict.value[key] ?? zhTW[key] ?? key
+  function t(key: string, params?: Record<string, string | number>): string {
+    const raw = dict.value[key] ?? zhTW[key] ?? key
+    if (!params) return raw
+    return Object.keys(params).reduce(
+      (acc, k) => acc.replace(new RegExp(`\\{\\{\\s*${k}\\s*\\}\\}`, 'g'), String(params[k])),
+      raw,
+    )
   }
 
   return { t, dict, inclusive, locale }

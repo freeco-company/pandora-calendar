@@ -151,6 +151,8 @@ onMounted(load)
       <div
         v-if="post.has_self_harm_signal"
         class="bg-peach-100 border-l-4 border-peach-500 rounded-xl p-3 text-sm text-cream-900"
+        role="region"
+        aria-label="緊急求助專線"
       >
         <div class="font-semibold mb-1">想找人聊聊嗎？</div>
         <div class="text-xs text-cream-800 leading-relaxed">
@@ -179,7 +181,12 @@ onMounted(load)
         <p class="mt-2 text-cream-800 whitespace-pre-wrap leading-relaxed">{{ post.body }}</p>
 
         <div class="flex items-center gap-4 mt-3 pt-3 border-t border-cream-200 text-sm">
-          <button class="flex items-center gap-1" @click="togglePostLike">
+          <button
+            class="flex items-center gap-1"
+            :aria-label="post.liked ? `取消喜歡，目前 ${post.like_count} 個喜歡` : `喜歡，目前 ${post.like_count} 個喜歡`"
+            :aria-pressed="post.liked"
+            @click="togglePostLike"
+          >
             <span :class="post.liked ? 'text-peach-600' : 'text-cream-600'">
               {{ post.liked ? '♥' : '♡' }} {{ post.like_count }}
             </span>
@@ -220,7 +227,11 @@ onMounted(load)
         </div>
         <p class="text-sm text-cream-800 whitespace-pre-wrap leading-relaxed">{{ r.body }}</p>
         <div class="flex items-center gap-3 mt-2 text-xs">
-          <button @click="toggleReplyLike(r)">
+          <button
+            :aria-label="r.liked ? `取消喜歡，目前 ${r.like_count} 個喜歡` : `喜歡，目前 ${r.like_count} 個喜歡`"
+            :aria-pressed="r.liked"
+            @click="toggleReplyLike(r)"
+          >
             <span :class="r.liked ? 'text-peach-600' : 'text-cream-600'">
               {{ r.liked ? '♥' : '♡' }} {{ r.like_count }}
             </span>
@@ -245,11 +256,14 @@ onMounted(load)
       <div v-else-if="replyHint" class="text-xs text-peach-700 mb-2">{{ replyHint }}</div>
       <div v-else-if="replyError" class="text-xs text-red-500 mb-2">{{ replyError }}</div>
       <div class="flex gap-2">
+        <label for="community-reply" class="sr-only">回覆內容</label>
         <textarea
+          id="community-reply"
           v-model="replyBody"
           rows="1"
           maxlength="500"
           placeholder="留下溫柔的回覆..."
+          aria-label="回覆內容"
           class="flex-1 px-3 py-2 rounded-xl border border-cream-200 text-sm resize-none"
         />
         <Button
@@ -267,10 +281,13 @@ onMounted(load)
     <div
       v-if="showReportFor"
       class="fixed inset-0 bg-black/40 flex items-end sm:items-center justify-center z-50"
+      role="dialog"
+      aria-modal="true"
+      aria-labelledby="report-modal-title"
       @click.self="showReportFor = null"
     >
       <div class="bg-white rounded-t-3xl sm:rounded-3xl w-full max-w-md p-5 space-y-3">
-        <h3 class="font-semibold text-cream-900">檢舉內容</h3>
+        <h3 id="report-modal-title" class="font-semibold text-cream-900">檢舉內容</h3>
         <p class="text-xs text-cream-700">朵朵會盡快確認，謝謝妳幫忙維護社群。</p>
         <div class="space-y-2">
           <label v-for="r in REPORT_REASONS" :key="r.value" class="flex items-center gap-2 text-sm">
@@ -278,11 +295,14 @@ onMounted(load)
             <span>{{ r.label }}</span>
           </label>
         </div>
+        <label for="report-message" class="sr-only">補充說明（選填）</label>
         <textarea
+          id="report-message"
           v-model="reportMessage"
           rows="2"
           maxlength="500"
           placeholder="想補充什麼嗎？(選填)"
+          aria-label="補充說明（選填）"
           class="w-full px-3 py-2 rounded-xl border border-cream-200 text-sm resize-none"
         />
         <div class="flex gap-2">

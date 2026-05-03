@@ -82,16 +82,16 @@ async function checkin(mood: 'good' | 'okay' | 'bad') {
     todayPhase.value = res.data.data.phase
     sfx.play('correct')
     // 樂觀 +XP（catalog: calendar.dodo_checkin = 3 XP, daily_cap=3）
-    awardXp(3, '今天和朵朵聊了天')
+    awardXp(3, t('dodo_xp_chatted'))
     await loadRecent()
     setTimeout(() => { void consumeGamificationPending() }, 1500)
   } catch (e: any) {
     if (e?.response?.status === 402) {
       upgradePromptVisible.value = true
-      error.value = e?.response?.data?.message ?? '免費版每天 1 次'
+      error.value = e?.response?.data?.message ?? t('dodo_error_rate_limited')
       sfx.play('notify')
     } else {
-      error.value = e?.response?.data?.message ?? '失敗'
+      error.value = e?.response?.data?.message ?? t('dodo_error_generic')
       sfx.play('wrong')
     }
   } finally {
@@ -99,13 +99,13 @@ async function checkin(mood: 'good' | 'okay' | 'bad') {
   }
 }
 
-const phaseLabels: Record<string, string> = {
-  menstrual: '經期',
-  follicular: '濾泡期',
-  ovulation: '排卵期',
-  luteal: '黃體期',
+const phaseLabels = computed<Record<string, string>>(() => ({
+  menstrual: t('calendar_phase_menstrual'),
+  follicular: t('calendar_phase_follicular'),
+  ovulation: t('calendar_phase_ovulation'),
+  luteal: t('calendar_phase_luteal'),
   unknown: '',
-}
+}))
 
 const dodoMood = computed(() => moodForPhase(todayPhase.value))
 </script>
@@ -126,7 +126,7 @@ const dodoMood = computed(() => moodForPhase(todayPhase.value))
           :interactive="true"
         />
       </div>
-      <h1 class="font-display text-2xl font-bold text-peach-500">朵朵 dodo</h1>
+      <h1 class="font-display text-2xl font-bold text-peach-500">{{ t('dodo_view_title') }}</h1>
       <p class="font-zen text-sm text-stone-600">
         {{ t('dodo_today_question') }}
       </p>
@@ -135,13 +135,13 @@ const dodoMood = computed(() => moodForPhase(todayPhase.value))
     <div class="md:grid md:grid-cols-2 md:gap-5 md:items-start space-y-5 md:space-y-0">
 
     <Card tone="plain">
-      <p class="font-zen text-xs text-stone-500 text-center mb-3">點一下，告訴朵朵</p>
+      <p class="font-zen text-xs text-stone-500 text-center mb-3">{{ t('dodo_tap_hint') }}</p>
       <div class="grid grid-cols-3 gap-2.5">
         <button
           v-for="m in [
-            { v: 'good', e: '😊', label: '還不錯' },
-            { v: 'okay', e: '😐', label: '普普' },
-            { v: 'bad', e: '😞', label: '不太好' },
+            { v: 'good', e: '😊', label: t('dodo_mood_good') },
+            { v: 'okay', e: '😐', label: t('dodo_mood_okay') },
+            { v: 'bad', e: '😞', label: t('dodo_mood_bad') },
           ]"
           :key="m.v"
           :data-test="`mood-${m.v}`"
@@ -155,7 +155,7 @@ const dodoMood = computed(() => moodForPhase(todayPhase.value))
       </div>
     </Card>
 
-    <Spinner v-if="loading && !todayResponse" label="朵朵正在想..." />
+    <Spinner v-if="loading && !todayResponse" :label="t('dodo_thinking_label')" />
 
     <Card
       v-if="todayResponse"
@@ -179,7 +179,7 @@ const dodoMood = computed(() => moodForPhase(todayPhase.value))
       <div class="text-3xl">💎</div>
       <p class="text-sm text-stone-700 font-zen">{{ error }}</p>
       <Button variant="primary" sfx="ui_open" @click="router.push('/me/premium')">
-        升級 Premium 解鎖無限
+        {{ t('dodo_upgrade_btn') }}
       </Button>
     </Card>
 
@@ -229,7 +229,7 @@ const dodoMood = computed(() => moodForPhase(todayPhase.value))
       <EmptyState
         v-else
         icon="🐣"
-        title="還沒 check-in 過"
+        :title="t('dodo_history_empty_title')"
         :subtitle="t('dodo_silent')"
       />
     </Card>

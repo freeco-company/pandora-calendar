@@ -271,7 +271,11 @@ async function confirmDeleteData() {
 <template>
   <div class="px-5 md:px-8 pt-10 pb-6 max-w-md md:max-w-4xl lg:max-w-5xl mx-auto space-y-5 md:space-y-6">
     <header class="text-center space-y-2">
-      <div class="w-24 h-24 mx-auto rounded-full bg-peach-gradient flex items-center justify-center text-4xl shadow-soft">
+      <div
+        class="w-24 h-24 mx-auto rounded-full bg-peach-gradient flex items-center justify-center text-4xl shadow-soft"
+        role="img"
+        aria-label="個人頭像"
+      >
         👤
       </div>
       <p class="font-zen text-xs text-stone-500">{{ greeting }}，</p>
@@ -731,9 +735,12 @@ async function confirmDeleteData() {
             ⚠️ 集團帳號（FP 統一身份）保留在 Pandora Core，若要連集團帳號一起清除請另外來信
             <a href="mailto:support@js-store.com.tw" class="text-peach-500 underline">support@js-store.com.tw</a>
           </p>
+          <label for="delete-confirm-input" class="sr-only">輸入「刪除」二字確認</label>
           <input
+            id="delete-confirm-input"
             v-model="deleteConfirmText"
             placeholder='輸入「刪除」二字確認'
+            aria-label="輸入「刪除」二字以確認清除月曆資料"
             class="w-full px-3 py-2 rounded-2xl border border-cream-200 bg-cream-50 focus:outline-none focus:border-sakura-300 text-sm font-zen"
             data-test="delete-confirm-input"
           />

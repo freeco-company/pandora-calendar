@@ -28,7 +28,7 @@ async function load() {
     prediction.value = c.data.prediction
     rhythm.value = c.data.body_rhythm
   } catch (e: any) {
-    error.value = e?.response?.data?.message ?? '載入失敗，朵朵稍後再試試。'
+    error.value = e?.response?.data?.message ?? t('calendar_error_load')
   } finally {
     loading.value = false
   }
@@ -90,15 +90,17 @@ function hasLogOn(date: string): boolean {
   return cycles.value.some((c) => c.start_date === date) || symptoms.value.some((s) => s.logged_on === date)
 }
 
-const phaseLabels: Record<string, string> = {
-  menstrual: '經期',
-  follicular: '濾泡期',
-  ovulation: '排卵期',
-  luteal: '黃體期',
-  unknown: '尚未推算',
-}
+const phaseLabels = computed<Record<string, string>>(() => ({
+  menstrual: t('calendar_phase_menstrual'),
+  follicular: t('calendar_phase_follicular'),
+  ovulation: t('calendar_phase_ovulation'),
+  luteal: t('calendar_phase_luteal'),
+  unknown: t('calendar_phase_unknown'),
+}))
 
-const monthTitle = computed(() => `${today.getFullYear()} 年 ${today.getMonth() + 1} 月`)
+const monthTitle = computed(() =>
+  t('calendar_year_month', { year: today.getFullYear(), month: today.getMonth() + 1 }),
+)
 const todayMood = computed(() => moodForPhase(rhythm.value?.phase))
 
 // P0-2 倒數天數大字
@@ -143,7 +145,7 @@ function openDay(cell: DayMeta) {
             <template v-if="daysUntilNext < 0">+{{ Math.abs(daysUntilNext) }}</template>
             <template v-else>{{ daysUntilNext }}</template>
             <span class="text-base text-stone-400 ml-2 font-zen">
-              {{ daysUntilNext < 0 ? '天' : daysUntilNext === 0 ? '今天' : '天' }}
+              {{ daysUntilNext === 0 ? t('calendar_unit_today') : t('calendar_unit_day') }}
             </span>
           </h1>
         </template>
@@ -155,9 +157,9 @@ function openDay(cell: DayMeta) {
           class="font-zen text-[12px] text-stone-600 mt-1.5"
           data-test="phase-label"
         >
-          目前
+          {{ t('calendar_phase_now_prefix') }}
           <span class="font-semibold text-peach-500">{{ phaseLabels[rhythm.phase] }}</span>
-          <template v-if="rhythm.cycle_day"> · 週期第 {{ rhythm.cycle_day }} 天</template>
+          <template v-if="rhythm.cycle_day">{{ t('calendar_cycle_day_suffix', { day: rhythm.cycle_day }) }}</template>
         </p>
       </div>
       <!-- 角落寵物 widget -->
@@ -176,12 +178,12 @@ function openDay(cell: DayMeta) {
       </div>
     </header>
 
-    <Spinner v-if="loading" label="朵朵在算..." />
+    <Spinner v-if="loading" :label="t('calendar_loading')" />
 
     <EmptyState
       v-else-if="error"
       icon="🌸"
-      title="暫時讀不到資料"
+      :title="t('calendar_empty_title')"
       :subtitle="error"
     />
 
@@ -190,7 +192,7 @@ function openDay(cell: DayMeta) {
       <div class="md:min-w-0">
       <Card tone="plain" class="mb-4">
         <div class="grid grid-cols-7 text-[11px] font-zen text-center text-stone-400 mb-3">
-          <span v-for="w in ['日', '一', '二', '三', '四', '五', '六']" :key="w">{{ w }}</span>
+          <span v-for="w in [t('calendar_weekday_sun'), t('calendar_weekday_mon'), t('calendar_weekday_tue'), t('calendar_weekday_wed'), t('calendar_weekday_thu'), t('calendar_weekday_fri'), t('calendar_weekday_sat')]" :key="w">{{ w }}</span>
         </div>
         <div class="grid grid-cols-7 gap-1.5">
           <button
@@ -218,30 +220,30 @@ function openDay(cell: DayMeta) {
       </Card>
 
       <Card tone="cream" class="mb-4">
-        <h3 class="font-display font-bold text-peach-500 text-base mb-2">下次經期預測</h3>
+        <h3 class="font-display font-bold text-peach-500 text-base mb-2">{{ t('calendar_section_next_period') }}</h3>
         <p v-if="prediction?.next_period_eta" class="text-sm text-stone-700 leading-relaxed font-zen">
-          📅 約
+          {{ t('calendar_eta_prefix') }}
           <span class="font-bold text-peach-500">{{ prediction.next_period_eta }}</span>
-          · 信心度
+          {{ t('calendar_eta_confidence_label') }}
           <span :class="prediction.confidence === 'high' ? 'text-sage-500' : 'text-peach-400'">
             {{
               prediction.confidence === 'high'
-                ? '高'
+                ? t('calendar_confidence_high')
                 : prediction.confidence === 'low'
-                ? '低（資料還不夠）'
-                : '無'
+                ? t('calendar_confidence_low')
+                : t('calendar_confidence_none')
             }}
           </span>
         </p>
-        <p v-else class="text-sm text-stone-500 font-zen">記錄一次經期後就會開始預測喔。</p>
+        <p v-else class="text-sm text-stone-500 font-zen">{{ t('calendar_no_prediction') }}</p>
       </Card>
 
       <div class="flex gap-3 text-[11px] text-stone-500 px-2 font-zen flex-wrap">
-        <span class="flex items-center gap-1.5"><span class="w-2.5 h-2.5 rounded-full bg-phase-menstrual" />經期</span>
-        <span class="flex items-center gap-1.5"><span class="w-2.5 h-2.5 rounded-full bg-phase-follicular" />濾泡</span>
-        <span class="flex items-center gap-1.5"><span class="w-2.5 h-2.5 rounded-full bg-phase-ovulation" />排卵</span>
-        <span class="flex items-center gap-1.5"><span class="w-2.5 h-2.5 rounded-full bg-phase-luteal" />黃體</span>
-        <span class="flex items-center gap-1.5"><span class="w-1.5 h-1.5 rounded-full bg-peach-500" />當天有記錄</span>
+        <span class="flex items-center gap-1.5"><span class="w-2.5 h-2.5 rounded-full bg-phase-menstrual" />{{ t('calendar_legend_period') }}</span>
+        <span class="flex items-center gap-1.5"><span class="w-2.5 h-2.5 rounded-full bg-phase-follicular" />{{ t('calendar_legend_follicular') }}</span>
+        <span class="flex items-center gap-1.5"><span class="w-2.5 h-2.5 rounded-full bg-phase-ovulation" />{{ t('calendar_legend_ovulation') }}</span>
+        <span class="flex items-center gap-1.5"><span class="w-2.5 h-2.5 rounded-full bg-phase-luteal" />{{ t('calendar_legend_luteal') }}</span>
+        <span class="flex items-center gap-1.5"><span class="w-1.5 h-1.5 rounded-full bg-peach-500" />{{ t('calendar_legend_logged') }}</span>
       </div>
       </div>
 
@@ -250,24 +252,24 @@ function openDay(cell: DayMeta) {
         <Card tone="cream" class="space-y-3">
           <header class="flex items-center justify-between">
             <h3 class="font-display text-base font-bold text-peach-500">
-              {{ detailDate || '點選日期看記錄' }}
+              {{ detailDate || t('calendar_detail_picker_hint') }}
             </h3>
           </header>
 
           <p v-if="detailDay?.phase" class="font-zen text-[12px] text-stone-500">
-            這天是
+            {{ t('calendar_detail_phase_prefix') }}
             <span class="font-semibold text-peach-500">{{ phaseLabels[detailDay.phase] }}</span>
           </p>
 
           <div v-if="detailCycle" class="bg-white rounded-2xl p-3 text-sm font-zen space-y-1">
-            <p class="text-peach-500 font-bold">🌙 經期記錄</p>
-            <p class="text-stone-600">流量 {{ detailCycle.peak_flow ?? '未填' }} / 5</p>
-            <p v-if="detailCycle.length_days" class="text-stone-500 text-xs">持續 {{ detailCycle.length_days }} 天</p>
+            <p class="text-peach-500 font-bold">{{ t('calendar_detail_section_period') }}</p>
+            <p class="text-stone-600">{{ t('calendar_detail_flow_label') }} {{ detailCycle.peak_flow ?? t('calendar_detail_flow_unfilled') }} / 5</p>
+            <p v-if="detailCycle.length_days" class="text-stone-500 text-xs">{{ t('calendar_detail_length_prefix') }} {{ detailCycle.length_days }}{{ t('calendar_detail_length_suffix') }}</p>
           </div>
 
           <div v-if="detailSymptom" class="bg-white rounded-2xl p-3 text-sm font-zen space-y-1.5">
-            <p class="text-peach-500 font-bold">🌸 身體記錄</p>
-            <p class="text-stone-600">{{ MOOD_LABEL[detailSymptom.mood ?? ''] || '未記錄心情' }}</p>
+            <p class="text-peach-500 font-bold">{{ t('calendar_detail_section_body') }}</p>
+            <p class="text-stone-600">{{ MOOD_LABEL[detailSymptom.mood ?? ''] || t('calendar_detail_no_mood') }}</p>
             <div v-if="detailSymptom.tags?.length" class="flex flex-wrap gap-1">
               <span
                 v-for="t in detailSymptom.tags"
@@ -283,13 +285,13 @@ function openDay(cell: DayMeta) {
             v-if="detailDate && !detailCycle && !detailSymptom"
             class="text-stone-400 text-[12px] text-center font-zen py-3"
           >
-            這天沒有記錄
+            {{ t('calendar_detail_empty') }}
           </p>
           <p
             v-else-if="!detailDate"
             class="text-stone-400 text-[12px] text-center font-zen py-3"
           >
-            點月曆任何一天，這裡會顯示細節
+            {{ t('calendar_detail_hint') }}
           </p>
         </Card>
       </aside>
@@ -311,19 +313,19 @@ function openDay(cell: DayMeta) {
           </header>
 
           <p v-if="detailDay?.phase" class="font-zen text-[12px] text-stone-500">
-            這天是
+            {{ t('calendar_detail_phase_prefix') }}
             <span class="font-semibold text-peach-500">{{ phaseLabels[detailDay.phase] }}</span>
           </p>
 
           <div v-if="detailCycle" class="bg-white rounded-2xl p-3 text-sm font-zen space-y-1">
-            <p class="text-peach-500 font-bold">🌙 經期記錄</p>
-            <p class="text-stone-600">流量 {{ detailCycle.peak_flow ?? '未填' }} / 5</p>
-            <p v-if="detailCycle.length_days" class="text-stone-500 text-xs">持續 {{ detailCycle.length_days }} 天</p>
+            <p class="text-peach-500 font-bold">{{ t('calendar_detail_section_period') }}</p>
+            <p class="text-stone-600">{{ t('calendar_detail_flow_label') }} {{ detailCycle.peak_flow ?? t('calendar_detail_flow_unfilled') }} / 5</p>
+            <p v-if="detailCycle.length_days" class="text-stone-500 text-xs">{{ t('calendar_detail_length_prefix') }} {{ detailCycle.length_days }}{{ t('calendar_detail_length_suffix') }}</p>
           </div>
 
           <div v-if="detailSymptom" class="bg-white rounded-2xl p-3 text-sm font-zen space-y-1.5">
-            <p class="text-peach-500 font-bold">🌸 身體記錄</p>
-            <p class="text-stone-600">{{ MOOD_LABEL[detailSymptom.mood ?? ''] || '未記錄心情' }}</p>
+            <p class="text-peach-500 font-bold">{{ t('calendar_detail_section_body') }}</p>
+            <p class="text-stone-600">{{ MOOD_LABEL[detailSymptom.mood ?? ''] || t('calendar_detail_no_mood') }}</p>
             <div v-if="detailSymptom.tags?.length" class="flex flex-wrap gap-1">
               <span
                 v-for="t in detailSymptom.tags"
@@ -339,7 +341,7 @@ function openDay(cell: DayMeta) {
             v-if="!detailCycle && !detailSymptom"
             class="text-stone-400 text-[12px] text-center font-zen py-3"
           >
-            這天沒有記錄
+            {{ t('calendar_detail_empty') }}
           </p>
         </div>
       </div>

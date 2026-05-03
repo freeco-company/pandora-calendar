@@ -10,11 +10,12 @@ class Feedback extends Model
     protected $table = 'feedbacks';
 
     protected $fillable = [
-        'user_id', 'category', 'message', 'app_version', 'device_info',
+        'user_id', 'category', 'message', 'app_version', 'device_info', 'processed_at',
     ];
 
     protected $casts = [
         'device_info' => 'array',
+        'processed_at' => 'datetime',
     ];
 
     public const CATEGORIES = ['bug', 'feature', 'content', 'other'];

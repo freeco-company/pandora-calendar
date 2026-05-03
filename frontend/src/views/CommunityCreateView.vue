@@ -141,12 +141,14 @@ async function submit() {
 
       <!-- Title -->
       <Card>
-        <label class="text-sm font-medium text-cream-800">標題</label>
+        <label for="community-title" class="text-sm font-medium text-cream-800">標題</label>
         <input
+          id="community-title"
           v-model="title"
           type="text"
           maxlength="60"
           placeholder="一句話說重點"
+          aria-label="貼文標題"
           class="mt-2 w-full px-3 py-2 rounded-xl border border-cream-200"
         />
         <div class="text-xs text-cream-500 text-right mt-1">{{ titleLen }} / 60</div>
@@ -154,12 +156,14 @@ async function submit() {
 
       <!-- Body -->
       <Card>
-        <label class="text-sm font-medium text-cream-800">內容</label>
+        <label for="community-body" class="text-sm font-medium text-cream-800">內容</label>
         <textarea
+          id="community-body"
           v-model="body"
           rows="8"
           maxlength="1000"
           placeholder="分享妳的故事 / 問題 / 想法。記得溫柔對待自己和朋友。"
+          aria-label="貼文內容"
           class="mt-2 w-full px-3 py-2 rounded-xl border border-cream-200 resize-none"
         />
         <div class="flex items-center justify-between text-xs mt-1">

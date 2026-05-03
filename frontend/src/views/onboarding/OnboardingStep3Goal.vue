@@ -1,5 +1,8 @@
 <script setup lang="ts">
-import { ref } from 'vue'
+import { ref, computed } from 'vue'
+import { useTone } from '../../composables/useTone'
+
+const { t } = useTone()
 
 export type OnboardingGoal = 'health' | 'conceive' | 'avoid' | 'unsure'
 
@@ -16,12 +19,12 @@ const emit = defineEmits<{
 
 const selected = ref<OnboardingGoal | null>(props.modelValue)
 
-const options: Array<{ value: OnboardingGoal; emoji: string; title: string; subtitle: string }> = [
-  { value: 'health', emoji: '🌸', title: '追蹤健康', subtitle: '了解自己的身體節律' },
-  { value: 'conceive', emoji: '🌱', title: '備孕中', subtitle: '掌握排卵與最佳時機' },
-  { value: 'avoid', emoji: '🛡', title: '避孕中', subtitle: '搭配避孕措施做提醒' },
-  { value: 'unsure', emoji: '💭', title: '還不確定', subtitle: '先記錄看看再說' },
-]
+const options = computed<Array<{ value: OnboardingGoal; emoji: string; title: string; subtitle: string }>>(() => [
+  { value: 'health', emoji: '🌸', title: t('onboarding_goal_health_title'), subtitle: t('onboarding_goal_health_subtitle') },
+  { value: 'conceive', emoji: '🌱', title: t('onboarding_goal_conceive_title'), subtitle: t('onboarding_goal_conceive_subtitle') },
+  { value: 'avoid', emoji: '🛡', title: t('onboarding_goal_avoid_title'), subtitle: t('onboarding_goal_avoid_subtitle') },
+  { value: 'unsure', emoji: '💭', title: t('onboarding_goal_unsure_title'), subtitle: t('onboarding_goal_unsure_subtitle') },
+])
 
 function pick(v: OnboardingGoal) {
   selected.value = v
@@ -39,10 +42,10 @@ function submit() {
     <div class="space-y-1.5">
       <p class="font-zen text-xs text-stone-500 tracking-widest uppercase">Step 3 / 3</p>
       <h2 class="font-display text-2xl font-bold text-peach-500 leading-snug">
-        妳想用月曆做什麼？
+        {{ t('onboarding_step3_heading') }}
       </h2>
       <p class="font-zen text-sm text-stone-500">
-        朵朵會根據妳的目標調整提醒與建議。隨時可以改。
+        {{ t('onboarding_step3_help') }}
       </p>
     </div>
 
@@ -82,7 +85,7 @@ function submit() {
         class="py-3 rounded-2xl bg-white border border-cream-200 text-stone-500 font-zen text-sm transition-all active:scale-[0.99] disabled:opacity-50"
         @click="emit('back')"
       >
-        ← 上一步
+        {{ t('onboarding_step3_btn_back') }}
       </button>
       <button
         type="button"
@@ -91,7 +94,7 @@ function submit() {
         class="py-3 rounded-2xl bg-peach-gradient text-white font-display font-bold text-base shadow-soft transition-all active:scale-[0.99] disabled:opacity-50"
         @click="submit"
       >
-        {{ loading ? '正在準備…' : '開始使用 ✨' }}
+        {{ loading ? t('onboarding_step3_btn_loading') : t('onboarding_step3_btn_submit') }}
       </button>
     </div>
   </section>

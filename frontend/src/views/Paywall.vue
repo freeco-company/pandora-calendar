@@ -43,33 +43,13 @@ const selectedProduct = computed(() => products.value.find((p) => p.id === selec
  * Premium 5 大賣點 — fallback 顯示（後端 features 沒設定或還沒回傳時）
  * 對應 backend FreemiumGate / Premium feature 列表（PMS / BBT 雙相 / 衛教文章 / 伴侶分享 / 無廣告）
  */
-const PREMIUM_BENEFITS: Array<{ emoji: string; title: string; desc: string }> = [
-  {
-    emoji: '🌙',
-    title: '完整 PMS 模式分析',
-    desc: '朵朵看出妳每個週期的情緒與身體模式，提早 3-7 天提醒。',
-  },
-  {
-    emoji: '🌡',
-    title: 'BBT 基礎體溫雙相偵測',
-    desc: '自動標記排卵窗口，備孕／避孕都能更準確。',
-  },
-  {
-    emoji: '📰',
-    title: '每日朵朵衛教與週報',
-    desc: '貼合妳當下相位的內容，不是泛泛的健康文。',
-  },
-  {
-    emoji: '💞',
-    title: '伴侶分享連結',
-    desc: '只分享相位與下次經期，不洩漏隱私細節。',
-  },
-  {
-    emoji: '🚫',
-    title: '永遠無廣告 · 不賣資料',
-    desc: '免費版也不放廣告。Premium 是支持朵朵長期陪伴妳的方式。',
-  },
-]
+const PREMIUM_BENEFITS = computed<Array<{ emoji: string; title: string; desc: string }>>(() => [
+  { emoji: '🌙', title: t('paywall_benefit_1_title'), desc: t('paywall_benefit_1_desc') },
+  { emoji: '🌡', title: t('paywall_benefit_2_title'), desc: t('paywall_benefit_2_desc') },
+  { emoji: '📰', title: t('paywall_benefit_3_title'), desc: t('paywall_benefit_3_desc') },
+  { emoji: '💞', title: t('paywall_benefit_4_title'), desc: t('paywall_benefit_4_desc') },
+  { emoji: '🚫', title: t('paywall_benefit_5_title'), desc: t('paywall_benefit_5_desc') },
+])
 
 const benefits = computed(() => {
   if (features.value.length >= 3) {
@@ -80,7 +60,7 @@ const benefits = computed(() => {
       desc: '',
     }))
   }
-  return PREMIUM_BENEFITS
+  return PREMIUM_BENEFITS.value
 })
 
 async function ecpayCheckout() {
@@ -92,14 +72,14 @@ async function ecpayCheckout() {
     const { data } = await SubscriptionApi.ecpayCheckout(selectedProduct.value.id, returnUrl)
     // Demo phase：show action url；prod 會是 form auto-post
     if (data?.data?.action_url) {
-      message.value = `付款頁準備好囉，朵朵幫妳開啟。`
+      message.value = t('paywall_msg_ecpay_ready')
       // TODO(prod): auto-submit form to ECPay action_url with form_params
       window.alert(
         `Demo Phase: ECPay checkout 觸發\n\naction_url: ${data.data.action_url}\n\nProd 會自動跳轉到 ECPay 完成付款。`,
       )
     }
   } catch (e: any) {
-    error.value = e?.response?.data?.message ?? '建立付款失敗，請稍後再試。'
+    error.value = e?.response?.data?.message ?? t('paywall_error_checkout_fail')
   } finally {
     loading.value = false
   }
@@ -120,12 +100,12 @@ async function restorePurchase() {
   try {
     await ent.load()
     if (ent.isPremium()) {
-      message.value = '已恢復妳的 Premium ✨'
+      message.value = t('paywall_msg_restored')
     } else {
-      message.value = '目前沒有可恢復的訂閱。如果剛付款請稍候 1 分鐘再試。'
+      message.value = t('paywall_msg_no_active_sub')
     }
   } catch (e: any) {
-    error.value = e?.response?.data?.message ?? '恢復失敗，請稍後再試。'
+    error.value = e?.response?.data?.message ?? t('paywall_error_restore_fail')
   } finally {
     restoring.value = false
   }
@@ -143,7 +123,7 @@ function back() {
       data-test="paywall-back"
       class="font-zen text-sm text-peach-500 hover:text-peach-400"
     >
-      ← 回我的
+      {{ t('paywall_btn_back') }}
     </button>
 
     <header class="text-center space-y-2">
@@ -158,14 +138,14 @@ function back() {
           :floaty="true"
         />
       </div>
-      <p class="font-zen text-xs text-stone-500 tracking-widest uppercase">Premium</p>
+      <p class="font-zen text-xs text-stone-500 tracking-widest uppercase">{{ t('paywall_eyebrow_premium') }}</p>
       <h1 class="font-display text-3xl font-bold text-peach-500">{{ t('paywall_heading') }}</h1>
       <p class="font-zen text-sm text-stone-500 leading-relaxed">
-        解鎖完整 PMS 分析、BBT 雙相判讀、每日衛教與伴侶分享。
+        {{ t('paywall_subtitle') }}
       </p>
     </header>
 
-    <Spinner v-if="initialLoad" label="載入中..." />
+    <Spinner v-if="initialLoad" :label="t('paywall_loading')" />
 
     <Card
       v-else-if="ent.isPremium()"
@@ -173,9 +153,9 @@ function back() {
       data-test="already-premium"
       class="text-center text-white space-y-1"
     >
-      <p class="font-display font-bold text-lg">妳已經是 Premium ✨</p>
+      <p class="font-display font-bold text-lg">{{ t('paywall_already_premium_heading') }}</p>
       <p v-if="ent.data?.premium_until" class="text-xs opacity-90 font-zen">
-        到期：{{ ent.data.premium_until.slice(0, 10) }}
+        {{ t('paywall_already_expires_prefix') }}{{ ent.data.premium_until.slice(0, 10) }}
       </p>
       <button
         type="button"
@@ -184,14 +164,14 @@ function back() {
         class="mt-2 px-4 py-1.5 rounded-full bg-white/20 text-xs font-zen hover:bg-white/30 transition-colors disabled:opacity-50"
         @click="restorePurchase"
       >
-        {{ restoring ? '檢查中…' : '重新整理訂閱狀態' }}
+        {{ restoring ? t('paywall_btn_refresh_checking') : t('paywall_btn_refresh_status') }}
       </button>
     </Card>
 
     <template v-else>
       <!-- Premium 5 賣點 -->
       <Card tone="cream" class="space-y-3" data-test="premium-benefits">
-        <h3 class="font-display font-bold text-peach-500 text-base">Premium 解鎖</h3>
+        <h3 class="font-display font-bold text-peach-500 text-base">{{ t('paywall_section_unlock') }}</h3>
         <ul class="space-y-3">
           <li
             v-for="(b, idx) in benefits"
@@ -229,7 +209,7 @@ function back() {
             v-if="p === annualProduct"
             class="absolute -top-3 left-5 bg-gradient-to-r from-peach-400 to-sakura-400 text-white text-[10px] font-zen font-bold px-3 py-1 rounded-full shadow-soft"
           >
-            最受歡迎 · 省 24%
+            {{ t('paywall_badge_popular') }}
           </span>
           <div class="flex justify-between items-baseline">
             <span class="font-display font-bold text-peach-500 text-base">{{ p.title }}</span>
@@ -241,14 +221,14 @@ function back() {
           <div class="mt-2 flex items-baseline gap-1">
             <span class="font-display font-black text-3xl text-peach-500">NT${{ p.price_twd }}</span>
             <span class="text-sm text-stone-500 font-normal font-zen">
-              / {{ p.period === 'year' ? '年' : '月' }}
+              / {{ p.period === 'year' ? t('paywall_unit_year') : t('paywall_unit_month') }}
             </span>
           </div>
           <p
             v-if="p.monthly_equivalent"
             class="text-xs text-stone-500 mt-1 font-zen"
           >
-            等於 NT${{ p.monthly_equivalent }} / 月
+            {{ t('paywall_monthly_equivalent', { amount: p.monthly_equivalent }) }}
           </p>
         </button>
       </div>
@@ -261,7 +241,7 @@ function back() {
         class="w-full py-3.5 rounded-2xl bg-peach-gradient text-white font-display font-bold text-base shadow-soft transition-all active:scale-[0.99] disabled:opacity-50"
         @click="ecpayCheckout"
       >
-        {{ loading ? '建立付款中…' : '訂閱 Premium ✨' }}
+        {{ loading ? t('paywall_btn_subscribe_loading') : t('paywall_btn_subscribe') }}
       </button>
 
       <!-- Restore Purchase（App Store / Play 審核必要）-->
@@ -272,7 +252,7 @@ function back() {
         class="w-full py-2.5 rounded-2xl bg-white border border-cream-200 text-stone-500 font-zen text-sm transition-all active:scale-[0.99] hover:bg-cream-50 disabled:opacity-50"
         @click="restorePurchase"
       >
-        {{ restoring ? '檢查中…' : '已經買過？恢復購買紀錄' }}
+        {{ restoring ? t('paywall_btn_restore_loading') : t('paywall_btn_restore') }}
       </button>
 
       <p v-if="message" class="text-center text-peach-500 text-sm font-zen">{{ message }}</p>
@@ -286,15 +266,14 @@ function back() {
           <span v-for="i in 5" :key="i">★</span>
         </div>
         <p class="font-zen text-[12px] text-stone-500">
-          已陪伴 5,000+ 朋友記錄她們的週期
+          {{ t('paywall_social_proof') }}
         </p>
       </Card>
 
       <!-- 訂閱條款 / 法律連結（App Store / Play 審核必要） -->
       <div class="text-center space-y-2 pt-1">
         <p class="font-zen text-[10px] text-stone-400 leading-relaxed">
-          訂閱會自動續訂，可在 App Store / Google Play 帳戶設定隨時取消。<br />
-          訂閱期間結束前 24 小時若未取消會自動續期。
+          {{ t('paywall_legal_blurb') }}
         </p>
         <div class="flex justify-center gap-3 text-[11px] font-zen">
           <RouterLink
@@ -302,7 +281,7 @@ function back() {
             data-test="paywall-terms"
             class="text-stone-500 hover:text-peach-500 transition-colors underline-offset-2 hover:underline"
           >
-            使用條款
+            {{ t('paywall_link_terms') }}
           </RouterLink>
           <span class="text-stone-300">·</span>
           <RouterLink
@@ -310,7 +289,7 @@ function back() {
             data-test="paywall-privacy"
             class="text-stone-500 hover:text-peach-500 transition-colors underline-offset-2 hover:underline"
           >
-            隱私權
+            {{ t('paywall_link_privacy') }}
           </RouterLink>
           <span class="text-stone-300">·</span>
           <a
@@ -320,14 +299,14 @@ function back() {
             data-test="paywall-subscription-terms"
             class="text-stone-500 hover:text-peach-500 transition-colors underline-offset-2 hover:underline"
           >
-            訂閱管理
+            {{ t('paywall_link_manage_sub') }}
           </a>
         </div>
       </div>
     </template>
 
     <p class="text-center text-[10px] text-stone-400 pt-3 font-zen leading-relaxed">
-      ❌ 不做廣告 · ❌ 不賣資料 · 妳的週期資料只屬於妳
+      {{ t('paywall_footer_no_ads') }}
     </p>
   </div>
 </template>

@@ -21,9 +21,9 @@ const displayName = ref('')
 const showDemo = ref(import.meta.env.DEV)
 
 const demoUsers = [
-  { name: '小敏', detail: '28 天週期', email: 'demo-min@pandora-calendar.test' },
-  { name: '雨晴', detail: '30 天週期', email: 'demo-yuching@pandora-calendar.test' },
-  { name: '阿伶', detail: '26 天週期', email: 'demo-aling@pandora-calendar.test' },
+  { labelKey: 'login_demo_user_min', email: 'demo-min@pandora-calendar.test' },
+  { labelKey: 'login_demo_user_yuching', email: 'demo-yuching@pandora-calendar.test' },
+  { labelKey: 'login_demo_user_aling', email: 'demo-aling@pandora-calendar.test' },
 ]
 
 function maybeArmLock() {
@@ -40,7 +40,7 @@ async function pickDemo(addr: string) {
     maybeArmLock()
     router.push('/calendar')
   } catch (e: any) {
-    error.value = e?.response?.data?.message ?? '登入失敗'
+    error.value = e?.response?.data?.message ?? t('login_error_login_failed')
   } finally {
     loading.value = false
     activeEmail.value = null
@@ -49,7 +49,7 @@ async function pickDemo(addr: string) {
 
 async function submitLogin() {
   if (!email.value || !password.value) {
-    error.value = '請填 email + 密碼'
+    error.value = t('login_validation_required')
     return
   }
   loading.value = true
@@ -59,7 +59,7 @@ async function submitLogin() {
     maybeArmLock()
     router.push('/calendar')
   } catch (e: any) {
-    error.value = e?.response?.data?.detail ?? e?.response?.data?.error ?? '登入失敗'
+    error.value = e?.response?.data?.detail ?? e?.response?.data?.error ?? t('login_error_login_failed')
   } finally {
     loading.value = false
   }
@@ -67,7 +67,7 @@ async function submitLogin() {
 
 async function submitRegister() {
   if (!email.value || !password.value || password.value.length < 8) {
-    error.value = '請填 email + 密碼（至少 8 字元）'
+    error.value = t('login_register_validation')
     return
   }
   loading.value = true
@@ -76,9 +76,9 @@ async function submitRegister() {
     await platformRegister(email.value.trim(), password.value, displayName.value.trim() || undefined)
     error.value = null
     mode.value = 'login'
-    alert('註冊成功！請收驗證信，之後再登入。')
+    alert(t('login_register_alert_success'))
   } catch (e: any) {
-    error.value = e?.response?.data?.detail ?? e?.response?.data?.error ?? '註冊失敗'
+    error.value = e?.response?.data?.detail ?? e?.response?.data?.error ?? t('login_error_register_failed')
   } finally {
     loading.value = false
   }
@@ -92,7 +92,7 @@ async function loginWith(provider: 'google' | 'line' | 'apple') {
     // Capacitor app 用 in-app browser；web 直接 redirect
     window.location.href = url
   } catch (e: any) {
-    error.value = e?.response?.data?.error ?? `${provider} 登入失敗`
+    error.value = e?.response?.data?.error ?? `${provider} ${t('login_error_oauth_failed_prefix')}`
     loading.value = false
   }
 }
@@ -104,7 +104,7 @@ async function loginWith(provider: 'google' | 'line' | 'apple') {
       <div class="flex justify-center mb-2">
         <Character species="dodo" :size="148" mood="happy" :show-halo="true" :floaty="true" />
       </div>
-      <h1 class="font-display text-4xl font-bold text-peach-500 tracking-wide">潘朵拉月曆</h1>
+      <h1 class="font-display text-4xl font-bold text-peach-500 tracking-wide">{{ t('login_app_title') }}</h1>
       <p class="font-zen text-stone-600 mt-2 text-sm">{{ t('login_subtitle') }}</p>
     </header>
 
@@ -116,21 +116,21 @@ async function loginWith(provider: 'google' | 'line' | 'apple') {
           :class="mode === 'login' ? 'bg-peach-gradient text-white' : 'bg-cream-50 text-stone-500'"
           class="flex-1 py-2 rounded-2xl text-sm font-zen transition-all"
         >
-          登入
+          {{ t('login_tab_login') }}
         </button>
         <button
           @click="mode = 'register'"
           :class="mode === 'register' ? 'bg-peach-gradient text-white' : 'bg-cream-50 text-stone-500'"
           class="flex-1 py-2 rounded-2xl text-sm font-zen transition-all"
         >
-          註冊
+          {{ t('login_tab_register') }}
         </button>
       </div>
 
       <input
         v-model="email"
         type="email"
-        placeholder="email"
+        :placeholder="t('login_placeholder_email')"
         autocomplete="email"
         data-test="login-email"
         class="w-full px-4 py-2.5 rounded-2xl border border-cream-200 bg-cream-50 focus:outline-none focus:border-peach-300 focus:bg-white transition-colors text-sm font-zen"
@@ -138,7 +138,7 @@ async function loginWith(provider: 'google' | 'line' | 'apple') {
       <input
         v-model="password"
         type="password"
-        placeholder="密碼（至少 8 字元）"
+        :placeholder="t('login_placeholder_password')"
         autocomplete="current-password"
         data-test="login-password"
         class="w-full px-4 py-2.5 rounded-2xl border border-cream-200 bg-cream-50 focus:outline-none focus:border-peach-300 focus:bg-white transition-colors text-sm font-zen"
@@ -147,7 +147,7 @@ async function loginWith(provider: 'google' | 'line' | 'apple') {
         v-if="mode === 'register'"
         v-model="displayName"
         type="text"
-        placeholder="暱稱（選填）"
+        :placeholder="t('login_placeholder_display_name')"
         class="w-full px-4 py-2.5 rounded-2xl border border-cream-200 bg-cream-50 focus:outline-none focus:border-peach-300 focus:bg-white transition-colors text-sm font-zen"
       />
 
@@ -158,13 +158,13 @@ async function loginWith(provider: 'google' | 'line' | 'apple') {
         @click="mode === 'login' ? submitLogin() : submitRegister()"
         :data-test="`submit-${mode}`"
       >
-        {{ mode === 'login' ? '登入' : '建立帳號' }}
+        {{ mode === 'login' ? t('login_btn_submit_login') : t('login_btn_submit_register') }}
       </Button>
 
       <!-- OAuth -->
       <div class="flex items-center gap-2 my-2">
         <div class="flex-1 h-px bg-cream-200" />
-        <span class="text-[10px] font-zen text-stone-400">或</span>
+        <span class="text-[10px] font-zen text-stone-400">{{ t('login_oauth_divider') }}</span>
         <div class="flex-1 h-px bg-cream-200" />
       </div>
       <div class="grid grid-cols-3 gap-2">
@@ -172,7 +172,7 @@ async function loginWith(provider: 'google' | 'line' | 'apple') {
         <button
           @click="loginWith('google')"
           :disabled="loading"
-          aria-label="使用 Google 登入"
+          :aria-label="t('login_oauth_google_aria')"
           class="py-2.5 rounded-2xl border border-cream-200 bg-white hover:bg-cream-50 disabled:opacity-50 transition-all flex items-center justify-center gap-1.5"
         >
           <svg class="w-4 h-4" viewBox="0 0 18 18" xmlns="http://www.w3.org/2000/svg">
@@ -187,7 +187,7 @@ async function loginWith(provider: 'google' | 'line' | 'apple') {
         <button
           @click="loginWith('line')"
           :disabled="loading"
-          aria-label="使用 LINE 登入"
+          :aria-label="t('login_oauth_line_aria')"
           class="py-2.5 rounded-2xl border border-cream-200 bg-white hover:bg-cream-50 disabled:opacity-50 transition-all flex items-center justify-center gap-1.5"
         >
           <svg class="w-4 h-4" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
@@ -200,7 +200,7 @@ async function loginWith(provider: 'google' | 'line' | 'apple') {
         <button
           @click="loginWith('apple')"
           :disabled="loading"
-          aria-label="使用 Apple 登入"
+          :aria-label="t('login_oauth_apple_aria')"
           class="py-2.5 rounded-2xl border border-stone-800 bg-stone-900 hover:bg-stone-800 disabled:opacity-50 transition-all flex items-center justify-center gap-1.5"
         >
           <svg class="w-4 h-4" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg" fill="white">
@@ -218,14 +218,14 @@ async function loginWith(provider: 'google' | 'line' | 'apple') {
           href="mailto:support@js-store.com.tw?subject=潘朵拉月曆%20-%20忘記密碼&body=請協助重設我的密碼，謝謝。我的 email："
           class="text-[11px] text-stone-400 hover:text-peach-500 transition-colors font-zen underline-offset-2 hover:underline"
         >
-          忘記密碼？
+          {{ t('login_forgot_password') }}
         </a>
       </p>
     </Card>
 
     <!-- Dev demo (gated by import.meta.env.DEV) -->
     <Card v-if="showDemo" tone="plain" class="w-full max-w-sm space-y-2 mt-4">
-      <p class="font-zen text-[11px] text-stone-500 text-center">dev demo · 一鍵登入示範帳號</p>
+      <p class="font-zen text-[11px] text-stone-500 text-center">{{ t('login_demo_caption') }}</p>
       <button
         v-for="u in demoUsers"
         :key="u.email"
@@ -234,7 +234,7 @@ async function loginWith(provider: 'google' | 'line' | 'apple') {
         class="w-full px-5 py-2.5 bg-cream-50 hover:bg-peach-50 disabled:opacity-50 rounded-2xl transition-all active:scale-[0.98] flex items-center justify-between text-left text-sm border border-cream-200"
         :data-test="`demo-login-${u.email}`"
       >
-        <span class="font-zen text-peach-500">{{ u.name }} · {{ u.detail }}</span>
+        <span class="font-zen text-peach-500">{{ t(u.labelKey) }}</span>
         <span
           v-if="activeEmail === u.email && loading"
           class="w-3 h-3 border-2 border-peach-300 border-t-transparent rounded-full animate-spin"
@@ -251,9 +251,9 @@ async function loginWith(provider: 'google' | 'line' | 'apple') {
     </div>
 
     <p class="font-zen text-[10px] text-stone-400 mt-2 text-center space-x-2">
-      <RouterLink to="/privacy" class="hover:text-peach-500 transition-colors">隱私權</RouterLink>
+      <RouterLink to="/privacy" class="hover:text-peach-500 transition-colors">{{ t('login_link_privacy') }}</RouterLink>
       <span>·</span>
-      <RouterLink to="/terms" class="hover:text-peach-500 transition-colors">使用條款</RouterLink>
+      <RouterLink to="/terms" class="hover:text-peach-500 transition-colors">{{ t('login_link_terms') }}</RouterLink>
     </p>
   </div>
 </template>

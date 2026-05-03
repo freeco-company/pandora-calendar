@@ -173,8 +173,8 @@ onMounted(load)
             <h3 class="font-semibold text-cream-900 mt-1 line-clamp-2">{{ p.title }}</h3>
             <p class="text-sm text-cream-700 mt-1 line-clamp-2">{{ preview(p.body) }}</p>
             <div class="flex items-center gap-4 mt-2 text-xs text-cream-600">
-              <span>♡ {{ p.like_count }}</span>
-              <span>💬 {{ p.reply_count }}</span>
+              <span :aria-label="`${p.like_count} 個喜歡`">♡ {{ p.like_count }}</span>
+              <span :aria-label="`${p.reply_count} 則回覆`">💬 {{ p.reply_count }}</span>
               <span
                 v-if="p.has_self_harm_signal"
                 class="ml-auto text-peach-700 bg-peach-50 px-2 py-0.5 rounded"
@@ -190,6 +190,7 @@ onMounted(load)
     <button
       class="fixed bottom-6 right-5 w-14 h-14 rounded-full bg-peach-400 text-white text-2xl shadow-floaty active:scale-95 transition"
       :title="canPostHint ?? '發新文'"
+      :aria-label="canPostHint ?? '發新貼文'"
       @click="router.push('/community/new')"
     >
       ＋

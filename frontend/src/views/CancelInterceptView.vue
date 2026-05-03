@@ -225,11 +225,14 @@ const offerKind = computed(() => selectedReason.value?.offer_kind ?? 'none')
             <p class="font-zen text-sm text-stone-600 leading-relaxed">
               妳缺的功能，可能朵朵正在做。直接告訴我，下次更新就有可能看到。
             </p>
+            <label for="cancel-feature-message" class="sr-only">妳希望朵朵能做到的功能</label>
             <textarea
+              id="cancel-feature-message"
               v-model="featureMessage"
               rows="5"
               maxlength="2000"
               placeholder="妳希望朵朵能做到的…"
+              aria-label="妳希望朵朵能做到的功能"
               class="w-full px-4 py-3 rounded-2xl border border-cream-200 bg-white focus:outline-none focus:border-peach-300 font-zen text-sm leading-relaxed resize-none"
             />
             <Button full :loading="busy" :disabled="busy" @click="submitFeatureFeedback">

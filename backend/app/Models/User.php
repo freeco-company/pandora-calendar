@@ -4,6 +4,8 @@ namespace App\Models;
 
 // use Illuminate\Contracts\Auth\MustVerifyEmail;
 use Database\Factories\UserFactory;
+use Filament\Models\Contracts\FilamentUser;
+use Filament\Panel;
 use Illuminate\Database\Eloquent\Attributes\Fillable;
 use Illuminate\Database\Eloquent\Attributes\Hidden;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
@@ -12,9 +14,9 @@ use Illuminate\Foundation\Auth\User as Authenticatable;
 use Illuminate\Notifications\Notifiable;
 use Laravel\Sanctum\HasApiTokens;
 
-#[Fillable(['name', 'email', 'password', 'identity_uuid', 'identity_synced_at', 'last_synced_at', 'display_name', 'avatar_url', 'subscription_tier', 'mother_customer_id', 'mother_total_orders', 'total_xp', 'level', 'outfit_state', 'pet_species', 'pet_nickname', 'pet_onboarded_at', 'partner_share_token', 'partner_share_enabled_at', 'push_opted_in', 'preferences'])]
+#[Fillable(['name', 'email', 'password', 'identity_uuid', 'identity_synced_at', 'last_synced_at', 'display_name', 'avatar_url', 'subscription_tier', 'mother_customer_id', 'mother_total_orders', 'total_xp', 'level', 'outfit_state', 'pet_species', 'pet_nickname', 'pet_onboarded_at', 'partner_share_token', 'partner_share_enabled_at', 'push_opted_in', 'preferences', 'is_admin'])]
 #[Hidden(['password', 'remember_token'])]
-class User extends Authenticatable
+class User extends Authenticatable implements FilamentUser
 {
     /** @use HasFactory<UserFactory> */
     use HasApiTokens, HasFactory, Notifiable;
@@ -35,8 +37,20 @@ class User extends Authenticatable
             'level' => 'integer',
             'outfit_state' => 'array',
             'preferences' => 'array',
+            'is_admin' => 'boolean',
             'password' => 'hashed',
         ];
+    }
+
+    /**
+     * Filament panel access gate.
+     *
+     * Reuses the customer `users` table — admins are flagged via `is_admin`.
+     * Defaults to false in migration, so existing prod accounts are safe.
+     */
+    public function canAccessPanel(Panel $panel): bool
+    {
+        return $panel->getId() === 'admin' && (bool) $this->is_admin;
     }
 
     public function cycles(): HasMany

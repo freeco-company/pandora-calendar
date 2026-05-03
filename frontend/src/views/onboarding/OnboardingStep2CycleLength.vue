@@ -1,5 +1,8 @@
 <script setup lang="ts">
 import { ref, computed } from 'vue'
+import { useTone } from '../../composables/useTone'
+
+const { t } = useTone()
 
 const props = defineProps<{
   modelValue: number
@@ -14,9 +17,9 @@ const emit = defineEmits<{
 const length = ref<number>(props.modelValue || 28)
 
 const hint = computed(() => {
-  if (length.value < 24) return '比平均偏短，朵朵會貼近妳的節奏。'
-  if (length.value > 35) return '比平均偏長，朵朵會貼近妳的節奏。'
-  return '常見區間，週期穩定的朋友多在這裡。'
+  if (length.value < 24) return t('onboarding_step2_hint_short')
+  if (length.value > 35) return t('onboarding_step2_hint_long')
+  return t('onboarding_step2_hint_normal')
 })
 
 function next() {
@@ -30,16 +33,16 @@ function next() {
     <div class="space-y-1.5">
       <p class="font-zen text-xs text-stone-500 tracking-widest uppercase">Step 2 / 3</p>
       <h2 class="font-display text-2xl font-bold text-peach-500 leading-snug">
-        妳的週期通常多長？
+        {{ t('onboarding_step2_heading') }}
       </h2>
       <p class="font-zen text-sm text-stone-500">
-        從月經第一天到下一次月經第一天的天數。不確定的話 28 天是常見值。
+        {{ t('onboarding_step2_help_long') }}
       </p>
     </div>
 
     <div class="bg-cream-50 rounded-3xl p-5 text-center space-y-3">
       <p class="font-display font-bold text-peach-500 text-5xl leading-none">
-        {{ length }}<span class="text-base text-stone-400 ml-1 font-zen">天</span>
+        {{ length }}<span class="text-base text-stone-400 ml-1 font-zen">{{ t('onboarding_step2_unit_days') }}</span>
       </p>
       <input
         v-model.number="length"
@@ -66,7 +69,7 @@ function next() {
         class="py-3 rounded-2xl bg-white border border-cream-200 text-stone-500 font-zen text-sm transition-all active:scale-[0.99]"
         @click="emit('back')"
       >
-        ← 上一步
+        {{ t('onboarding_step2_btn_back') }}
       </button>
       <button
         type="button"
@@ -74,7 +77,7 @@ function next() {
         class="py-3 rounded-2xl bg-peach-gradient text-white font-display font-bold text-base shadow-soft transition-all active:scale-[0.99]"
         @click="next"
       >
-        下一步 →
+        {{ t('onboarding_step2_btn_next') }}
       </button>
     </div>
   </section>

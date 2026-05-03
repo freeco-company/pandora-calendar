@@ -60,6 +60,9 @@ onMounted(() => {
     class="fixed inset-0 z-[100] flex flex-col items-center justify-center px-6 py-10 bg-dawn-gradient"
     style="padding-top: env(safe-area-inset-top)"
     data-test="app-lock-screen"
+    role="dialog"
+    aria-modal="true"
+    aria-labelledby="lock-title"
   >
     <div class="max-w-sm w-full text-center space-y-8">
       <div class="space-y-3">
@@ -69,7 +72,7 @@ onMounted(() => {
         >
           🔒
         </div>
-        <h1 class="font-display text-2xl font-bold text-peach-500">
+        <h1 id="lock-title" class="font-display text-2xl font-bold text-peach-500">
           妳的健康記錄是私密的
         </h1>
         <p class="font-zen text-sm text-stone-600 leading-relaxed">

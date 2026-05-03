@@ -7,7 +7,9 @@ import EmptyState from '../components/ui/EmptyState.vue'
 import { useSfx } from '../lib/sound'
 import { awardXp, emitAchievement, consumeGamificationPending } from '../lib/gamification'
 import { useSymptomTags, type SymptomCategory } from '../composables/useSymptomTags'
+import { useTone } from '../composables/useTone'
 
+const { t } = useTone()
 const sfx = useSfx()
 const startDate = ref(new Date().toISOString().slice(0, 10))
 const endDate = ref('')
@@ -52,18 +54,18 @@ async function saveCycle() {
       end_date: endDate.value || undefined,
       peak_flow: peakFlow.value,
     })
-    message.value = '已記錄這次經期 ✓'
+    message.value = t('log_toast_cycle_saved')
     sfx.play('cycle_logged')
     // 樂觀 +XP（對齊 py-service catalog: calendar.cycle_logged = 5 XP）
-    awardXp(5, '記錄了今天的週期')
+    awardXp(5, t('log_xp_cycle_logged'))
     if (cycles.value.length === 0) {
       // 本地樂觀 first_cycle 成就 toast（py-service 真正 award 透過 webhook 到 pending，
       // consumeGamificationPending 會在後面消化；重複觸發無害，icon 一致）
       setTimeout(() => {
         emitAchievement({
           code: 'first_cycle',
-          title: '第一次記錄',
-          description: '謝謝妳願意分享，朵朵會陪著妳。',
+          title: t('log_first_cycle_title'),
+          description: t('log_first_cycle_desc'),
           icon: '🌸',
         })
       }, 700)
@@ -72,7 +74,7 @@ async function saveCycle() {
     // 真實 level_up / achievement_unlocked 由 py-service webhook 推回 → cache → 這裡 pull
     setTimeout(() => { void consumeGamificationPending() }, 1500)
   } catch (e: any) {
-    message.value = e?.response?.data?.message ?? '存檔失敗'
+    message.value = e?.response?.data?.message ?? t('log_error_save_failed')
     sfx.play('wrong')
   } finally {
     saving.value = false
@@ -95,15 +97,15 @@ async function saveSymptom() {
       tags: selectedTags.value,
       mood: symptomMood.value,
     })
-    message.value = '已記錄今日狀態 ✓'
+    message.value = t('log_toast_symptom_saved')
     sfx.play('meal_logged')
     // 樂觀 +XP（對齊 catalog: calendar.symptom_logged = 3 XP）
-    awardXp(3, '記錄了今天的身體狀態')
+    awardXp(3, t('log_xp_symptom_logged'))
     selectedTags.value = []
     await load()
     setTimeout(() => { void consumeGamificationPending() }, 1500)
   } catch (e: any) {
-    message.value = e?.response?.data?.message ?? '存檔失敗'
+    message.value = e?.response?.data?.message ?? t('log_error_save_failed')
     sfx.play('wrong')
   } finally {
     saving.value = false
@@ -119,20 +121,20 @@ function pickMood(v: string) {
 <template>
   <div class="px-5 md:px-8 pt-10 pb-6 max-w-md md:max-w-4xl lg:max-w-5xl mx-auto space-y-5">
     <header>
-      <p class="font-zen text-xs text-stone-500 tracking-widest uppercase">Log</p>
-      <h1 class="font-display text-2xl font-bold text-peach-500 mt-0.5">今天的記錄</h1>
-      <p class="font-zen text-sm text-stone-500 mt-1">越記越懂自己 · 朵朵會跟著一起學</p>
+      <p class="font-zen text-xs text-stone-500 tracking-widest uppercase">{{ t('log_eyebrow') }}</p>
+      <h1 class="font-display text-2xl font-bold text-peach-500 mt-0.5">{{ t('log_title_today') }}</h1>
+      <p class="font-zen text-sm text-stone-500 mt-1">{{ t('log_subtitle') }}</p>
     </header>
 
     <div class="md:grid md:grid-cols-2 md:gap-5 md:items-start space-y-5 md:space-y-0">
     <Card tone="plain" class="space-y-4">
       <div class="flex items-center gap-2">
         <span class="text-2xl">🌙</span>
-        <h2 class="font-display font-bold text-peach-500 text-base">經期記錄</h2>
+        <h2 class="font-display font-bold text-peach-500 text-base">{{ t('log_section_period') }}</h2>
       </div>
       <div class="grid grid-cols-2 gap-3 text-sm">
         <label class="block">
-          <span class="text-stone-500 font-zen text-xs">開始日</span>
+          <span class="text-stone-500 font-zen text-xs">{{ t('log_field_start_date') }}</span>
           <input
             v-model="startDate"
             type="date"
@@ -141,7 +143,7 @@ function pickMood(v: string) {
           />
         </label>
         <label class="block">
-          <span class="text-stone-500 font-zen text-xs">結束日（選填）</span>
+          <span class="text-stone-500 font-zen text-xs">{{ t('log_field_end_date') }}</span>
           <input
             v-model="endDate"
             type="date"
@@ -151,7 +153,7 @@ function pickMood(v: string) {
         </label>
       </div>
       <label class="block text-sm">
-        <span class="text-stone-500 font-zen text-xs">流量（1 最少 · 5 最多）</span>
+        <span class="text-stone-500 font-zen text-xs">{{ t('log_field_flow_label') }}</span>
         <div class="flex items-center gap-3 mt-2">
           <input
             v-model.number="peakFlow"
@@ -171,17 +173,17 @@ function pickMood(v: string) {
         sfx="cycle_logged"
         @click="saveCycle"
       >
-        記下這次經期
+        {{ t('log_btn_save_cycle') }}
       </Button>
     </Card>
 
     <Card tone="plain" class="space-y-4">
       <div class="flex items-center gap-2">
         <span class="text-2xl">🌸</span>
-        <h2 class="font-display font-bold text-peach-500 text-base">今日身體狀態</h2>
+        <h2 class="font-display font-bold text-peach-500 text-base">{{ t('log_section_today_state') }}</h2>
       </div>
       <label class="block text-sm">
-        <span class="text-stone-500 font-zen text-xs">日期</span>
+        <span class="text-stone-500 font-zen text-xs">{{ t('log_field_date') }}</span>
         <input
           v-model="symptomDate"
           type="date"
@@ -234,9 +236,9 @@ function pickMood(v: string) {
       <div class="grid grid-cols-3 gap-2">
         <button
           v-for="m in [
-            { v: 'good', e: '😊', label: '還不錯' },
-            { v: 'okay', e: '😐', label: '普普' },
-            { v: 'bad', e: '😞', label: '不太好' },
+            { v: 'good', e: '😊', label: t('log_mood_good') },
+            { v: 'okay', e: '😐', label: t('log_mood_okay') },
+            { v: 'bad', e: '😞', label: t('log_mood_bad') },
           ]"
           :key="m.v"
           @click="pickMood(m.v)"
@@ -259,7 +261,7 @@ function pickMood(v: string) {
         sfx="meal_logged"
         @click="saveSymptom"
       >
-        存今日狀態
+        {{ t('log_btn_save_symptom') }}
       </Button>
     </Card>
     </div>
@@ -274,7 +276,7 @@ function pickMood(v: string) {
 
     <Card tone="plain">
       <h2 class="font-display font-bold text-peach-500 text-base mb-3 flex items-center gap-2">
-        <span class="text-xl">📚</span> 最近的經期
+        <span class="text-xl">📚</span> {{ t('log_section_recent') }}
       </h2>
       <ul v-if="cycles.length" class="text-sm divide-y divide-cream-200 font-zen">
         <li
@@ -283,14 +285,14 @@ function pickMood(v: string) {
           class="py-2.5 flex justify-between text-stone-600"
         >
           <span>{{ c.start_date }}</span>
-          <span class="text-stone-400">{{ c.length_days ?? '進行中' }}{{ c.length_days ? ' 天' : '' }}</span>
+          <span class="text-stone-400">{{ c.length_days ?? t('log_recent_in_progress') }}{{ c.length_days ? ' ' + t('calendar_unit_day') : '' }}</span>
         </li>
       </ul>
       <EmptyState
         v-else
         icon="🌱"
-        title="還沒有記錄"
-        subtitle="第一次記錄就由朵朵陪妳開始。"
+        :title="t('log_empty_title')"
+        :subtitle="t('log_empty_subtitle')"
       />
     </Card>
   </div>

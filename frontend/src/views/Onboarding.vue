@@ -69,7 +69,7 @@ async function submit() {
   } catch (e: any) {
     // backend endpoint 還沒上線時不要擋住 onboarding 體驗
     if (e?.response?.status && e.response.status !== 404) {
-      error.value = e?.response?.data?.message ?? '網路忙線中，朵朵稍後再幫妳同步。'
+      error.value = e?.response?.data?.message ?? t('onboarding_error_sync')
     }
   } finally {
     try {

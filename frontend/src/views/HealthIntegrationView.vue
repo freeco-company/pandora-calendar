@@ -164,11 +164,13 @@ onMounted(() => {
             <p class="text-xs text-[#9b8763] mt-0.5">{{ KIND_META[kind].desc }}</p>
           </div>
           <label class="relative inline-flex items-center cursor-pointer pt-1.5">
+            <span class="sr-only">{{ KIND_META[kind].label }}</span>
             <input
               type="checkbox"
               class="sr-only peer"
               :checked="toggles[kind]"
               :disabled="!available"
+              :aria-label="`啟用 ${KIND_META[kind].label} 同步`"
               @change="(toggles[kind] = ($event.target as HTMLInputElement).checked), saveToggles()"
             />
             <div

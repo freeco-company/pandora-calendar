@@ -1,5 +1,8 @@
 <script setup lang="ts">
 import { ref, computed } from 'vue'
+import { useTone } from '../../composables/useTone'
+
+const { t } = useTone()
 
 const props = defineProps<{
   modelValue: string | null
@@ -41,15 +44,15 @@ function onDateInput(e: Event) {
     <div class="space-y-1.5">
       <p class="font-zen text-xs text-stone-500 tracking-widest uppercase">Step 1 / 3</p>
       <h2 class="font-display text-2xl font-bold text-peach-500 leading-snug">
-        妳上次月經第一天是？
+        {{ t('onboarding_step1_heading') }}
       </h2>
       <p class="font-zen text-sm text-stone-500">
-        朵朵會用這個日期推算妳的下次經期與排卵期。
+        {{ t('onboarding_step1_help') }}
       </p>
     </div>
 
     <label class="block">
-      <span class="font-zen text-xs text-stone-500">日期</span>
+      <span class="font-zen text-xs text-stone-500">{{ t('onboarding_step1_date_label') }}</span>
       <input
         :value="localDate"
         type="date"
@@ -72,7 +75,7 @@ function onDateInput(e: Event) {
       "
       @click="pickUnsure"
     >
-      我不確定
+      {{ t('onboarding_step1_btn_unsure') }}
     </button>
 
     <button
@@ -82,7 +85,7 @@ function onDateInput(e: Event) {
       class="w-full py-3 rounded-2xl bg-peach-gradient text-white font-display font-bold text-base shadow-soft disabled:opacity-50 transition-all active:scale-[0.99]"
       @click="next"
     >
-      下一步 →
+      {{ t('onboarding_step1_btn_next') }}
     </button>
   </section>
 </template>
