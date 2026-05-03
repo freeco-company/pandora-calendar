@@ -617,6 +617,88 @@ export const SubscriptionFlowApi = {
     api.post('/v1/subscription/cancel-feedback', { reason, message }),
 }
 
+// =====================================================================
+// Daily Action Engine（個人化每日小任務 + pattern report）
+// =====================================================================
+
+export type ActionType = 'symptom_relief' | 'phase_support' | 'mood' | 'habit' | 'general'
+export type ActionDifficulty = 'easy' | 'medium' | 'hard'
+export type ActionFeedback = 'helpful' | 'neutral' | 'unhelpful'
+
+export interface DailyAction {
+  id: number
+  action_key: string
+  title: string
+  body: string
+  type: ActionType
+  phase: Phase | null
+  expected_benefit: string | null
+  time_minutes: number | null
+  difficulty: ActionDifficulty
+  is_completed: boolean
+  feedback?: ActionFeedback | null
+}
+
+export interface ActionCompleteResponse {
+  data: DailyAction
+  dodo_reply?: string | null
+}
+
+export interface ActionFeedbackResponse {
+  data: DailyAction
+  dodo_reply?: string | null
+}
+
+export interface ActionHistoryRow extends DailyAction {
+  for_date: string
+  completed_at: string | null
+}
+
+export interface ProtocolEntry {
+  action_key: string
+  title: string
+  effectiveness: number // 0..1
+  sample_size: number
+}
+
+export interface ProtocolByPhase {
+  menstrual: ProtocolEntry[]
+  follicular: ProtocolEntry[]
+  ovulation: ProtocolEntry[]
+  luteal: ProtocolEntry[]
+}
+
+export const ActionApi = {
+  today: () => api.get<{ data: DailyAction | null }>('/v1/actions/today'),
+  complete: (id: number) => api.post<ActionCompleteResponse>(`/v1/actions/${id}/complete`),
+  feedback: (id: number, feedback: ActionFeedback, body_note?: string) =>
+    api.post<ActionFeedbackResponse>(`/v1/actions/${id}/feedback`, { feedback, body_note }),
+  history: (days = 30) =>
+    api.get<{ data: ActionHistoryRow[] }>('/v1/actions/history', { params: { days } }),
+  protocol: () => unwrapPremium(api.get<{ data: ProtocolByPhase }>('/v1/actions/protocol')),
+}
+
+export interface PatternReportSummary {
+  phase_summary: Record<string, number> // phase → days count
+  top_actions: Array<{ action_key: string; title: string; effectiveness: number; sample_size: number }>
+  top_unhelpful: Array<{ action_key: string; title: string; effectiveness: number; sample_size: number }>
+  vs_previous: Array<{ symptom: string; delta: number; direction: 'up' | 'down' | 'flat' }>
+  dodo_message: string
+  generated_at: string
+  month_label?: string
+}
+
+export interface PatternReportListRow {
+  id: number
+  generated_at: string
+  month_label: string
+}
+
+export const PatternReportApi = {
+  latest: () => api.get<{ data: PatternReportSummary | null }>('/v1/pattern-report/latest'),
+  list: () => api.get<{ data: PatternReportListRow[] }>('/v1/pattern-report/list'),
+}
+
 // Community Q&A
 export type CommunityCategory = 'question' | 'experience' | 'tip' | 'support'
 export type CommunitySort = 'latest' | 'hot' | 'mine'

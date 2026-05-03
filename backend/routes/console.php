@@ -44,3 +44,13 @@ Schedule::command('exports:purge --days=7')
     ->timezone('Asia/Taipei')
     ->withoutOverlapping()
     ->runInBackground();
+
+/*
+| Daily 04:00 — 為昨天結束 cycle 的用戶生成 pattern report。
+| Idempotent；同 user/cycle 已生成直接跳過。
+*/
+Schedule::command('pandora:pattern-reports:generate')
+    ->dailyAt('04:00')
+    ->timezone('Asia/Taipei')
+    ->withoutOverlapping()
+    ->runInBackground();

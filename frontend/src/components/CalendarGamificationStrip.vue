@@ -9,7 +9,7 @@
  */
 import { computed, onActivated, onMounted, ref } from 'vue'
 import { useRouter } from 'vue-router'
-import { JourneyApi, type JourneyData } from '../api'
+import { ActionApi, JourneyApi, type DailyAction, type JourneyData } from '../api'
 import Character from './Character.vue'
 import { getPet, moodForPhase } from '../lib/character'
 import { useTone } from '../composables/useTone'
@@ -26,6 +26,9 @@ const journey = ref<JourneyData | null>(null)
 const loading = ref(true)
 const { current: quest, isCompleted, markCompleted, refresh } = useDailyQuest()
 
+// 個人化 daily action — 若 backend 有資料則優先顯示，沒有 fallback 既有 quest pool
+const personalizedAction = ref<DailyAction | null>(null)
+
 async function load() {
   loading.value = true
   try {
@@ -38,11 +41,28 @@ async function load() {
   }
 }
 
-onMounted(load)
+async function loadPersonalizedAction() {
+  try {
+    const r = await ActionApi.today()
+    personalizedAction.value = r.data.data
+  } catch {
+    personalizedAction.value = null
+  }
+}
+
+onMounted(() => {
+  load()
+  loadPersonalizedAction()
+})
 onActivated(() => {
   refresh()
   load()
+  loadPersonalizedAction()
 })
+
+// 是否走個人化 action 模式
+const usePersonalizedAction = computed(() => !!personalizedAction.value)
+const personalizedDone = computed(() => !!personalizedAction.value?.is_completed)
 
 const todayMood = computed(() => moodForPhase(props.phase ?? null))
 const streakDays = computed(() => journey.value?.streak_days ?? 0)
@@ -99,6 +119,11 @@ function goPet() {
 }
 
 function goQuest() {
+  // 有個人化 action → 跳 DailyActionView 完成
+  if (usePersonalizedAction.value) {
+    router.push('/me/action-today')
+    return
+  }
   // mark completed on click — user actually engaged with the suggested action.
   // 真正 XP 仍由目的 view（Log / Dodo / BBT）走既有 publisher 發放。
   markCompleted()
@@ -149,32 +174,33 @@ function goQuest() {
       </div>
     </div>
 
-    <!-- 3. Today's quest -->
+    <!-- 3. Today's quest（personalized action 優先，無則 fallback quest pool） -->
     <button
       type="button"
       @click="goQuest"
-      :disabled="isCompleted"
+      :disabled="usePersonalizedAction ? personalizedDone : isCompleted"
       class="rounded-2xl p-3 shadow-soft text-left active:scale-95 transition-transform flex flex-col justify-between min-h-[72px]"
-      :class="isCompleted
+      :class="(usePersonalizedAction ? personalizedDone : isCompleted)
         ? 'bg-stone-100 text-stone-400 cursor-default'
         : 'bg-gradient-to-br from-sage-50 to-cream-50 text-stone-700'"
       data-test="gam-strip-quest"
     >
       <p class="font-zen text-[10px] uppercase tracking-wider text-peach-500/80 flex items-center gap-1">
         <span>{{ t('gam_strip_quest_today') }}</span>
-        <span v-if="isCompleted" class="text-sage-500" aria-hidden="true">✓</span>
+        <span v-if="usePersonalizedAction ? personalizedDone : isCompleted" class="text-sage-500" aria-hidden="true">✓</span>
       </p>
       <p
         class="font-zen text-[12px] leading-tight mt-0.5 line-clamp-2"
-        :class="isCompleted && 'line-through'"
+        :class="(usePersonalizedAction ? personalizedDone : isCompleted) && 'line-through'"
       >
-        {{ t(quest.title_key) }}
+        {{ usePersonalizedAction ? personalizedAction!.title : t(quest.title_key) }}
       </p>
       <p
-        v-if="!isCompleted"
+        v-if="!(usePersonalizedAction ? personalizedDone : isCompleted)"
         class="font-zen text-[10px] text-sage-500 mt-1"
       >
-        +{{ quest.xp_reward }} XP
+        <template v-if="usePersonalizedAction">→</template>
+        <template v-else>+{{ quest.xp_reward }} XP</template>
       </p>
       <p
         v-else

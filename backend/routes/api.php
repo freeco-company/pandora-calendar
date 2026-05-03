@@ -211,6 +211,19 @@ Route::middleware(['auth.platform'])->prefix('v1')->group(function () {
     // 訂閱挽留 / 暫停
     Route::post('/subscription/pause', [\App\Http\Controllers\Api\V1\SubscriptionController::class, 'pause']);
     Route::post('/subscription/cancel-feedback', [\App\Http\Controllers\Api\V1\SubscriptionController::class, 'cancelFeedback']);
+
+    // Daily Action Engine（free，protocol 完整 view 才 Premium）
+    Route::get('/actions/today', [\App\Http\Controllers\Api\V1\DailyActionController::class, 'today']);
+    Route::post('/actions/{recId}/complete', [\App\Http\Controllers\Api\V1\DailyActionController::class, 'complete'])
+        ->whereNumber('recId');
+    Route::post('/actions/{recId}/feedback', [\App\Http\Controllers\Api\V1\DailyActionController::class, 'feedback'])
+        ->whereNumber('recId');
+    Route::get('/actions/history', [\App\Http\Controllers\Api\V1\DailyActionController::class, 'history']);
+    Route::get('/actions/protocol', [\App\Http\Controllers\Api\V1\DailyActionController::class, 'protocol']);
+
+    // Cycle pattern report（每 cycle 結束 04:00 schedule 自動生）
+    Route::get('/pattern-report/latest', [\App\Http\Controllers\Api\V1\PatternReportController::class, 'latest']);
+    Route::get('/pattern-report/list', [\App\Http\Controllers\Api\V1\PatternReportController::class, 'index']);
 });
 
 // Phase 0 demo helper（dev / testing only）

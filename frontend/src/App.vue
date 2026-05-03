@@ -15,6 +15,7 @@ import {
 import XpToast from './components/XpToast.vue'
 import LevelUpModal from './components/LevelUpModal.vue'
 import AchievementToast from './components/AchievementToast.vue'
+import DodoReplyToast from './components/DodoReplyToast.vue'
 import PetOnboardingModal from './components/PetOnboardingModal.vue'
 import LockView from './views/Lock.vue'
 
@@ -149,6 +150,7 @@ function tabClick() {
     <XpToast />
     <LevelUpModal />
     <AchievementToast />
+    <DodoReplyToast />
     <PetOnboardingModal v-if="showTabBar" />
 
     <!-- App lock overlay：擋住 router-view，必須驗證才放行 -->
