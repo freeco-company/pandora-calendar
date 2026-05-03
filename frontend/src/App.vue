@@ -6,6 +6,7 @@ import { useSfx } from './lib/sound'
 import XpToast from './components/XpToast.vue'
 import LevelUpModal from './components/LevelUpModal.vue'
 import AchievementToast from './components/AchievementToast.vue'
+import PetOnboardingModal from './components/PetOnboardingModal.vue'
 
 const route = useRoute()
 const showTabBar = computed(() => !!getToken() && route.path !== '/login')
@@ -73,5 +74,6 @@ function tabClick() {
     <XpToast />
     <LevelUpModal />
     <AchievementToast />
+    <PetOnboardingModal v-if="showTabBar" />
   </div>
 </template>

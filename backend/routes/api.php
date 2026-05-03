@@ -32,6 +32,9 @@ Route::post('/v1/internal/webhooks/gamification', [\App\Http\Controllers\Api\V1\
 Route::post('/v1/internal/webhooks/identity', \App\Http\Controllers\Api\V1\Internal\IdentityWebhookController::class)
     ->middleware('identity.webhook');
 
+// P2-9 Partner share — public anonymous view by token（無 auth）
+Route::get('/v1/partner/{token}', [\App\Http\Controllers\Api\V1\PartnerShareController::class, 'publicView']);
+
 // P1 ADR-007 — auth proxy 到 Pandora Core（不存 password / refresh token 在本機）
 // throttle:5,1 = 5 req/min/IP，PC 自己也擋一次但 calendar 站前面也擋（defense-in-depth）
 Route::prefix('v1/auth')->group(function () {
@@ -113,10 +116,37 @@ Route::middleware(['auth.platform'])->prefix('v1')->group(function () {
     // P5.3 / P5.4 ADR-009：朵朵 / pet / pending events
     Route::get('/me/gamification/pending', [\App\Http\Controllers\Api\V1\MeGamificationController::class, 'pending']);
     Route::get('/me/dodo', [\App\Http\Controllers\Api\V1\MeGamificationController::class, 'dodo']);
-    Route::get('/me/pet', [\App\Http\Controllers\Api\V1\MeGamificationController::class, 'pet']);
+    // /me/pet 改由 PetController 處理（superset response）
 
     // App Store / GDPR：In-app account data deletion
     Route::delete('/me', [\App\Http\Controllers\Api\V1\AccountController::class, 'destroy']);
+
+    // P0-1 Pet：onboarding picker + persistent
+    Route::get('/me/pet', [\App\Http\Controllers\Api\V1\PetController::class, 'show']);
+    Route::patch('/me/pet', [\App\Http\Controllers\Api\V1\PetController::class, 'update']);
+
+    // P0-4 Journey dashboard
+    Route::get('/me/journey', [\App\Http\Controllers\Api\V1\JourneyController::class, 'show']);
+
+    // P1-5 Dodo chat history
+    Route::get('/me/dodo/history', [\App\Http\Controllers\Api\V1\DodoChatHistoryController::class, 'index']);
+
+    // P1-6 Daily reminder（phase-based hard-coded tip）
+    Route::get('/me/daily-reminder', [\App\Http\Controllers\Api\V1\DailyReminderController::class, 'show']);
+
+    // P2-8 BBT（基礎體溫）
+    Route::get('/me/bbt', [\App\Http\Controllers\Api\V1\BbtController::class, 'index']);
+    Route::post('/me/bbt', [\App\Http\Controllers\Api\V1\BbtController::class, 'store']);
+    Route::delete('/me/bbt/{id}', [\App\Http\Controllers\Api\V1\BbtController::class, 'destroy']);
+
+    // P2-9 Partner share（自己 manage）
+    Route::get('/me/partner-share', [\App\Http\Controllers\Api\V1\PartnerShareController::class, 'show']);
+    Route::post('/me/partner-share', [\App\Http\Controllers\Api\V1\PartnerShareController::class, 'enable']);
+    Route::delete('/me/partner-share', [\App\Http\Controllers\Api\V1\PartnerShareController::class, 'disable']);
+
+    // Push subscription
+    Route::post('/me/push/subscribe', [\App\Http\Controllers\Api\V1\PushSubscriptionController::class, 'subscribe']);
+    Route::post('/me/push/unsubscribe', [\App\Http\Controllers\Api\V1\PushSubscriptionController::class, 'unsubscribe']);
 });
 
 // Phase 0 demo helper（dev / testing only）

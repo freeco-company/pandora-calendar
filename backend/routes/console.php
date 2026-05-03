@@ -25,3 +25,13 @@ Schedule::command('identity:reconcile-users')
     ->everyTenMinutes()
     ->withoutOverlapping()
     ->runInBackground();
+
+/*
+| 每天早上 8:00（台北時區）對 push_opted_in 用戶寄 phase-based 推播。
+| 觸發規則嚴：經期前一天 / 經期當天 / 排卵前一天，平日不寄。
+*/
+Schedule::command('push:send-daily-reminders')
+    ->dailyAt('08:00')
+    ->timezone('Asia/Taipei')
+    ->withoutOverlapping()
+    ->runInBackground();

@@ -3,6 +3,7 @@ import { computed, onMounted, ref } from 'vue'
 import { useRouter } from 'vue-router'
 import { getStoredUser, logout, deleteCalendarData } from '../api'
 import { useEntitlementsStore } from '../stores/entitlements'
+import { pushSupport, enablePush, disablePush } from '../lib/push'
 import Card from '../components/ui/Card.vue'
 import Button from '../components/ui/Button.vue'
 import Character from '../components/Character.vue'
@@ -18,6 +19,29 @@ const pet = ref(getPet())
 const level = ref(getCurrentLevel())
 const xp = ref(getCurrentXp())
 const muted = ref(sfx.isMuted())
+const pushState = ref(pushSupport())
+const pushBusy = ref(false)
+const pushMessage = ref<string | null>(null)
+const pushEnabled = ref(pushState.value.permission === 'granted')
+
+async function togglePush() {
+  pushBusy.value = true
+  pushMessage.value = null
+  if (pushEnabled.value) {
+    await disablePush()
+    pushEnabled.value = false
+    pushMessage.value = '已關閉通知'
+  } else {
+    const r = await enablePush()
+    if (r.ok) {
+      pushEnabled.value = true
+      pushMessage.value = '✓ 通知已開啟，朵朵會在重要時間點提醒妳'
+    } else {
+      pushMessage.value = '無法開啟：' + (r.error ?? '請檢查瀏覽器通知權限')
+    }
+  }
+  pushBusy.value = false
+}
 
 onMounted(() => ent.load())
 
@@ -125,12 +149,37 @@ async function confirmDeleteData() {
 
     <Card tone="plain" :padded="false" class="overflow-hidden">
       <RouterLink
+        to="/me/journey"
+        data-test="link-journey"
+        class="flex items-center justify-between px-5 py-4 hover:bg-peach-50 transition-colors border-b border-cream-100 last:border-b-0"
+        @click="sfx.play('ui_tap')"
+      >
+        <span class="font-zen text-peach-500 text-sm">✨ 我的旅程</span>
+        <span class="text-stone-400">→</span>
+      </RouterLink>
+      <RouterLink
+        to="/me/bbt"
+        class="flex items-center justify-between px-5 py-4 hover:bg-peach-50 transition-colors border-b border-cream-100 last:border-b-0"
+        @click="sfx.play('ui_tap')"
+      >
+        <span class="font-zen text-peach-500 text-sm">🌡️ 基礎體溫</span>
+        <span class="text-stone-400">→</span>
+      </RouterLink>
+      <RouterLink
+        to="/me/partner"
+        class="flex items-center justify-between px-5 py-4 hover:bg-peach-50 transition-colors border-b border-cream-100 last:border-b-0"
+        @click="sfx.play('ui_tap')"
+      >
+        <span class="font-zen text-peach-500 text-sm">💞 伴侶分享</span>
+        <span class="text-stone-400">→</span>
+      </RouterLink>
+      <RouterLink
         to="/me/premium"
         data-test="link-premium"
         class="flex items-center justify-between px-5 py-4 hover:bg-peach-50 transition-colors border-b border-cream-100 last:border-b-0"
         @click="sfx.play('ui_tap')"
       >
-        <span class="font-zen text-peach-500 text-sm">{{ ent.isPremium() ? '管理 Premium' : '看看 Premium' }}</span>
+        <span class="font-zen text-peach-500 text-sm">{{ ent.isPremium() ? '💎 管理 Premium' : '💎 看看 Premium' }}</span>
         <span class="text-stone-400">→</span>
       </RouterLink>
       <RouterLink
@@ -138,7 +187,7 @@ async function confirmDeleteData() {
         class="flex items-center justify-between px-5 py-4 hover:bg-peach-50 transition-colors border-b border-cream-100 last:border-b-0"
         @click="sfx.play('ui_tap')"
       >
-        <span class="font-zen text-peach-500 text-sm">每週朵朵報告</span>
+        <span class="font-zen text-peach-500 text-sm">📰 每週朵朵報告</span>
         <span class="text-stone-400">→</span>
       </RouterLink>
       <RouterLink
@@ -146,7 +195,7 @@ async function confirmDeleteData() {
         class="flex items-center justify-between px-5 py-4 hover:bg-peach-50 transition-colors border-b border-cream-100 last:border-b-0"
         @click="sfx.play('ui_tap')"
       >
-        <span class="font-zen text-peach-500 text-sm">PMS 模式分析</span>
+        <span class="font-zen text-peach-500 text-sm">🌙 PMS 模式分析</span>
         <span class="text-stone-400">→</span>
       </RouterLink>
       <!--
@@ -186,6 +235,30 @@ async function confirmDeleteData() {
           />
         </button>
       </label>
+
+      <label
+        v-if="pushState.supported"
+        class="flex items-center justify-between cursor-pointer pt-2 border-t border-cream-100"
+      >
+        <div>
+          <p class="font-zen text-sm text-stone-700">通知</p>
+          <p class="font-zen text-[11px] text-stone-400 mt-0.5">經期前一天 / 排卵期 朵朵會提醒妳</p>
+        </div>
+        <button
+          @click="togglePush"
+          :disabled="pushBusy"
+          data-test="push-toggle"
+          class="relative w-12 h-7 rounded-full transition-colors shrink-0 disabled:opacity-50"
+          :class="pushEnabled ? 'bg-peach-400' : 'bg-stone-300'"
+          :aria-pressed="pushEnabled"
+        >
+          <span
+            class="absolute top-0.5 left-0.5 w-6 h-6 bg-white rounded-full shadow transition-transform"
+            :class="pushEnabled ? 'translate-x-5' : ''"
+          />
+        </button>
+      </label>
+      <p v-if="pushMessage" class="font-zen text-[11px] text-stone-500">{{ pushMessage }}</p>
     </Card>
 
     <Card tone="plain" class="space-y-2 text-sm">

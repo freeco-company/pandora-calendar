@@ -1,7 +1,7 @@
 <script setup lang="ts">
 import { computed, onMounted, ref } from 'vue'
 import { useRouter } from 'vue-router'
-import { CalendarApi, type DodoCheckin } from '../api'
+import { CalendarApi, ReminderApi, DodoChatApi, type DodoCheckin, type DailyReminder } from '../api'
 import { useEntitlementsStore } from '../stores/entitlements'
 import Card from '../components/ui/Card.vue'
 import Button from '../components/ui/Button.vue'
@@ -23,6 +23,16 @@ const initialLoading = ref(true)
 const error = ref<string | null>(null)
 const upgradePromptVisible = ref(false)
 const dodoLevel = ref(getCurrentLevel())
+const reminder = ref<DailyReminder | null>(null)
+const history = ref<DodoCheckin[]>([])
+
+const TONE_BG: Record<string, string> = {
+  sakura: 'bg-gradient-to-br from-sakura-50 to-cream-100',
+  lavender: 'bg-gradient-to-br from-lavender-50 to-cream-100',
+  peach: 'bg-gradient-to-br from-peach-50 to-cream-100',
+  cream: 'bg-cream-50',
+  sage: 'bg-gradient-to-br from-sage-50 to-cream-100',
+}
 
 async function loadRecent() {
   const res = await CalendarApi.dodoRecent()
@@ -36,10 +46,24 @@ async function loadRecent() {
   }
 }
 
+async function loadReminder() {
+  try {
+    const r = await ReminderApi.today()
+    reminder.value = r.data.data
+  } catch {/* silent */}
+}
+
+async function loadHistory() {
+  try {
+    const r = await DodoChatApi.history(20)
+    history.value = r.data.data as any
+  } catch {/* silent */}
+}
+
 onMounted(async () => {
   ent.load()
   try {
-    await loadRecent()
+    await Promise.all([loadRecent(), loadReminder(), loadHistory()])
   } finally {
     initialLoading.value = false
   }
@@ -161,21 +185,42 @@ const dodoMood = computed(() => moodForPhase(todayPhase.value))
       {{ error }}
     </p>
 
+    <!-- P1-6 朵朵每日提醒（基於 phase）-->
+    <div
+      v-if="reminder"
+      :class="[TONE_BG[reminder.tone] || 'bg-cream-50', 'rounded-3xl shadow-soft p-4 space-y-1.5']"
+      data-test="daily-reminder"
+    >
+      <p class="font-zen text-[11px] text-peach-500 flex items-center gap-1.5">
+        <span class="text-base">{{ reminder.icon }}</span>
+        <span class="font-bold">{{ reminder.title }}</span>
+      </p>
+      <p class="text-stone-700 text-[13px] font-zen leading-relaxed">{{ reminder.body }}</p>
+    </div>
+
+    <!-- P1-5 朵朵聊天歷史 timeline -->
     <Card tone="plain">
       <h2 class="font-display font-bold text-peach-500 text-base mb-3 flex items-center gap-2">
-        <span class="text-xl">🗓️</span> 最近 check-in
+        <span class="text-xl">💬</span> 朵朵跟妳的對話
       </h2>
       <Spinner v-if="initialLoading" size="sm" />
-      <ul v-else-if="recent.length" class="text-sm divide-y divide-cream-200 font-zen">
-        <li
-          v-for="r in recent.slice(0, 7)"
+      <div v-else-if="history.length" class="space-y-3 font-zen text-sm">
+        <div
+          v-for="r in history.slice(0, 12)"
           :key="r.checked_on"
-          class="py-2.5 flex gap-3"
+          class="flex gap-2.5 items-start"
         >
-          <span class="text-stone-400 w-24 shrink-0 text-xs">{{ r.checked_on }}</span>
-          <span class="text-stone-700 truncate flex-1">{{ r.dodo_response }}</span>
-        </li>
-      </ul>
+          <span class="text-xl shrink-0 mt-0.5">
+            {{ r.mood === 'good' ? '😊' : r.mood === 'okay' ? '😐' : '😞' }}
+          </span>
+          <div class="flex-1 min-w-0">
+            <p class="text-[10px] text-stone-400 mb-0.5">{{ r.checked_on }}</p>
+            <div class="bg-cream-50 rounded-2xl px-3 py-2 text-stone-700 text-[13px] leading-relaxed">
+              {{ r.dodo_response }}
+            </div>
+          </div>
+        </div>
+      </div>
       <EmptyState
         v-else
         icon="🐣"

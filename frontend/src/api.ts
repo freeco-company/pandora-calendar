@@ -348,6 +348,95 @@ export const GamificationApi = {
   pending: () => api.get<{ data: GamificationPending }>('/v1/me/gamification/pending'),
   dodo: () =>
     api.get<{ data: { level: number; total_xp: number; outfit_state: unknown; mood: string } }>('/v1/me/dodo'),
-  pet: () =>
-    api.get<{ data: { species: string | null; nickname: string | null; level: number } }>('/v1/me/pet'),
+}
+
+export interface PetState {
+  species: string | null
+  nickname: string | null
+  level: number
+  onboarded: boolean
+  available_species: string[]
+}
+
+export const PetApi = {
+  show: () => api.get<{ data: PetState }>('/v1/me/pet'),
+  update: (species: string, nickname: string) =>
+    api.patch<{ data: { species: string; nickname: string; onboarded: boolean } }>('/v1/me/pet', { species, nickname }),
+}
+
+export interface JourneyData {
+  level: number
+  total_xp: number
+  progress_in_level: number
+  need_for_next_level: number
+  next_level_at_xp: number
+  streak_days: number
+  last_30_days: { cycles_logged: number; symptoms_logged: number; dodo_checkins: number }
+  outfit_owned: string[]
+  outfit_equipped: string | null
+  milestones: Array<{ code: string; name: string; icon: string; unlocked: boolean; progress?: number; target?: number }>
+}
+
+export const JourneyApi = {
+  show: () => api.get<{ data: JourneyData }>('/v1/me/journey'),
+}
+
+export interface DailyReminder {
+  phase: Phase
+  cycle_day: number | null
+  days_until_next_period: number | null
+  icon: string
+  title: string
+  body: string
+  tone: 'sakura' | 'cream' | 'peach' | 'lavender' | 'sage'
+}
+
+export const ReminderApi = {
+  today: () => api.get<{ data: DailyReminder }>('/v1/me/daily-reminder'),
+}
+
+export const DodoChatApi = {
+  history: (limit = 20) =>
+    api.get<{ data: Array<{ id: number; checked_on: string; mood: string; phase: string; cycle_day: number | null; dodo_response: string }> }>(
+      '/v1/me/dodo/history',
+      { params: { limit } },
+    ),
+}
+
+export interface BbtRow {
+  id: number
+  measured_on: string
+  temperature_c: string
+  note: string | null
+}
+
+export const BbtApi = {
+  list: (params?: { from?: string; to?: string }) =>
+    api.get<{ data: BbtRow[]; avg_low: number; avg_high: number }>('/v1/me/bbt', { params }),
+  store: (measured_on: string, temperature_c: number, note?: string) =>
+    api.post<{ data: BbtRow }>('/v1/me/bbt', { measured_on, temperature_c, note }),
+  destroy: (id: number) => api.delete(`/v1/me/bbt/${id}`),
+}
+
+export interface PartnerShareState {
+  enabled: boolean
+  token: string | null
+  enabled_at: string | null
+  share_url: string | null
+}
+
+export const PartnerApi = {
+  show: () => api.get<{ data: PartnerShareState }>('/v1/me/partner-share'),
+  enable: () => api.post<{ data: { token: string; share_url: string } }>('/v1/me/partner-share'),
+  disable: () => api.delete('/v1/me/partner-share'),
+  publicView: (token: string) =>
+    api.get<{
+      data: { display_name: string; phase: Phase; days_until_next_period: number | null; partner_hint: string }
+    }>(`/v1/partner/${token}`),
+}
+
+export const PushApi = {
+  subscribe: (sub: PushSubscriptionJSON & { platform?: string }) =>
+    api.post('/v1/me/push/subscribe', sub),
+  unsubscribe: (endpoint: string) => api.post('/v1/me/push/unsubscribe', { endpoint }),
 }

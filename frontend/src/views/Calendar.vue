@@ -1,6 +1,6 @@
 <script setup lang="ts">
 import { computed, onMounted, ref } from 'vue'
-import { CalendarApi, type CyclePrediction, type BodyRhythm, type CycleRecord } from '../api'
+import { CalendarApi, type CyclePrediction, type BodyRhythm, type CycleRecord, type SymptomRecord } from '../api'
 import Card from '../components/ui/Card.vue'
 import Spinner from '../components/ui/Spinner.vue'
 import EmptyState from '../components/ui/EmptyState.vue'
@@ -8,6 +8,7 @@ import Character from '../components/Character.vue'
 import { getPet, moodForPhase } from '../lib/character'
 
 const cycles = ref<CycleRecord[]>([])
+const symptoms = ref<SymptomRecord[]>([])
 const prediction = ref<CyclePrediction | null>(null)
 const rhythm = ref<BodyRhythm | null>(null)
 const loading = ref(true)
@@ -18,10 +19,11 @@ async function load() {
   loading.value = true
   error.value = null
   try {
-    const res = await CalendarApi.cycles()
-    cycles.value = res.data.data
-    prediction.value = res.data.prediction
-    rhythm.value = res.data.body_rhythm
+    const [c, s] = await Promise.all([CalendarApi.cycles(), CalendarApi.symptoms()])
+    cycles.value = c.data.data
+    symptoms.value = s.data.data
+    prediction.value = c.data.prediction
+    rhythm.value = c.data.body_rhythm
   } catch (e: any) {
     error.value = e?.response?.data?.message ?? '載入失敗，朵朵稍後再試試。'
   } finally {
@@ -41,13 +43,14 @@ interface DayMeta {
   day: number
   phase: 'menstrual' | 'follicular' | 'ovulation' | 'luteal' | 'unknown' | null
   isToday: boolean
+  hasLog: boolean
 }
 
 const grid = computed<DayMeta[]>(() => {
   if (!prediction.value) return []
   const cells: DayMeta[] = []
   for (let i = 0; i < startWeekday.value; i++) {
-    cells.push({ date: '', day: 0, phase: null, isToday: false })
+    cells.push({ date: '', day: 0, phase: null, isToday: false, hasLog: false })
   }
   for (let d = 1; d <= daysInMonth.value; d++) {
     const date = new Date(today.getFullYear(), today.getMonth(), d)
@@ -57,6 +60,7 @@ const grid = computed<DayMeta[]>(() => {
       day: d,
       phase: phaseFor(date),
       isToday: date.toDateString() === today.toDateString(),
+      hasLog: hasLogOn(isoDate),
     })
   }
   return cells
@@ -79,6 +83,10 @@ function phaseFor(date: Date): DayMeta['phase'] {
   return 'luteal'
 }
 
+function hasLogOn(date: string): boolean {
+  return cycles.value.some((c) => c.start_date === date) || symptoms.value.some((s) => s.logged_on === date)
+}
+
 const phaseLabels: Record<string, string> = {
   menstrual: '經期',
   follicular: '濾泡期',
@@ -89,20 +97,62 @@ const phaseLabels: Record<string, string> = {
 
 const monthTitle = computed(() => `${today.getFullYear()} 年 ${today.getMonth() + 1} 月`)
 const todayMood = computed(() => moodForPhase(rhythm.value?.phase))
+
+// P0-2 倒數天數大字
+const daysUntilNext = computed(() => rhythm.value?.days_until_next_period ?? null)
+const countdownLabel = computed(() => {
+  const d = daysUntilNext.value
+  if (d === null) return null
+  if (d < 0) return '經期已遲到'
+  if (d === 0) return '經期可能今天到'
+  if (d <= 7) return '經期接近中'
+  return '距離下次經期'
+})
+
+// P1-7 click-day modal
+const detailDate = ref<string | null>(null)
+const detailDay = computed<DayMeta | null>(() => grid.value.find((c) => c.date === detailDate.value) ?? null)
+const detailCycle = computed(() => cycles.value.find((c) => c.start_date === detailDate.value) ?? null)
+const detailSymptom = computed(() => symptoms.value.find((s) => s.logged_on === detailDate.value) ?? null)
+
+const TAG_LABEL: Record<string, string> = {
+  cramp: '經痛', headache: '頭痛', fatigue: '疲倦', bloating: '腹脹',
+  breast_tender: '胸脹', acne: '冒痘', mood_swing: '情緒起伏',
+  craving_sweet: '想吃甜', insomnia: '失眠', back_pain: '腰痠',
+}
+const MOOD_LABEL: Record<string, string> = { good: '😊 還不錯', okay: '😐 普普', bad: '😞 不太好' }
+
+function openDay(cell: DayMeta) {
+  if (cell.day === 0) return
+  detailDate.value = cell.date
+}
 </script>
 
 <template>
   <div class="px-5 pt-10 pb-6 max-w-md mx-auto">
+    <!-- 倒數大字 header -->
     <header class="flex items-start justify-between mb-5">
-      <div>
-        <p class="font-zen text-xs text-stone-500 tracking-widest uppercase">Today</p>
-        <h1 class="font-display text-2xl font-bold text-peach-500 mt-0.5">{{ monthTitle }}</h1>
+      <div class="flex-1">
+        <p class="font-zen text-xs text-stone-500 tracking-widest uppercase">{{ monthTitle }}</p>
+        <template v-if="daysUntilNext !== null">
+          <p class="font-zen text-[11px] text-stone-500 mt-1">{{ countdownLabel }}</p>
+          <h1 class="font-display text-5xl font-bold text-peach-500 mt-0.5 leading-none">
+            <template v-if="daysUntilNext < 0">+{{ Math.abs(daysUntilNext) }}</template>
+            <template v-else>{{ daysUntilNext }}</template>
+            <span class="text-base text-stone-400 ml-2 font-zen">
+              {{ daysUntilNext < 0 ? '天' : daysUntilNext === 0 ? '今天' : '天' }}
+            </span>
+          </h1>
+        </template>
+        <template v-else>
+          <h1 class="font-display text-2xl font-bold text-peach-500 mt-0.5">{{ monthTitle }}</h1>
+        </template>
         <p
           v-if="rhythm"
-          class="font-zen text-sm text-stone-600 mt-1"
+          class="font-zen text-[12px] text-stone-600 mt-1.5"
           data-test="phase-label"
         >
-          今天是
+          目前
           <span class="font-semibold text-peach-500">{{ phaseLabels[rhythm.phase] }}</span>
           <template v-if="rhythm.cycle_day"> · 週期第 {{ rhythm.cycle_day }} 天</template>
         </p>
@@ -138,10 +188,13 @@ const todayMood = computed(() => moodForPhase(rhythm.value?.phase))
           <span v-for="w in ['日', '一', '二', '三', '四', '五', '六']" :key="w">{{ w }}</span>
         </div>
         <div class="grid grid-cols-7 gap-1.5">
-          <div
+          <button
             v-for="(cell, idx) in grid"
             :key="idx"
-            class="aspect-square rounded-xl flex items-center justify-center text-sm font-zen relative transition-all"
+            @click="openDay(cell)"
+            :disabled="cell.day === 0"
+            class="aspect-square rounded-xl flex items-center justify-center text-sm font-zen relative transition-all active:scale-95 disabled:cursor-default"
+            :data-test="cell.date ? `cal-day-${cell.day}` : undefined"
             :class="{
               'bg-phase-menstrual/20 text-sakura-500': cell.phase === 'menstrual',
               'bg-phase-follicular/30 text-peach-500': cell.phase === 'follicular',
@@ -151,7 +204,11 @@ const todayMood = computed(() => moodForPhase(rhythm.value?.phase))
             }"
           >
             {{ cell.day || '' }}
-          </div>
+            <span
+              v-if="cell.hasLog"
+              class="absolute bottom-0.5 right-0.5 w-1.5 h-1.5 rounded-full bg-peach-500"
+            />
+          </button>
         </div>
       </Card>
 
@@ -179,7 +236,57 @@ const todayMood = computed(() => moodForPhase(rhythm.value?.phase))
         <span class="flex items-center gap-1.5"><span class="w-2.5 h-2.5 rounded-full bg-phase-follicular" />濾泡</span>
         <span class="flex items-center gap-1.5"><span class="w-2.5 h-2.5 rounded-full bg-phase-ovulation" />排卵</span>
         <span class="flex items-center gap-1.5"><span class="w-2.5 h-2.5 rounded-full bg-phase-luteal" />黃體</span>
+        <span class="flex items-center gap-1.5"><span class="w-1.5 h-1.5 rounded-full bg-peach-500" />當天有記錄</span>
       </div>
     </template>
+
+    <!-- P1-7 Day detail modal -->
+    <Transition name="ach">
+      <div
+        v-if="detailDate"
+        class="fixed inset-0 z-[70] bg-stone-900/40 backdrop-blur-sm flex items-end sm:items-center justify-center p-4"
+        @click.self="detailDate = null"
+        data-test="day-detail-modal"
+      >
+        <div class="w-full max-w-sm bg-cream-50 rounded-3xl p-5 shadow-soft-lg space-y-3 animate-pop">
+          <header class="flex items-center justify-between">
+            <h3 class="font-display text-lg font-bold text-peach-500">{{ detailDate }}</h3>
+            <button @click="detailDate = null" class="text-stone-400 text-xl leading-none">×</button>
+          </header>
+
+          <p v-if="detailDay?.phase" class="font-zen text-[12px] text-stone-500">
+            這天是
+            <span class="font-semibold text-peach-500">{{ phaseLabels[detailDay.phase] }}</span>
+          </p>
+
+          <div v-if="detailCycle" class="bg-white rounded-2xl p-3 text-sm font-zen space-y-1">
+            <p class="text-peach-500 font-bold">🌙 經期記錄</p>
+            <p class="text-stone-600">流量 {{ detailCycle.peak_flow ?? '未填' }} / 5</p>
+            <p v-if="detailCycle.length_days" class="text-stone-500 text-xs">持續 {{ detailCycle.length_days }} 天</p>
+          </div>
+
+          <div v-if="detailSymptom" class="bg-white rounded-2xl p-3 text-sm font-zen space-y-1.5">
+            <p class="text-peach-500 font-bold">🌸 身體記錄</p>
+            <p class="text-stone-600">{{ MOOD_LABEL[detailSymptom.mood ?? ''] || '未記錄心情' }}</p>
+            <div v-if="detailSymptom.tags?.length" class="flex flex-wrap gap-1">
+              <span
+                v-for="t in detailSymptom.tags"
+                :key="t"
+                class="text-[11px] bg-cream-100 text-peach-500 px-2 py-0.5 rounded-full"
+              >
+                {{ TAG_LABEL[t] || t }}
+              </span>
+            </div>
+          </div>
+
+          <p
+            v-if="!detailCycle && !detailSymptom"
+            class="text-stone-400 text-[12px] text-center font-zen py-3"
+          >
+            這天沒有記錄
+          </p>
+        </div>
+      </div>
+    </Transition>
   </div>
 </template>

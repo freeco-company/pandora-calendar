@@ -12,6 +12,10 @@ const routes: RouteRecordRaw[] = [
   { path: '/me/week-report', component: () => import('./views/WeekReportView.vue') },
   { path: '/me/pms', component: () => import('./views/PmsView.vue') },
   { path: '/me/jerosse', component: () => import('./views/JerosseDeep.vue') },
+  { path: '/me/journey', component: () => import('./views/JourneyView.vue') },
+  { path: '/me/bbt', component: () => import('./views/BbtView.vue') },
+  { path: '/me/partner', component: () => import('./views/PartnerShareView.vue') },
+  { path: '/partner/:token', component: () => import('./views/PartnerPublicView.vue'), meta: { public: true } },
   { path: '/privacy', component: () => import('./views/Privacy.vue'), meta: { public: true } },
   { path: '/terms', component: () => import('./views/Terms.vue'), meta: { public: true } },
 ]

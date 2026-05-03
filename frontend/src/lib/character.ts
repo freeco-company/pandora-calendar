@@ -31,6 +31,12 @@ export type Outfit =
   | 'angel_wings'
   | 'starry_cape'
 
+export const OUTFITS: Outfit[] = [
+  'ribbon', 'witch_hat', 'fp_crown', 'fp_chef', 'straw_hat', 'sakura',
+  'sunglasses', 'winter_scarf', 'chef_apron', 'fp_apron_premium',
+  'angel_wings', 'starry_cape',
+]
+
 const ANCHOR_BASE = '/character/anchors'
 const OUTFIT_BASE = '/character/outfits'
 const MOOD_BASE = '/character/moods'
