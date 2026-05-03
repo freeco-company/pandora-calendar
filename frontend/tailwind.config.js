@@ -65,6 +65,10 @@ export default {
           '100%': { transform: 'translateX(0)', opacity: '1' },
         },
         fadein: { '0%': { opacity: '0' }, '100%': { opacity: '1' } },
+        'pulse-slow': {
+          '0%, 100%': { boxShadow: '0 0 0 0 rgba(255, 153, 119, 0.45)' },
+          '50%': { boxShadow: '0 0 0 6px rgba(255, 153, 119, 0)' },
+        },
       },
       animation: {
         floaty: 'floaty 4s ease-in-out infinite',
@@ -72,6 +76,7 @@ export default {
         pop: 'pop 0.4s cubic-bezier(0.34, 1.56, 0.64, 1)',
         slidein: 'slidein 0.45s cubic-bezier(0.22, 1, 0.36, 1)',
         fadein: 'fadein 0.3s ease-out',
+        'pulse-slow': 'pulse-slow 2.4s ease-in-out infinite',
       },
     },
   },

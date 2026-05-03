@@ -108,33 +108,83 @@ const phaseLabels = computed<Record<string, string>>(() => ({
 }))
 
 const dodoMood = computed(() => moodForPhase(todayPhase.value))
+
+// First-time hero: 沒有任何歷史 + 沒有今天回應 + 已載入完成
+const isFirstTime = computed(() =>
+  !initialLoading.value && history.value.length === 0 && !todayResponse.value
+)
 </script>
 
 <template>
   <div class="px-5 md:px-8 pt-10 pb-6 max-w-md md:max-w-3xl lg:max-w-4xl mx-auto space-y-5">
-    <!-- 朵朵 NPC 角色區 -->
-    <header class="text-center space-y-2">
+
+    <!-- 第一次來：放大 hero 卡，講清楚朵朵是什麼 -->
+    <section
+      v-if="isFirstTime"
+      data-test="dodo-hero"
+      class="surface-card text-center px-6 py-8 space-y-4 animate-pop"
+    >
       <div class="flex justify-center">
         <Character
           species="dodo"
           :level="dodoLevel"
           :mood="dodoMood"
           outfit="ribbon"
-          :size="160"
+          :size="180"
           :show-rarity="true"
           :floaty="true"
           :interactive="true"
         />
       </div>
-      <h1 class="font-display text-2xl font-bold text-peach-500">{{ t('dodo_view_title') }}</h1>
-      <p class="font-zen text-sm text-stone-600">
-        {{ t('dodo_today_question') }}
+      <h1 class="font-display text-2xl font-bold text-peach-500 leading-tight">
+        {{ t('dodo_hero_title') }}
+      </h1>
+      <p class="font-zen text-sm text-stone-600 leading-relaxed max-w-xs mx-auto">
+        {{ t('dodo_hero_subtitle') }}
       </p>
+      <p class="font-zen text-[12px] text-peach-500 inline-flex items-center gap-1.5">
+        <span class="w-1.5 h-1.5 rounded-full bg-peach-400 animate-sparkle" />
+        {{ t('dodo_hero_cta') }}
+      </p>
+    </section>
+
+    <!-- 已有 history：精簡 header（小 character + 標題） -->
+    <header v-else class="text-center space-y-2">
+      <div class="flex justify-center">
+        <Character
+          species="dodo"
+          :level="dodoLevel"
+          :mood="dodoMood"
+          outfit="ribbon"
+          :size="120"
+          :show-rarity="true"
+          :floaty="true"
+          :interactive="true"
+        />
+      </div>
+      <h1 class="font-display text-xl font-bold text-peach-500">{{ t('dodo_view_title') }}</h1>
     </header>
+
+    <!-- P1-6 今日 reminder（已有 history 才顯示，避免第一次資訊太多）-->
+    <div
+      v-if="reminder && !isFirstTime"
+      :class="[TONE_BG[reminder.tone] || 'bg-cream-50', 'rounded-3xl shadow-soft p-4 space-y-1.5']"
+      data-test="daily-reminder"
+    >
+      <p class="font-zen text-[11px] text-peach-500 flex items-center gap-1.5">
+        <span class="text-base">{{ reminder.icon }}</span>
+        <span class="font-bold">{{ reminder.title }}</span>
+      </p>
+      <p class="text-stone-700 text-[13px] font-zen leading-relaxed">{{ reminder.body }}</p>
+    </div>
 
     <div class="md:grid md:grid-cols-2 md:gap-5 md:items-start space-y-5 md:space-y-0">
 
-    <Card tone="plain">
+    <!-- 主動作區：mood checkin 永遠在 thumb-zone（最上） -->
+    <Card tone="plain" data-test="mood-checkin">
+      <h2 class="font-display text-lg font-bold text-peach-500 text-center mb-1">
+        {{ t('dodo_today_section_title') }}
+      </h2>
       <p class="font-zen text-xs text-stone-500 text-center mb-3">{{ t('dodo_tap_hint') }}</p>
       <div class="grid grid-cols-3 gap-2.5">
         <button
@@ -157,6 +207,7 @@ const dodoMood = computed(() => moodForPhase(todayPhase.value))
 
     <Spinner v-if="loading && !todayResponse" :label="t('dodo_thinking_label')" />
 
+    <!-- 朵朵的回應（mood checkin 後即時出現） -->
     <Card
       v-if="todayResponse"
       tone="cream"
@@ -190,21 +241,16 @@ const dodoMood = computed(() => moodForPhase(todayPhase.value))
       {{ error }}
     </p>
 
-    <!-- P1-6 朵朵每日提醒（基於 phase）-->
-    <div
-      v-if="reminder"
-      :class="[TONE_BG[reminder.tone] || 'bg-cream-50', 'rounded-3xl shadow-soft p-4 space-y-1.5']"
-      data-test="daily-reminder"
+    <!-- 長期承諾條（提醒朵朵會學習，鼓勵連續記錄）-->
+    <p
+      v-if="!isFirstTime"
+      class="font-zen text-[12px] text-stone-500 text-center px-4 leading-relaxed"
     >
-      <p class="font-zen text-[11px] text-peach-500 flex items-center gap-1.5">
-        <span class="text-base">{{ reminder.icon }}</span>
-        <span class="font-bold">{{ reminder.title }}</span>
-      </p>
-      <p class="text-stone-700 text-[13px] font-zen leading-relaxed">{{ reminder.body }}</p>
-    </div>
+      <span class="inline-block mr-1">🌱</span>{{ t('dodo_commitment') }}
+    </p>
 
-    <!-- P1-5 朵朵聊天歷史 timeline -->
-    <Card tone="plain">
+    <!-- P1-5 朵朵聊天歷史 timeline（第一次來時隱藏整塊，避免空 timeline 干擾）-->
+    <Card v-if="!isFirstTime" tone="plain">
       <h2 class="font-display font-bold text-peach-500 text-base mb-3 flex items-center gap-2">
         <span class="text-xl">💬</span> {{ t('dodo_chat_history') }}
       </h2>

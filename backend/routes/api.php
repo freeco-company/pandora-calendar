@@ -100,6 +100,7 @@ Route::middleware(['auth.platform'])->prefix('v1')->group(function () {
 
     Route::get('/cycles', [CycleController::class, 'index']);
     Route::post('/cycles', [CycleController::class, 'store']);
+    Route::patch('/cycles/{cycle}', [CycleController::class, 'update']);
     Route::delete('/cycles/{cycle}', [CycleController::class, 'destroy']);
 
     Route::get('/symptoms', [SymptomController::class, 'index']);

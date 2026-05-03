@@ -5,10 +5,13 @@ import Card from '../components/ui/Card.vue'
 import Spinner from '../components/ui/Spinner.vue'
 import EmptyState from '../components/ui/EmptyState.vue'
 import Character from '../components/Character.vue'
+import CalendarGamificationStrip from '../components/CalendarGamificationStrip.vue'
 import { getPet, moodForPhase } from '../lib/character'
 import { useTone } from '../composables/useTone'
+import { useRouter } from 'vue-router'
 
 const { t } = useTone()
+const router = useRouter()
 
 const cycles = ref<CycleRecord[]>([])
 const symptoms = ref<SymptomRecord[]>([])
@@ -131,6 +134,26 @@ function openDay(cell: DayMeta) {
   if (cell.day === 0) return
   detailDate.value = cell.date
 }
+
+// streak cells: 連續記錄到今天的最後 N 天加 sparkle ✨
+const streakDates = computed<Set<string>>(() => {
+  const set = new Set<string>()
+  const all = new Set<string>()
+  cycles.value.forEach((c) => all.add(c.start_date))
+  symptoms.value.forEach((s) => all.add(s.logged_on))
+  let cursor = new Date()
+  for (let i = 0; i < 60; i++) {
+    const iso = cursor.toISOString().slice(0, 10)
+    if (!all.has(iso)) break
+    set.add(iso)
+    cursor.setDate(cursor.getDate() - 1)
+  }
+  return set
+})
+
+function goPet() {
+  router.push('/me/journey')
+}
 </script>
 
 <template>
@@ -162,8 +185,15 @@ function openDay(cell: DayMeta) {
           <template v-if="rhythm.cycle_day">{{ t('calendar_cycle_day_suffix', { day: rhythm.cycle_day }) }}</template>
         </p>
       </div>
-      <!-- 角落寵物 widget -->
-      <div class="shrink-0 -mt-2">
+      <!-- 角落寵物 widget（click → /me/journey） -->
+      <button
+        type="button"
+        class="shrink-0 -mt-2 active:scale-95 transition-transform"
+        :title="`${pet.nickname}, Lv ${pet.level}`"
+        :aria-label="`${pet.nickname}, Lv ${pet.level}`"
+        @click="goPet"
+        data-test="header-pet"
+      >
         <Character
           :species="pet.species"
           :level="pet.level"
@@ -175,8 +205,11 @@ function openDay(cell: DayMeta) {
           :interactive="true"
           :show-rarity="false"
         />
-      </div>
+      </button>
     </header>
+
+    <!-- Gamification strip: pet / streak / quest / milestone -->
+    <CalendarGamificationStrip :phase="rhythm?.phase ?? null" />
 
     <Spinner v-if="loading" :label="t('calendar_loading')" />
 
@@ -207,7 +240,7 @@ function openDay(cell: DayMeta) {
               'bg-phase-follicular/30 text-peach-500': cell.phase === 'follicular',
               'bg-phase-ovulation/25 text-sage-500': cell.phase === 'ovulation',
               'bg-phase-luteal/20 text-lavender-500': cell.phase === 'luteal',
-              'ring-2 ring-peach-400 font-bold shadow-soft': cell.isToday,
+              'ring-2 ring-peach-400 font-bold shadow-soft animate-pulse-slow': cell.isToday,
             }"
           >
             {{ cell.day || '' }}
@@ -215,6 +248,11 @@ function openDay(cell: DayMeta) {
               v-if="cell.hasLog"
               class="absolute bottom-0.5 right-0.5 w-1.5 h-1.5 rounded-full bg-peach-500"
             />
+            <span
+              v-if="cell.date && streakDates.has(cell.date)"
+              class="absolute top-0.5 right-0.5 text-[10px] leading-none select-none"
+              aria-hidden="true"
+            >✨</span>
           </button>
         </div>
       </Card>

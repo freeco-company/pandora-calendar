@@ -14,7 +14,7 @@ html, body, #app {
 }
 
 body {
-  font-family: 'Noto Sans TC', 'Zen Kaku Gothic New', system-ui, -apple-system, 'Helvetica Neue', sans-serif;
+  font-family: 'Zen Kaku Gothic New', 'Noto Sans TC', 'PingFang TC', -apple-system, BlinkMacSystemFont, system-ui, sans-serif;
   color: #4A3A2E;
   background-image: linear-gradient(180deg, #FFF7EC 0%, #FBE9D8 100%);
   background-attachment: fixed;

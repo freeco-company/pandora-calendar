@@ -69,12 +69,7 @@ class CycleController extends Controller
 
     public function store(Request $request): JsonResponse
     {
-        $data = $request->validate([
-            'start_date' => ['required', 'date'],
-            'end_date' => ['nullable', 'date', 'after_or_equal:start_date'],
-            'peak_flow' => ['nullable', 'integer', 'min:1', 'max:5'],
-            'notes' => ['nullable', 'string', 'max:1000'],
-        ]);
+        $data = $this->validateCycleInput($request);
 
         $user = $request->user();
         $existed = Cycle::where('user_id', $user->id)->exists();
@@ -157,12 +152,73 @@ class CycleController extends Controller
         ], 201);
     }
 
+    public function update(Request $request, Cycle $cycle): JsonResponse
+    {
+        abort_if($cycle->user_id !== $request->user()->id, 403);
+
+        $data = $this->validateCycleInput($request, $cycle);
+        $cycle->fill($data)->save();
+
+        return response()->json([
+            'data' => [
+                'id' => $cycle->id,
+                'start_date' => $cycle->start_date->toDateString(),
+                'end_date' => $cycle->end_date?->toDateString(),
+                'peak_flow' => $cycle->peak_flow,
+            ],
+        ]);
+    }
+
     public function destroy(Request $request, Cycle $cycle): JsonResponse
     {
         abort_if($cycle->user_id !== $request->user()->id, 403);
         $cycle->delete();
 
         return response()->json(['deleted' => true]);
+    }
+
+    /**
+     * 共用 cycle 輸入驗證：
+     * - end_date 不可在未來（妳記錄的是已發生的週期）
+     * - end_date - start_date <= 14 天（正常經期 ≤ 10 天，14 給異常 buffer）
+     */
+    private function validateCycleInput(Request $request, ?Cycle $existing = null): array
+    {
+        $today = \Carbon\CarbonImmutable::today()->toDateString();
+
+        $startRule = $existing ? ['sometimes', 'required', 'date'] : ['required', 'date'];
+
+        return $request->validate(
+            [
+                'start_date' => $startRule,
+                'end_date' => [
+                    'nullable',
+                    'date',
+                    'after_or_equal:start_date',
+                    'before_or_equal:'.$today,
+                    function (string $attribute, mixed $value, \Closure $fail) use ($request, $existing) {
+                        if ($value === null || $value === '') {
+                            return;
+                        }
+                        $start = $request->input('start_date') ?? $existing?->start_date?->toDateString();
+                        if (! $start) {
+                            return;
+                        }
+                        $diff = \Carbon\CarbonImmutable::parse($start)
+                            ->diffInDays(\Carbon\CarbonImmutable::parse($value));
+                        if ($diff > 14) {
+                            $fail('經期長度看起來異常，要不要再確認一下？');
+                        }
+                    },
+                ],
+                'peak_flow' => ['nullable', 'integer', 'min:1', 'max:5'],
+                'notes' => ['nullable', 'string', 'max:1000'],
+            ],
+            [
+                'end_date.before_or_equal' => '結束日不能在未來，要不要再確認一下？',
+                'end_date.after_or_equal' => '結束日不能早於開始日。',
+            ],
+        );
     }
 
     /**

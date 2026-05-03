@@ -37,9 +37,26 @@ class CyclePredictor
 
         $stdDev = $cleanLengths->count() >= 2 ? $this->stdDev($cleanLengths) : 0.0;
 
+        // 防衛：髒資料（end_date 在未來、手動 import 錯誤）→ lengthInDays() 已回 null。
+        // 額外 guard：原始 raw diff > 14 / < 1 也擋掉並 log，避免之後 model 邏輯改了又漏。
         $periodLengths = $cycles
             ->filter(fn (Cycle $c) => $c->end_date !== null)
-            ->map(fn (Cycle $c) => $c->lengthInDays());
+            ->map(function (Cycle $c) {
+                $raw = $c->start_date->diffInDays($c->end_date) + 1;
+                if ($raw < 1 || $raw > 14) {
+                    \Log::warning('CyclePredictor: filtered invalid cycle length', [
+                        'cycle_id' => $c->id,
+                        'user_id' => $c->user_id,
+                        'raw_length_days' => $raw,
+                    ]);
+
+                    return null;
+                }
+
+                return $c->lengthInDays();
+            })
+            ->filter(fn (?int $v) => $v !== null && $v >= 1 && $v <= 14)
+            ->values();
 
         $avgPeriodLength = $periodLengths->isEmpty()
             ? self::DEFAULT_PERIOD_LENGTH
