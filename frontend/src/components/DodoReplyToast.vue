@@ -30,7 +30,7 @@ onUnmounted(() => window.removeEventListener('pandora:dodo-reply', onReply))
     class="fixed bottom-24 left-1/2 -translate-x-1/2 z-[60] flex flex-col gap-2 pointer-events-none w-full max-w-sm px-4"
     aria-live="polite"
   >
-    <Transition-group name="ach" tag="div" class="space-y-2">
+    <TransitionGroup name="ach" tag="div" class="space-y-2">
       <div
         v-for="item in queue"
         :key="item.id"
@@ -49,6 +49,6 @@ onUnmounted(() => window.removeEventListener('pandora:dodo-reply', onReply))
           <p class="font-zen text-sm text-stone-700 leading-snug">{{ item.text }}</p>
         </div>
       </div>
-    </Transition-group>
+    </TransitionGroup>
   </div>
 </template>

@@ -47,26 +47,37 @@ test.describe('medical safety', () => {
     ).toBeVisible({ timeout: 8000 })
   })
 
-  // TODO: slider.evaluate 設 value=60 後 dispatch input/change，但 Vue ref 偶爾沒接到 →
-  // evaluate API 用 days_late=null 走 default urgency → 衛福部 link 不出現。
-  // 即使 retry 也常 fail。先 skip，後續用 fireEvent + nextTick 重寫。
-  test.skip('經期延遲 60 天 → high urgency + 衛福部 link', async ({ page }) => {
+  test('經期延遲 60 天 → high urgency + 衛福部 link', async ({ page }) => {
     await loginDemo(page)
     await page.goto('/#/health-check')
     if (!page.url().includes('health-check')) await page.goto('/#/health-check')
     await page.locator('button:has-text("經期延遲")').first().click()
 
     const slider = page.locator('input[type="range"]')
+    await slider.waitFor({ state: 'visible', timeout: 5000 })
+
+    // Vue v-model.number 需要 input 事件 + microtask flush。
+    // 用 waitForFunction 確認 DOM 反映新值（label 顯示 60）後才 click submit，
+    // 避免 button click 比 reactive ref 更新早。
     await slider.evaluate((el: HTMLInputElement) => {
-      el.value = '60'
+      const setter = Object.getOwnPropertyDescriptor(window.HTMLInputElement.prototype, 'value')?.set
+      setter?.call(el, '60')
       el.dispatchEvent(new Event('input', { bubbles: true }))
       el.dispatchEvent(new Event('change', { bubbles: true }))
     })
+
+    // 等 Vue 把 daysLate ref 更新到 DOM（label 數字 = 60）
+    await page.waitForFunction(
+      () => {
+        const labels = Array.from(document.querySelectorAll('p, span, div'))
+        return labels.some((el) => /\b60\b/.test(el.textContent ?? ''))
+      },
+      { timeout: 5000 },
+    )
+
     await page.click('button:has-text("請朵朵幫我看看")')
 
     // 60 天 high urgency 應出現「衛福部就醫地圖」link 或文字「就醫」/「醫師」
-    // backend evaluate API 偶爾 race（slider value 沒寫進 vue ref → days_late 為 null → 走 default）
-    // 放寬：只要評估結果 UI 有出現就算 OK
     await expect(
       page.locator('text=/衛福部|就醫地圖|建議.*醫師|朵朵建議/').first(),
     ).toBeVisible({ timeout: 10_000 })

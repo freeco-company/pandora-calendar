@@ -173,9 +173,35 @@ class SubscriptionController extends Controller
      */
     public function churnIntercept(): JsonResponse
     {
+        // 對齊 frontend ChurnInterceptReason type contract：
+        // backend schema (key / offers[]) → frontend (code / offer_kind 單一)
+        $reasons = collect(config('churn-intercept.reasons', []))
+            ->map(function (array $r): array {
+                // 取第一個非 cancel 的 offer 當主 offer_kind
+                $firstNonCancel = collect($r['offers'] ?? [])
+                    ->firstWhere(fn ($o) => ($o['kind'] ?? null) !== 'cancel');
+                $offerKind = $firstNonCancel['kind'] ?? 'none';
+                $offerKindMapped = match ($offerKind) {
+                    'pause', 'discount', 'feedback', 'privacy' => $offerKind,
+                    'feature' => 'feature_promise',
+                    default => 'none',
+                };
+
+                return [
+                    'code' => $r['key'] ?? '',
+                    'key' => $r['key'] ?? '',  // 保留 backwards-compat
+                    'label' => $r['label'] ?? '',
+                    'message' => $r['message'] ?? '',
+                    'offer_kind' => $offerKindMapped,
+                    'offers' => $r['offers'] ?? [],
+                ];
+            })
+            ->values()
+            ->all();
+
         return response()->json([
             'data' => [
-                'reasons' => config('churn-intercept.reasons', []),
+                'reasons' => $reasons,
                 'pause_options' => config('churn-intercept.pause_options', []),
                 'win_back' => config('churn-intercept.win_back', ''),
             ],
