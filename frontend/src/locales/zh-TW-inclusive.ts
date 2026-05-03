@@ -34,13 +34,71 @@ export const zhTWInclusive: ToneDict = {
   dodo_chat_history: '朵朵跟你的對話',
   dodo_silent: '第一次點一下心情，朵朵就會回覆你。',
   dodo_companion: '朵朵會陪著你',
+  dodo_milestone_first_log: '第一筆紀錄，朵朵會記住這天 💛',
+  dodo_milestone_streak_7: '連續 7 天記錄，你很穩定 ✨',
+  dodo_milestone_first_cycle: '第一個完整週期，朵朵更懂你的節奏了',
 
-  // login / onboarding / paywall
+  // 導航
+  nav_calendar: '月曆',
+  nav_log: '記錄',
+  nav_dodo: '朵朵',
+  nav_me: '我的',
+
+  // 共用按鈕
+  btn_save: '儲存',
+  btn_cancel: '取消',
+  btn_next: '下一步',
+  btn_back: '返回',
+  btn_done: '完成',
+  btn_done_today: '今天先到這',
+  btn_retry: '重試',
+  btn_confirm: '確認',
+  btn_delete: '刪除',
+  btn_edit: '編輯',
+
+  // empty / error 三態
+  empty_no_data: '目前還沒有資料',
+  empty_first_record: '記下第一筆，朵朵就會開始陪你',
+  empty_dodo_quiet: '朵朵今天很安靜，記一筆心情吧',
+  loading_default: '載入中...',
+  error_network: '網路有點不穩，等等再試一次？',
+  error_unauth: '請重新登入一下',
+  error_premium_required: '這是 Premium 內容，解鎖後朵朵陪你更深一點',
+  error_rate_limit: '太快囉～休息一下再來',
+  error_generic: '發生了一點小狀況',
+
+  // onboarding
+  onboarding_title: '朵朵想多認識你一點',
+  onboarding_step1_title: '上一次月經大約什麼時候？',
+  onboarding_step1_question: '幫朵朵抓一下節奏 💛',
+  onboarding_step1_unsure: '不太記得也沒關係',
+  onboarding_step2_title: '週期通常多長？',
+  onboarding_step2_help: '預設 28 天，你可以之後再調整',
+  onboarding_step3_title: '想記錄哪些？',
+
+  // log
+  log_today_mood: '今天的心情',
+  log_symptoms: '身體感受',
+  log_bbt: '基礎體溫',
+  log_partner_visible: '伴侶可見',
+  log_note_optional: '想多寫一點？（選填）',
+
+  // paywall
+  paywall_unlock: '解鎖完整朵朵',
+  paywall_per_month: '每月 NT$99',
+  paywall_per_year: '每年 NT$899',
+  paywall_restore: '還原購買',
+  paywall_cancel_anytime: '隨時可以取消',
+
+  // login / privacy
   login_subtitle: '你的週期 · 朵朵陪你一起記',
   privacy_yours: '你的資料只屬於你',
   privacy_blurb: '我們不賣資料、不放廣告。你隨時可以刪除你的紀錄。',
   privacy_blurb_long: '我們不賣資料、不放廣告。你的週期紀錄只用來陪伴你，不會被當成廣告素材。',
-  onboarding_title: '朵朵想多認識你一點',
+  privacy_no_ads: '不放廣告',
+  privacy_no_sell: '不賣資料',
+  privacy_no_track: '不追蹤你',
+
   paywall_heading: '朵朵陪你更深一點',
   paywall_subtitle: '解鎖完整 PMS 分析、BBT 雙相判讀、每日衛教與伴侶分享。',
 
@@ -50,9 +108,24 @@ export const zhTWInclusive: ToneDict = {
   countdown_label_close: '月經接近中',
   countdown_label_normal: '距離下次月經',
 
-  // profile section titles
+  // profile sections
   profile_greeting_default: '夥伴',
+  profile_section_pet: '我的寵物',
+  profile_section_subscription: '訂閱',
+  profile_section_security: '安全與隱私',
+  profile_section_personalize: '個人化',
+  profile_section_help: '需要幫忙',
+  profile_section_about: '關於潘朵拉月曆',
+  profile_locale_label: '語言 / Language',
+  profile_locale_help: '目前 English 為早期版本，部分文案仍會顯示中文。',
   setting_personalize: '個人化',
   setting_inclusive_label: '使用性別中性語氣',
   setting_inclusive_help: '對非二元 / 跨性別 / 不喜歡女性化稱謂的夥伴 ♥ 朵朵會切換為中性語氣',
+
+  // subscription state
+  subscription_active: '訂閱中',
+  subscription_paused: '已暫停',
+  subscription_canceled: '已取消',
+  subscription_next_billing: '下次續訂',
+  subscription_free: '免費版',
 }

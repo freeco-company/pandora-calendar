@@ -616,3 +616,87 @@ export const SubscriptionFlowApi = {
   cancelFeedback: (reason: string, message?: string) =>
     api.post('/v1/subscription/cancel-feedback', { reason, message }),
 }
+
+// Community Q&A
+export type CommunityCategory = 'question' | 'experience' | 'tip' | 'support'
+export type CommunitySort = 'latest' | 'hot' | 'mine'
+export type ReportReason =
+  | 'spam'
+  | 'harassment'
+  | 'medical_advice'
+  | 'commercial'
+  | 'self_harm'
+  | 'other'
+
+export interface CommunityPost {
+  id: number
+  category: CommunityCategory
+  title: string
+  body: string
+  anonymous_handle: string
+  is_mine: boolean
+  is_dodo: boolean
+  liked: boolean
+  like_count: number
+  reply_count: number
+  has_self_harm_signal: boolean
+  published_at: string | null
+  created_at: string | null
+}
+
+export interface CommunityReply {
+  id: number
+  post_id: number
+  body: string
+  anonymous_handle: string
+  is_mine: boolean
+  is_dodo: boolean
+  liked: boolean
+  like_count: number
+  created_at: string | null
+}
+
+export interface CommunityPostDetail extends CommunityPost {
+  replies: CommunityReply[]
+}
+
+export interface CommunityListMeta {
+  current_page: number
+  last_page: number
+  total: number
+}
+
+export interface CommunityGateInfo {
+  ok: boolean
+  reason?: string
+  hint?: string
+  days_remaining?: number
+  records_remaining?: number
+}
+
+export const CommunityApi = {
+  list: (params?: { category?: CommunityCategory; sort?: CommunitySort; page?: number }) =>
+    api.get<{ data: CommunityPost[]; meta: CommunityListMeta }>('/v1/community/posts', { params }),
+  show: (id: number) =>
+    api.get<{ data: CommunityPostDetail }>(`/v1/community/posts/${id}`),
+  create: (payload: { category: CommunityCategory; title: string; body: string }) =>
+    api.post<{ data: CommunityPost }>('/v1/community/posts', payload),
+  remove: (id: number) =>
+    api.delete<{ data: { deleted: true } }>(`/v1/community/posts/${id}`),
+  reply: (postId: number, body: string) =>
+    api.post<{ data: CommunityReply }>(`/v1/community/posts/${postId}/replies`, { body }),
+  likePost: (id: number) =>
+    api.post<{ data: { liked: boolean; like_count: number } }>(`/v1/community/posts/${id}/like`),
+  likeReply: (id: number) =>
+    api.post<{ data: { liked: boolean; like_count: number } }>(`/v1/community/replies/${id}/like`),
+  report: (payload: {
+    target_type: 'post' | 'reply'
+    target_id: number
+    reason: ReportReason
+    message?: string
+  }) =>
+    api.post<{ data: { reported?: boolean; already_reported?: boolean } }>(
+      '/v1/community/reports',
+      payload,
+    ),
+}

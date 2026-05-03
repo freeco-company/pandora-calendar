@@ -92,6 +92,12 @@ Route::middleware(['auth.platform'])->prefix('v1')->group(function () {
         ]]);
     });
 
+    // Sentry 接通驗證 endpoint — 留著直到 prod DSN 設定 + 看到事件後再移除
+    // auth required（避免被掃 endpoint 灌爆 quota）+ Premium not required（任何登入用戶可觸發）
+    Route::get('/sentry-test', function () {
+        throw new \RuntimeException('Sentry connectivity probe (pandora-calendar backend)');
+    });
+
     Route::get('/cycles', [CycleController::class, 'index']);
     Route::post('/cycles', [CycleController::class, 'store']);
     Route::delete('/cycles/{cycle}', [CycleController::class, 'destroy']);
@@ -189,6 +195,17 @@ Route::middleware(['auth.platform'])->prefix('v1')->group(function () {
 
     // 醫療安全決策樹
     Route::get('/medical-safety/evaluate', [\App\Http\Controllers\Api\V1\MedicalSafetyController::class, 'evaluate']);
+
+    // P5+ 匿名社群問板 — gate（連用 14 天 + 5 筆紀錄才能 post）+ moderation（auto-block 紅線）
+    Route::get('/community/posts', [\App\Http\Controllers\Api\V1\CommunityController::class, 'index']);
+    Route::get('/community/posts/{id}', [\App\Http\Controllers\Api\V1\CommunityController::class, 'show'])->whereNumber('id');
+    Route::post('/community/posts', [\App\Http\Controllers\Api\V1\CommunityController::class, 'store'])->middleware('throttle:10,1');
+    Route::delete('/community/posts/{id}', [\App\Http\Controllers\Api\V1\CommunityController::class, 'destroy'])->whereNumber('id');
+    Route::post('/community/posts/{id}/replies', [\App\Http\Controllers\Api\V1\CommunityController::class, 'reply'])
+        ->whereNumber('id')->middleware('throttle:30,1');
+    Route::post('/community/posts/{id}/like', [\App\Http\Controllers\Api\V1\CommunityController::class, 'likePost'])->whereNumber('id');
+    Route::post('/community/replies/{id}/like', [\App\Http\Controllers\Api\V1\CommunityController::class, 'likeReply'])->whereNumber('id');
+    Route::post('/community/reports', [\App\Http\Controllers\Api\V1\CommunityController::class, 'report']);
 
     // 訂閱挽留 / 暫停
     Route::post('/subscription/pause', [\App\Http\Controllers\Api\V1\SubscriptionController::class, 'pause']);

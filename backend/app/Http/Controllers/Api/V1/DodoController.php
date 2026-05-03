@@ -51,10 +51,11 @@ class DodoController extends Controller
         $prediction = $this->predictor->predict($user->id, $checkedOn);
         $rhythm = $this->rhythmCalc->compute($prediction, $checkedOn);
 
-        // 里程碑（7/14/30/60/90）優先 — 踩到那天朵朵說里程碑句，否則 mood × phase 變體
+        // 朵朵回應：先試 LLM（pluggable env-driven），無 key / 違規 / 過 cap 自動 fallback library。
+        // 里程碑日（7/14/30/60/90）由 DodoLLMResponder 內部處理（優先用 library 里程碑句）。
         $streakDays = $this->computeStreak($user->id, $checkedOn);
-        $milestone = $this->responder->streakMilestone($streakDays);
-        $response = $milestone ?? $this->responder->respond($data['mood'], $rhythm);
+        $reply = $this->responder->respondWithLLM($user, $data['mood'], $rhythm, $streakDays);
+        $response = $reply['text'];
 
         $checkin = DodoCheckin::updateOrCreate(
             ['user_id' => $user->id, 'checked_on' => $checkedOn->toDateString()],
@@ -85,6 +86,7 @@ class DodoController extends Controller
                 'phase' => $checkin->phase_at_checkin,
                 'cycle_day' => $checkin->cycle_day_at_checkin,
                 'dodo_response' => $checkin->dodo_response,
+                'dodo_source' => $reply['source'], // 'llm' | 'library'（debug / 監控用）
             ],
         ], 201);
     }

@@ -4,6 +4,10 @@
  * 預設 false（沿用集團 tone-of-voice 為主，不擅自改）。
  * 使用 reactive ref 讓 view 即時切換，無需重新整理。
  *
+ * 與 useI18n 正交（兩個獨立維度）：
+ *   locale ('zh-TW' | 'en') × inclusive (false | true) → 4 dictionaries
+ *   實際 dispatch 在 useTone() 裡組合。
+ *
  * 持久化：localStorage `inclusive_mode` = '1' / '0'
  */
 import { ref, watch } from 'vue'

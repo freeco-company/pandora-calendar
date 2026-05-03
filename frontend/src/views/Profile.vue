@@ -21,6 +21,7 @@ import {
 import { Capacitor } from '@capacitor/core'
 import { useInclusiveMode } from '../composables/useInclusiveMode'
 import { useTone } from '../composables/useTone'
+import { useI18n, type Locale } from '../composables/useI18n'
 
 const router = useRouter()
 const user = getStoredUser()
@@ -28,6 +29,13 @@ const ent = useEntitlementsStore()
 const sfx = useSfx()
 const inclusiveMode = useInclusiveMode()
 const { t } = useTone()
+const { locale: currentLocale } = useI18n()
+
+function onLocaleChange(e: Event) {
+  const val = (e.target as HTMLSelectElement).value as Locale
+  currentLocale.value = val
+  sfx.play('ui_tap')
+}
 
 function toggleInclusive() {
   inclusiveMode.value = !inclusiveMode.value
@@ -526,6 +534,25 @@ async function confirmDeleteData() {
           />
         </button>
       </label>
+
+      <!-- Locale switcher (early access, foundation only — most views still zh-TW) -->
+      <div class="pt-3 border-t border-stone-200/60" data-test="locale-switcher">
+        <label class="block">
+          <p class="font-zen text-sm text-stone-700">{{ t('profile_locale_label') }}</p>
+          <select
+            :value="currentLocale"
+            data-test="locale-select"
+            class="mt-2 w-full rounded-lg border border-stone-300 bg-white px-3 py-2 font-zen text-sm text-stone-700 focus:outline-none focus:ring-2 focus:ring-peach-300"
+            @change="onLocaleChange"
+          >
+            <option value="zh-TW">繁體中文</option>
+            <option value="en">English</option>
+          </select>
+          <p class="font-zen text-[11px] text-stone-500 mt-1 leading-relaxed">
+            {{ t('profile_locale_help') }}
+          </p>
+        </label>
+      </div>
     </Card>
 
     <!-- 安全與隱私 -->

@@ -34,6 +34,9 @@ const routes: RouteRecordRaw[] = [
   { path: '/faq', component: () => import('./views/FaqView.vue'), meta: { public: true } },
   { path: '/health-check', component: () => import('./views/MedicalSafetyView.vue'), meta: { public: true } },
   { path: '/feedback', component: () => import('./views/FeedbackView.vue') },
+  { path: '/community', name: 'community', component: () => import('./views/CommunityListView.vue') },
+  { path: '/community/new', name: 'community-new', component: () => import('./views/CommunityCreateView.vue') },
+  { path: '/community/:id', name: 'community-detail', component: () => import('./views/CommunityDetailView.vue') },
   { path: '/year-review/:year?', component: () => import('./views/YearReviewView.vue'), meta: { hideTabBar: true } },
   { path: '/subscription/cancel', component: () => import('./views/CancelInterceptView.vue') },
   // Lock deep-link fallback（biometric 失敗時跳這裡）

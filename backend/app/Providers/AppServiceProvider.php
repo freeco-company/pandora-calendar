@@ -2,6 +2,7 @@
 
 namespace App\Providers;
 
+use App\Services\Community\AnonymousHandle;
 use App\Services\Conversion\ConversionPublisher;
 use App\Services\Conversion\NoopConversionPublisher;
 use App\Services\Conversion\HttpConversionPublisher;
@@ -32,6 +33,15 @@ class AppServiceProvider extends ServiceProvider
             return ($enabled && $url && $secret)
                 ? new HttpGamificationPublisher($app->make(HttpFactory::class), $url, $secret)
                 : new NoopGamificationPublisher;
+        });
+
+        // Community anonymous handle generator — keyed by APP_KEY-derived secret
+        // so handles are deterministic per env (dev / testing / prod) but unguessable.
+        $this->app->singleton(AnonymousHandle::class, function () {
+            $secret = config('app.community_handle_secret')
+                ?: config('app.key', 'pandora-calendar-community-fallback-secret');
+
+            return new AnonymousHandle((string) $secret);
         });
 
         $this->app->bind(ConversionPublisher::class, function ($app) {

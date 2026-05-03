@@ -26,5 +26,7 @@ return Application::configure(basePath: dirname(__DIR__))
         ]);
     })
     ->withExceptions(function (Exceptions $exceptions): void {
-        //
+        // Sentry — Laravel 11+ exception handler 註冊（health-data scrubbing 在 config/sentry.php）
+        // DSN 未設時 SDK noop，不影響 dev / test
+        \Sentry\Laravel\Integration::handles($exceptions);
     })->create();

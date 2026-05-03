@@ -7,6 +7,58 @@
 <a href="https://packagist.org/packages/laravel/framework"><img src="https://img.shields.io/packagist/l/laravel/framework" alt="License"></a>
 </p>
 
+## 朵朵 LLM 配置（pluggable env-driven）
+
+朵朵 check-in 對白支援接 LLM（OpenAI / Claude），無 key 時自動 fallback 到 `DodoDialogLibrary`（100+ 句變體），不阻塞上架。
+
+### 切換 provider
+
+```bash
+# 預設（無成本，用 library 變體）
+LLM_PROVIDER=null
+
+# OpenAI gpt-4o-mini（最便宜，~$0.0002/次對白）
+LLM_PROVIDER=openai
+OPENAI_API_KEY=sk-...
+OPENAI_MODEL=gpt-4o-mini
+
+# Claude haiku-4-5
+LLM_PROVIDER=claude
+ANTHROPIC_API_KEY=ant-...
+CLAUDE_MODEL=claude-haiku-4-5
+```
+
+### 成本控制
+
+每用戶每日 USD cap（超過自動 fallback library）：
+
+```bash
+LLM_USER_DAILY_CAP=0.05         # free 用戶 ~250 次/日
+LLM_PREMIUM_USER_DAILY_CAP=0.20 # premium 用戶 ~1000 次/日
+```
+
+成本估算用 `config/llm.php` 的 `price_per_1k_input/output_usd` 做粗估（中文 token 用 char/2 近似），累計到 `Cache::put('llm:cost:{userId}:{date}', ...)`，每日 endOfDay 自動歸零。
+
+### 合規防護
+
+LLM output 走兩層紅線檢查（任一命中即 fallback library）：
+
+1. **本地紅線詞**（`config/dodo-llm-redlines.php`，UTF-8 byte sequence 編碼避免 source code 出現 raw 違規詞）—— 涵蓋食安 / 健食法療效詞 + 朵朵 tone & voice 禁用稱呼
+2. **集團 sanitizer**（`Pandora\Shared\Compliance\LegalContentSanitizer::riskReport`，55+ 詞）
+
+System prompt 存在 `resources/prompts/dodo-system-prompt.txt`（外部 .txt，避免 ComplianceContentGuard 誤殺），啟動時也跑一次 sanitizer self-check。
+
+### 隱私
+
+- prompt 不送 user_id raw / email / name；OpenAI `user` 欄位送 `sha256(user_id + APP_KEY)` 前 32 字
+- 最近 5 個 checkin context 只送 `mood / phase / cycle_day`（無原文）
+
+### 監控
+
+DodoController POST `/api/v1/dodo/checkin` 回傳 `data.dodo_source`（`'llm'` 或 `'library'`），前端 / Sentry breadcrumb 可記錄分布。
+
+---
+
 ## About Laravel
 
 Laravel is a web application framework with expressive, elegant syntax. We believe development must be an enjoyable and creative experience to be truly fulfilling. Laravel takes the pain out of development by easing common tasks used in many web projects, such as:
