@@ -381,6 +381,48 @@ export const JourneyApi = {
   show: () => api.get<{ data: JourneyData }>('/v1/me/journey'),
 }
 
+export interface AchievementRow {
+  key: string
+  name: string
+  hint: string
+  kind: 'first' | 'streak' | 'milestone'
+  tier: 'bronze' | 'silver' | 'gold'
+  badge: string
+  badge_url: string
+  xp: number
+  target: number | null
+  unlocked: boolean
+  unlocked_at: string | null
+}
+
+export const AchievementsApi = {
+  list: () =>
+    api.get<{ data: { unlocked_count: number; total: number; achievements: AchievementRow[] } }>(
+      '/v1/me/achievements',
+    ),
+}
+
+export interface OutfitRow {
+  code: string
+  name: string
+  hint: string
+  rarity: 'common' | 'rare' | 'epic' | 'legendary'
+  icon: string
+  unlock: { type: string; value: any }
+  svg_url: string
+  unlocked: boolean
+  equipped: boolean
+}
+
+export const OutfitsApi = {
+  list: () =>
+    api.get<{ data: { unlocked_count: number; total: number; equipped: string; outfits: OutfitRow[] } }>(
+      '/v1/me/outfits',
+    ),
+  equip: (code: string) =>
+    api.post<{ data: { equipped: string } }>('/v1/me/outfits/equip', { code }),
+}
+
 export interface DailyReminder {
   phase: Phase
   cycle_day: number | null

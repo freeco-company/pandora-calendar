@@ -6,7 +6,19 @@
 // 後續若補齊集團 11 species PNG（從 @freeco-company/pandora-design-svg），
 // 這裡的 ANIMAL_META map 自動可以擴。
 
-export type Species = 'dodo' | 'rabbit' | 'cat' | 'penguin' | 'bear'
+export type Species =
+  | 'dodo'
+  | 'rabbit'
+  | 'cat'
+  | 'dog'
+  | 'fox'
+  | 'bear'
+  | 'penguin'
+  | 'pig'
+  | 'sheep'
+  | 'dinosaur'
+  | 'tiger'
+  | 'robot'
 export type Mood =
   | 'happy'
   | 'sleeping'
@@ -50,10 +62,16 @@ interface AnimalMeta {
 export const ANIMAL_META: Record<Species, AnimalMeta> = {
   dodo: { file: 'dodo.png', name: '朵朵', halo: '#FFE4D2' },
   rabbit: { file: 'rabbit.png', name: '兔兔', halo: '#FCE6E6' },
-  // 後備：未 ship 的 species fallback 到 rabbit
-  cat: { file: 'rabbit.png', name: '貓貓', halo: '#FFE3D6' },
-  penguin: { file: 'rabbit.png', name: '企鵝', halo: '#DDE9F2' },
-  bear: { file: 'rabbit.png', name: '熊熊', halo: '#E8D5BB' },
+  cat: { file: 'cat.png', name: '貓貓', halo: '#FFE3D6' },
+  dog: { file: 'dog.png', name: '狗狗', halo: '#FFE9CC' },
+  fox: { file: 'fox.png', name: '狐狸', halo: '#FFD9B3' },
+  bear: { file: 'bear.png', name: '熊熊', halo: '#E8D5BB' },
+  penguin: { file: 'penguin.png', name: '企鵝', halo: '#DDE9F2' },
+  pig: { file: 'pig.png', name: '豬豬', halo: '#FFE3E8' },
+  sheep: { file: 'sheep.png', name: '羊羊', halo: '#F5EDE0' },
+  dinosaur: { file: 'dinosaur.png', name: '小恐龍', halo: '#D9F0DC' },
+  tiger: { file: 'tiger.png', name: '老虎', halo: '#FFD9A8' },
+  robot: { file: 'robot.png', name: '機器人', halo: '#DDE3EC' },
 }
 
 interface AnchorPoint {
@@ -68,8 +86,15 @@ const ANIMAL_ANCHORS: Record<Species, AnchorPoint> = {
   dodo: { eye_y: 38, nose_y: 45, neck_y: 56, chest_y: 68, back_y: 50 },
   rabbit: { eye_y: 38, nose_y: 45, neck_y: 58, chest_y: 70, back_y: 52 },
   cat: { eye_y: 36, nose_y: 43, neck_y: 52, chest_y: 62, back_y: 50 },
-  penguin: { eye_y: 28, nose_y: 34, neck_y: 50, chest_y: 62, back_y: 48 },
+  dog: { eye_y: 35, nose_y: 43, neck_y: 53, chest_y: 64, back_y: 50 },
+  fox: { eye_y: 34, nose_y: 41, neck_y: 52, chest_y: 62, back_y: 49 },
   bear: { eye_y: 32, nose_y: 39, neck_y: 48, chest_y: 58, back_y: 46 },
+  penguin: { eye_y: 28, nose_y: 34, neck_y: 50, chest_y: 62, back_y: 48 },
+  pig: { eye_y: 35, nose_y: 44, neck_y: 53, chest_y: 64, back_y: 50 },
+  sheep: { eye_y: 34, nose_y: 42, neck_y: 51, chest_y: 62, back_y: 49 },
+  dinosaur: { eye_y: 30, nose_y: 38, neck_y: 50, chest_y: 62, back_y: 48 },
+  tiger: { eye_y: 33, nose_y: 41, neck_y: 50, chest_y: 60, back_y: 48 },
+  robot: { eye_y: 32, nose_y: 40, neck_y: 50, chest_y: 60, back_y: 48 },
 }
 
 interface OutfitMeta {

@@ -128,6 +128,11 @@ Route::middleware(['auth.platform'])->prefix('v1')->group(function () {
     // P0-4 Journey dashboard
     Route::get('/me/journey', [\App\Http\Controllers\Api\V1\JourneyController::class, 'show']);
 
+    // P3 成就 + outfits
+    Route::get('/me/achievements', [\App\Http\Controllers\Api\V1\AchievementsController::class, 'index']);
+    Route::get('/me/outfits', [\App\Http\Controllers\Api\V1\OutfitsController::class, 'index']);
+    Route::post('/me/outfits/equip', [\App\Http\Controllers\Api\V1\OutfitsController::class, 'equip']);
+
     // P1-5 Dodo chat history
     Route::get('/me/dodo/history', [\App\Http\Controllers\Api\V1\DodoChatHistoryController::class, 'index']);
 

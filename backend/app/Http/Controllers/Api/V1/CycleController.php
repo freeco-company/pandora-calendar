@@ -10,6 +10,7 @@ use App\Services\Calendar\CyclePredictor;
 use App\Services\Conversion\LoyaltySignalEvaluator;
 use App\Models\CycleSymptom;
 use App\Services\Gamification\CalendarEventCatalog;
+use App\Services\Gamification\AchievementChecker;
 use App\Services\Gamification\GamificationPublisher;
 use App\Services\Gamification\IdempotencyKey;
 use Illuminate\Http\JsonResponse;
@@ -23,6 +24,7 @@ class CycleController extends Controller
         private readonly GamificationPublisher $gamification,
         private readonly BodyRhythmSyncService $bodyRhythmSync,
         private readonly LoyaltySignalEvaluator $loyalty,
+        private readonly AchievementChecker $achievements,
     ) {}
 
     public function index(Request $request): JsonResponse
@@ -128,6 +130,9 @@ class CycleController extends Controller
 
         // ADR-003 lifecycle 訊號（不在 App 內顯示）
         $this->loyalty->evaluate($user);
+
+        // P3 — 檢查成就解鎖
+        $this->achievements->checkAll($user);
 
         return response()->json([
             'data' => [

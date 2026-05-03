@@ -1,0 +1,38 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 96 96" width="96" height="96">
+  <defs>
+    <linearGradient id="ring" x1="0.2" y1="0.1" x2="0.8" y2="0.9"><stop offset="0%" stop-color="#FFF5C8"/><stop offset="55%" stop-color="#FFD060"/><stop offset="100%" stop-color="#C48A1A"/></linearGradient>
+    <radialGradient id="bg" cx="0.5" cy="0.42" r="0.75"><stop offset="0%" stop-color="#FFFBE8"/><stop offset="55%" stop-color="#FFEDA8"/><stop offset="100%" stop-color="#F5C040" stop-opacity="0.5"/></radialGradient>
+    <linearGradient id="ribbon" x1="0" y1="0" x2="0" y2="1"><stop offset="0%" stop-color="#FFD060"/><stop offset="100%" stop-color="#A87000"/></linearGradient>
+    <linearGradient id="key" x1="0" y1="0" x2="0" y2="1"><stop offset="0%" stop-color="#FFEDA8"/><stop offset="55%" stop-color="#FFD060"/><stop offset="100%" stop-color="#C48A1A"/></linearGradient>
+  </defs>
+  <ellipse cx="48" cy="92" rx="26" ry="2.5" fill="#7A5000" opacity="0.2"/>
+  <g><path d="M 28 70 L 28 93 L 38 87 L 48 92 L 58 87 L 68 93 L 68 70 Z" fill="url(#ribbon)" stroke="#7A5000" stroke-width="0.8" stroke-linejoin="round"/>
+    <path d="M 28 70 L 38 87 L 28 84 Z" fill="#7A5000" opacity="0.35"/><path d="M 68 70 L 58 87 L 68 84 Z" fill="#7A5000" opacity="0.35"/></g>
+  <circle cx="48" cy="48" r="42" fill="url(#bg)" stroke="url(#ring)" stroke-width="5"/>
+  <circle cx="48" cy="48" r="38" fill="none" stroke="#fff" stroke-width="1.4" opacity="0.65"/>
+  <g opacity="0.45" stroke="#FFD060" stroke-width="1" stroke-linecap="round">
+    <line x1="48" y1="16" x2="48" y2="22"/><line x1="16" y1="48" x2="22" y2="48"/><line x1="74" y1="48" x2="80" y2="48"/>
+    <line x1="24" y1="24" x2="28" y2="28"/><line x1="68" y1="68" x2="72" y2="72"/><line x1="72" y1="24" x2="68" y2="28"/><line x1="24" y1="72" x2="28" y2="68"/>
+    <animate attributeName="opacity" values="0.45;0.7;0.45" dur="4.80s" repeatCount="indefinite" calcMode="spline" keyTimes="0;0.5;1" keySplines="0.42 0 0.58 1;0.42 0 0.58 1"/>
+  </g>
+  <path d="M 26 36 Q 48 22 70 36" fill="none" stroke="#fff" stroke-width="2.2" opacity="0.7" stroke-linecap="round"/>
+  <g><animateTransform attributeName="transform" type="translate" values="0 0;0 -1.2;0 0" dur="6.75s" repeatCount="indefinite" calcMode="spline" keyTimes="0;0.5;1" keySplines="0.42 0 0.58 1;0.42 0 0.58 1"/>
+    <path d="M 18 56 C 17 54 15 54 15 56 C 15 58 18 60 18 60 C 18 60 21 58 21 56 C 21 54 19 54 18 56 Z" fill="#F5B5C5" opacity="0.85"><animate attributeName="opacity" values="0.85;0.6;0.85" dur="4.50s" repeatCount="indefinite" calcMode="spline" keyTimes="0;0.5;1" keySplines="0.42 0 0.58 1;0.42 0 0.58 1"/></path>
+    <path d="M 78 56 C 77 54 75 54 75 56 C 75 58 78 60 78 60 C 78 60 81 58 81 56 C 81 54 79 54 78 56 Z" fill="#F5B5C5" opacity="0.7"><animate attributeName="opacity" values="0.7;0.4;0.7" dur="5.40s" repeatCount="indefinite" calcMode="spline" keyTimes="0;0.5;1" keySplines="0.42 0 0.58 1;0.42 0 0.58 1"/></path>
+  </g>
+  <!-- key (gentle sway rotate) -->
+  <g>
+    <animateTransform attributeName="transform" type="rotate" values="-1.5 48 48; 1.5 48 48; -1.5 48 48" dur="7.50s" repeatCount="indefinite" calcMode="spline" keyTimes="0;0.5;1" keySplines="0.42 0 0.58 1;0.42 0 0.58 1"/>
+    <path d="M 48 28 C 41 20 30 24 32 36 C 34 45 48 52 48 52 C 48 52 62 45 64 36 C 66 24 55 20 48 28 Z"
+          fill="url(#key)" stroke="#7A5000" stroke-width="1.5" stroke-linejoin="round"/>
+    <path d="M 48 34 C 45 30 39 32 40 38 C 41 42 48 46 48 46 C 48 46 55 42 56 38 C 57 32 51 30 48 34 Z"
+          fill="#FFFBE8" stroke="#7A5000" stroke-width="0.9"/>
+    <path d="M 38 30 Q 42 26 46 28" fill="none" stroke="#fff" stroke-width="1.4" opacity="0.7" stroke-linecap="round"/>
+    <rect x="46" y="52" width="4" height="14" rx="1" fill="url(#key)" stroke="#7A5000" stroke-width="1"/>
+    <rect x="46.5" y="52.5" width="1" height="13" fill="#fff" opacity="0.55"/>
+    <rect x="50" y="58" width="5" height="3" rx="0.8" fill="url(#key)" stroke="#7A5000" stroke-width="0.9"/>
+    <rect x="50" y="63" width="3.5" height="3" rx="0.8" fill="url(#key)" stroke="#7A5000" stroke-width="0.9"/>
+  </g>
+  <path d="M 22 38 L 23 36 L 24 38 L 26 39 L 24 40 L 23 42 L 22 40 L 20 39 Z" fill="#fff" opacity="0.9"><animate attributeName="opacity" values="0.9;0.6;0.9" dur="3.60s" repeatCount="indefinite" calcMode="spline" keyTimes="0;0.5;1" keySplines="0.42 0 0.58 1;0.42 0 0.58 1"/></path>
+  <path d="M 70 64 L 71 62 L 72 64 L 74 65 L 72 66 L 71 68 L 70 66 L 68 65 Z" fill="#fff" opacity="0.85"><animate attributeName="opacity" values="0.85;0.55;0.85" dur="4.20s" repeatCount="indefinite" begin="0.8s" calcMode="spline" keyTimes="0;0.5;1" keySplines="0.42 0 0.58 1;0.42 0 0.58 1"/></path>
+</svg>

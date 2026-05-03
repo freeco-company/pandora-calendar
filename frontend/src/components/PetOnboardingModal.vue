@@ -22,6 +22,9 @@ const SPECIES_LABEL: Record<string, string> = {
   penguin: '企鵝',
   pig: '豬豬',
   sheep: '羊羊',
+  dinosaur: '小恐龍',
+  tiger: '老虎',
+  robot: '機器人',
 }
 
 onMounted(async () => {

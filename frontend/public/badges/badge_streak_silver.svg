@@ -1,0 +1,49 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 96 96" width="96" height="96">
+  <defs>
+    <linearGradient id="ring" x1="0.2" y1="0.1" x2="0.8" y2="0.9"><stop offset="0%" stop-color="#FFFFFF"/><stop offset="55%" stop-color="#D8E0EE"/><stop offset="100%" stop-color="#7A8AAB"/></linearGradient>
+    <radialGradient id="bg" cx="0.5" cy="0.42" r="0.75"><stop offset="0%" stop-color="#FFFFFF"/><stop offset="55%" stop-color="#E8E0FA"/><stop offset="100%" stop-color="#C0C8E8" stop-opacity="0.55"/></radialGradient>
+    <linearGradient id="ribbon" x1="0" y1="0" x2="0" y2="1"><stop offset="0%" stop-color="#D4DCEE"/><stop offset="100%" stop-color="#7A8AAB"/></linearGradient>
+    <linearGradient id="moon" x1="0" y1="0" x2="0" y2="1"><stop offset="0%" stop-color="#FFFBE8"/><stop offset="60%" stop-color="#FFE8B8"/><stop offset="100%" stop-color="#E0B070"/></linearGradient>
+  </defs>
+  <ellipse cx="48" cy="92" rx="26" ry="2.5" fill="#5A6B89" opacity="0.18"/>
+  <g><path d="M 28 70 L 28 93 L 38 87 L 48 92 L 58 87 L 68 93 L 68 70 Z" fill="url(#ribbon)" stroke="#5A6B89" stroke-width="0.8" stroke-linejoin="round"/>
+    <path d="M 28 70 L 38 87 L 28 84 Z" fill="#5A6B89" opacity="0.35"/><path d="M 68 70 L 58 87 L 68 84 Z" fill="#5A6B89" opacity="0.35"/></g>
+  <circle cx="48" cy="48" r="42" fill="url(#bg)" stroke="url(#ring)" stroke-width="5"/>
+  <circle cx="48" cy="48" r="38" fill="none" stroke="#fff" stroke-width="1.4" opacity="0.65"/>
+  <path d="M 26 36 Q 48 22 70 36" fill="none" stroke="#fff" stroke-width="2.2" opacity="0.7" stroke-linecap="round"/>
+  <g><animateTransform attributeName="transform" type="translate" values="0 0;0 -1.2;0 0" dur="6.75s" repeatCount="indefinite" calcMode="spline" keyTimes="0;0.5;1" keySplines="0.42 0 0.58 1;0.42 0 0.58 1"/>
+    <path d="M 22 60 C 21 58 19 58 19 60 C 19 62 22 64 22 64 C 22 64 25 62 25 60 C 25 58 23 58 22 60 Z" fill="#F5B5C5" opacity="0.85"><animate attributeName="opacity" values="0.85;0.6;0.85" dur="4.50s" repeatCount="indefinite" calcMode="spline" keyTimes="0;0.5;1" keySplines="0.42 0 0.58 1;0.42 0 0.58 1"/></path>
+    <path d="M 76 60 C 75 58 73 58 73 60 C 73 62 76 64 76 64 C 76 64 79 62 79 60 C 79 58 77 58 76 60 Z" fill="#F5B5C5" opacity="0.7"><animate attributeName="opacity" values="0.7;0.4;0.7" dur="5.40s" repeatCount="indefinite" calcMode="spline" keyTimes="0;0.5;1" keySplines="0.42 0 0.58 1;0.42 0 0.58 1"/></path>
+  </g>
+  <circle cx="48" cy="48" r="32" fill="#E0D4F5" opacity="0.18"/>
+  <!-- 1 plump star (twinkle) -->
+  <g>
+    <animateTransform attributeName="transform" type="rotate" values="0 26 36; 4 26 36; 0 26 36" dur="7.50s" repeatCount="indefinite" calcMode="spline" keyTimes="0;0.5;1" keySplines="0.42 0 0.58 1;0.42 0 0.58 1"/>
+    <path d="M 22 32 Q 23 28 24 32 Q 28 31 27 35 Q 31 36 27 38 Q 26 42 24 38 Q 20 38 21 35 Q 18 32 22 32 Z" fill="#FFE066" stroke="#a47e0c" stroke-width="0.8">
+      <animate attributeName="opacity" values="1;0.6;1" dur="3.30s" repeatCount="indefinite" calcMode="spline" keyTimes="0;0.5;1" keySplines="0.42 0 0.58 1;0.42 0 0.58 1"/>
+    </path>
+    <circle cx="23" cy="35" r="0.8" fill="#fff"/>
+  </g>
+  <!-- moon (sleepy bob) -->
+  <g>
+    <animateTransform attributeName="transform" type="translate" values="0 0;0 -1;0 0" dur="6.00s" repeatCount="indefinite" calcMode="spline" keyTimes="0;0.5;1" keySplines="0.42 0 0.58 1;0.42 0 0.58 1"/>
+    <path d="M 60 28 A 21 21 0 1 0 60 68 A 16 16 0 1 1 60 28 Z" fill="url(#moon)" stroke="#A86840" stroke-width="1.5" stroke-linejoin="round"/>
+    <ellipse cx="42" cy="42" rx="3" ry="5" fill="#fff" opacity="0.5"/>
+    <ellipse cx="44" cy="54" rx="3" ry="1.8" fill="#F9C4B0" opacity="0.85"/>
+    <path d="M 38 46 Q 41 49 44 46" fill="none" stroke="#5A4030" stroke-width="1.4" stroke-linecap="round"/>
+    <path d="M 41 58 Q 43 60 45 58" fill="none" stroke="#5A4030" stroke-width="1.2" stroke-linecap="round"/>
+  </g>
+  <!-- ZZZ (drift up + fade) -->
+  <g>
+    <path d="M 26 26 L 32 26 L 26 32 L 32 32" fill="none" stroke="#7A8AAB" stroke-width="1.3" stroke-linecap="round" stroke-linejoin="round" opacity="0.75">
+      <animate attributeName="opacity" values="0;0.75;0" dur="4.50s" repeatCount="indefinite" begin="0s" calcMode="spline" keyTimes="0;0.5;1" keySplines="0.42 0 0.58 1;0.42 0 0.58 1"/>
+      <animateTransform attributeName="transform" type="translate" values="0 0;0 -4;0 -8" dur="4.50s" repeatCount="indefinite" begin="0s" calcMode="spline" keyTimes="0;0.5;1" keySplines="0.42 0 0.58 1;0.42 0 0.58 1"/>
+    </path>
+    <path d="M 22 36 L 27 36 L 22 41 L 27 41" fill="none" stroke="#7A8AAB" stroke-width="1.1" stroke-linecap="round" stroke-linejoin="round" opacity="0.6">
+      <animate attributeName="opacity" values="0;0.6;0" dur="4.50s" repeatCount="indefinite" begin="1s" calcMode="spline" keyTimes="0;0.5;1" keySplines="0.42 0 0.58 1;0.42 0 0.58 1"/>
+      <animateTransform attributeName="transform" type="translate" values="0 0;0 -4;0 -8" dur="4.50s" repeatCount="indefinite" begin="1s" calcMode="spline" keyTimes="0;0.5;1" keySplines="0.42 0 0.58 1;0.42 0 0.58 1"/>
+    </path>
+  </g>
+  <circle cx="76" cy="32" r="1" fill="#FFE066"><animate attributeName="opacity" values="0.95;0.55;0.95" dur="3.60s" repeatCount="indefinite" calcMode="spline" keyTimes="0;0.5;1" keySplines="0.42 0 0.58 1;0.42 0 0.58 1"/></circle>
+  <circle cx="78" cy="56" r="1.2" fill="#FFF8F2"><animate attributeName="opacity" values="0.95;0.55;0.95" dur="4.20s" repeatCount="indefinite" begin="0.8s" calcMode="spline" keyTimes="0;0.5;1" keySplines="0.42 0 0.58 1;0.42 0 0.58 1"/></circle>
+</svg>

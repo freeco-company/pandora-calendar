@@ -9,11 +9,10 @@ use Illuminate\Http\Request;
 class PetController extends Controller
 {
     /**
-     * 集團共用 12 species 由 design-svg manifest 鎖定。calendar 預設給範圍縮版
-     * （避免讓用戶看 robot / dinosaur 跟月經情境衝突）。
+     * 集團共用 11 species 由 design-svg manifest 鎖定（dodo 是 NPC 不算用戶寵物）。
      */
     public const ALLOWED_SPECIES = [
-        'cat', 'rabbit', 'dog', 'fox', 'bear', 'penguin', 'pig', 'sheep',
+        'cat', 'rabbit', 'dog', 'fox', 'bear', 'penguin', 'pig', 'sheep', 'dinosaur', 'tiger', 'robot',
     ];
 
     public function show(Request $request): JsonResponse

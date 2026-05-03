@@ -30,10 +30,14 @@ export default {
           luteal: '#B59AD7',
         },
       },
+      // 對齊 pandora-meal style.css 字體階層
       fontFamily: {
-        display: ['"Shippori Mincho"', '"Noto Serif TC"', 'serif'],
-        zen: ['"Zen Kaku Gothic New"', '"Noto Sans TC"', 'sans-serif'],
-        sans: ['"Noto Sans TC"', '"Zen Kaku Gothic New"', 'system-ui', 'sans-serif'],
+        display: ['"Shippori Mincho B1"', '"Noto Serif TC"', '"Noto Serif JP"', 'serif'],
+        zen: ['"Zen Kaku Gothic New"', '"Noto Sans TC"', '"PingFang TC"', '-apple-system', 'sans-serif'],
+        maru: ['"Zen Maru Gothic"', '"Noto Sans TC"', 'sans-serif'],
+        rounded: ['"M PLUS Rounded 1c"', '"Noto Sans TC"', 'sans-serif'],
+        pop: ['"Mochiy Pop One"', '"M PLUS Rounded 1c"', '"Noto Sans TC"', 'sans-serif'],
+        sans: ['"Zen Kaku Gothic New"', '"Noto Sans TC"', '"PingFang TC"', '-apple-system', 'sans-serif'],
       },
       boxShadow: {
         soft: '0 6px 24px -8px rgba(159, 107, 62, 0.18)',

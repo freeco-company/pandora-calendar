@@ -1,34 +1,77 @@
 <script setup lang="ts">
 import { onMounted, ref, computed } from 'vue'
 import { useRouter } from 'vue-router'
-import { JourneyApi, type JourneyData, getStoredUser } from '../api'
+import {
+  JourneyApi, AchievementsApi, OutfitsApi,
+  type JourneyData, type AchievementRow, type OutfitRow,
+  getStoredUser,
+} from '../api'
 import Card from '../components/ui/Card.vue'
 import Spinner from '../components/ui/Spinner.vue'
 import Character from '../components/Character.vue'
 import { getPet } from '../lib/character'
-import { OUTFITS } from '../lib/character'
 
 const router = useRouter()
 const data = ref<JourneyData | null>(null)
+const achievements = ref<AchievementRow[]>([])
+const outfits = ref<OutfitRow[]>([])
+const equippedCode = ref<string>('none')
 const loading = ref(true)
 const pet = ref(getPet())
 const user = getStoredUser()
 
-const ALL_OUTFITS = OUTFITS
-const ownedSet = computed(() => new Set(data.value?.outfit_owned ?? []))
+const RARITY_COLOR: Record<string, string> = {
+  common: 'border-stone-200 bg-white',
+  rare: 'border-sage-200 bg-sage-50',
+  epic: 'border-lavender-200 bg-lavender-50',
+  legendary: 'border-peach-300 bg-peach-50 ring-2 ring-peach-200',
+}
+const RARITY_LABEL: Record<string, string> = {
+  common: '一般', rare: '稀有', epic: '史詩', legendary: '傳說',
+}
+const TIER_COLOR: Record<string, string> = {
+  bronze: 'text-amber-700',
+  silver: 'text-stone-500',
+  gold: 'text-yellow-600',
+}
+
 const progressPct = computed(() => {
   if (!data.value) return 0
   return Math.min(100, Math.round((data.value.progress_in_level / data.value.need_for_next_level) * 100))
 })
 
-onMounted(async () => {
+const unlockedAchievements = computed(() => achievements.value.filter((a) => a.unlocked))
+const lockedAchievements = computed(() => achievements.value.filter((a) => !a.unlocked))
+const unlockedOutfits = computed(() => outfits.value.filter((o) => o.unlocked))
+const lockedOutfits = computed(() => outfits.value.filter((o) => !o.unlocked))
+
+async function load() {
+  loading.value = true
   try {
-    const r = await JourneyApi.show()
-    data.value = r.data.data
+    const [j, a, o] = await Promise.all([
+      JourneyApi.show(),
+      AchievementsApi.list(),
+      OutfitsApi.list(),
+    ])
+    data.value = j.data.data
+    achievements.value = a.data.data.achievements
+    outfits.value = o.data.data.outfits
+    equippedCode.value = o.data.data.equipped
   } finally {
     loading.value = false
   }
-})
+}
+onMounted(load)
+
+async function equip(code: string) {
+  try {
+    await OutfitsApi.equip(code)
+    equippedCode.value = code
+    outfits.value = outfits.value.map((o) => ({ ...o, equipped: o.unlocked && o.code === code }))
+  } catch (e: any) {
+    alert(e?.response?.data?.error === 'outfit_locked' ? '這件還沒解鎖喔' : '裝備失敗')
+  }
+}
 </script>
 
 <template>
@@ -37,7 +80,9 @@ onMounted(async () => {
 
     <header class="text-center">
       <p class="font-zen text-xs text-stone-500 tracking-widest uppercase">Journey</p>
-      <h1 class="font-display text-2xl font-bold text-peach-500 mt-0.5">{{ user?.display_name ?? user?.name ?? '朋友' }} 的旅程</h1>
+      <h1 class="font-display text-2xl font-bold text-peach-500 mt-0.5">
+        {{ user?.display_name ?? user?.name ?? '朋友' }} 的旅程
+      </h1>
     </header>
 
     <Spinner v-if="loading" label="朵朵在算..." />
@@ -49,7 +94,7 @@ onMounted(async () => {
           <Character
             :species="pet.species"
             :level="data.level"
-            :outfit="pet.outfit"
+            :outfit="(equippedCode as any) || pet.outfit"
             mood="proud"
             :size="120"
             :show-halo="true"
@@ -75,10 +120,9 @@ onMounted(async () => {
         <h3 class="font-display font-bold text-peach-500 text-base flex items-center gap-2">
           <span>🔥</span>
           <span>連勝</span>
-          <span class="text-2xl text-sakura-500 font-display">{{ data.streak_days }}</span>
+          <span class="font-display text-2xl text-sakura-500">{{ data.streak_days }}</span>
           <span class="font-zen text-[12px] text-stone-500 self-end pb-1">天</span>
         </h3>
-        <p class="font-zen text-[12px] text-stone-500">過去 30 天</p>
         <div class="grid grid-cols-3 gap-2 text-center text-sm font-zen">
           <div class="bg-cream-50 rounded-2xl py-3">
             <p class="font-display text-lg text-peach-500 font-bold">{{ data.last_30_days.cycles_logged }}</p>
@@ -95,51 +139,102 @@ onMounted(async () => {
         </div>
       </Card>
 
-      <!-- 里程碑 -->
+      <!-- 成就（badge SVG） -->
       <Card tone="plain" class="space-y-3">
-        <h3 class="font-display font-bold text-peach-500 text-base">里程碑</h3>
-        <div class="space-y-2">
+        <div class="flex items-baseline justify-between">
+          <h3 class="font-display font-bold text-peach-500 text-base">成就徽章</h3>
+          <p class="font-zen text-[11px] text-stone-500">{{ unlockedAchievements.length }} / {{ achievements.length }}</p>
+        </div>
+
+        <!-- 已解鎖（彩色） -->
+        <div v-if="unlockedAchievements.length" class="grid grid-cols-3 gap-3">
           <div
-            v-for="m in data.milestones"
-            :key="m.code"
-            class="flex items-center gap-3 p-2.5 rounded-2xl"
-            :class="m.unlocked ? 'bg-peach-50' : 'bg-cream-50/50'"
+            v-for="a in unlockedAchievements"
+            :key="a.key"
+            class="flex flex-col items-center gap-1"
           >
-            <span class="text-2xl" :class="{ 'opacity-30': !m.unlocked }">{{ m.icon }}</span>
-            <div class="flex-1">
-              <p class="font-zen text-sm" :class="m.unlocked ? 'text-peach-500 font-bold' : 'text-stone-500'">
-                {{ m.name }}
-              </p>
-              <p
-                v-if="!m.unlocked && m.target"
-                class="font-zen text-[11px] text-stone-400 mt-0.5"
-              >
-                {{ m.progress ?? 0 }} / {{ m.target }}
-              </p>
+            <div class="w-16 h-16 flex items-center justify-center">
+              <img :src="a.badge_url" :alt="a.name" class="w-full h-full object-contain drop-shadow-sm" />
             </div>
-            <span v-if="m.unlocked" class="text-sage-500 font-zen text-xs">✓ 已解鎖</span>
+            <p class="font-zen text-[11px] text-stone-700 text-center font-bold">{{ a.name }}</p>
+            <p class="font-zen text-[9px]" :class="TIER_COLOR[a.tier]">{{ a.tier.toUpperCase() }}</p>
           </div>
         </div>
+
+        <!-- 待解（灰階 + 進度提示） -->
+        <details v-if="lockedAchievements.length" class="pt-2 border-t border-cream-100">
+          <summary class="font-zen text-[12px] text-stone-500 cursor-pointer">待解鎖 {{ lockedAchievements.length }} 項</summary>
+          <div class="mt-3 grid grid-cols-3 gap-3">
+            <div
+              v-for="a in lockedAchievements"
+              :key="a.key"
+              class="flex flex-col items-center gap-1 opacity-40"
+            >
+              <div class="w-16 h-16 flex items-center justify-center grayscale">
+                <img :src="a.badge_url" :alt="a.name" class="w-full h-full object-contain" />
+              </div>
+              <p class="font-zen text-[11px] text-stone-600 text-center">{{ a.name }}</p>
+              <p class="font-zen text-[9px] text-stone-400">{{ a.hint }}</p>
+            </div>
+          </div>
+        </details>
       </Card>
 
-      <!-- Outfit 解鎖預告 -->
+      <!-- Outfit 解鎖牆 -->
       <Card tone="plain" class="space-y-3">
-        <h3 class="font-display font-bold text-peach-500 text-base">寵物裝扮</h3>
-        <p class="font-zen text-[11px] text-stone-500">
-          已擁有 {{ data.outfit_owned.length }} 件 · 連勝、達成成就會解鎖更多。
-        </p>
-        <div class="grid grid-cols-4 gap-2">
-          <div
-            v-for="o in ALL_OUTFITS.slice(0, 12)"
-            :key="o"
-            class="aspect-square rounded-2xl flex items-center justify-center text-3xl"
-            :class="ownedSet.has(o) ? 'bg-peach-50 border border-peach-200' : 'bg-cream-50 border border-cream-200 opacity-30'"
-            :title="o"
-          >
-            <span v-if="ownedSet.has(o)">🎀</span>
-            <span v-else>🔒</span>
-          </div>
+        <div class="flex items-baseline justify-between">
+          <h3 class="font-display font-bold text-peach-500 text-base">寵物裝扮</h3>
+          <p class="font-zen text-[11px] text-stone-500">{{ unlockedOutfits.length }} / {{ outfits.length }}</p>
         </div>
+
+        <div v-if="unlockedOutfits.length" class="grid grid-cols-2 gap-2">
+          <button
+            v-for="o in unlockedOutfits"
+            :key="o.code"
+            @click="equip(o.code)"
+            :data-test="`outfit-${o.code}`"
+            :class="[
+              RARITY_COLOR[o.rarity] || 'border-stone-200 bg-white',
+              o.equipped ? 'ring-2 ring-peach-400' : '',
+              'border rounded-2xl p-3 flex items-center gap-2 transition-all active:scale-95'
+            ]"
+          >
+            <span class="text-2xl">{{ o.icon }}</span>
+            <div class="flex-1 text-left min-w-0">
+              <p class="font-zen text-[12px] text-stone-700 truncate font-bold">{{ o.name }}</p>
+              <p class="font-zen text-[10px] text-stone-400">{{ RARITY_LABEL[o.rarity] }}</p>
+            </div>
+            <span v-if="o.equipped" class="text-[10px] text-peach-500 font-bold">✓ 穿著</span>
+          </button>
+          <button
+            v-if="equippedCode !== 'none'"
+            @click="equip('none')"
+            class="border border-stone-200 bg-cream-50 rounded-2xl p-3 text-stone-500 font-zen text-xs hover:bg-cream-100"
+          >
+            脫掉裝扮
+          </button>
+        </div>
+
+        <details v-if="lockedOutfits.length" class="pt-2 border-t border-cream-100">
+          <summary class="font-zen text-[12px] text-stone-500 cursor-pointer">待解鎖 {{ lockedOutfits.length }} 件</summary>
+          <div class="mt-3 grid grid-cols-2 gap-2">
+            <div
+              v-for="o in lockedOutfits"
+              :key="o.code"
+              :class="[
+                RARITY_COLOR[o.rarity] || 'border-stone-200 bg-white',
+                'border rounded-2xl p-3 flex items-center gap-2 opacity-50'
+              ]"
+            >
+              <span class="text-2xl grayscale">{{ o.icon }}</span>
+              <div class="flex-1 text-left min-w-0">
+                <p class="font-zen text-[12px] text-stone-600 truncate">{{ o.name }}</p>
+                <p class="font-zen text-[10px] text-stone-400">{{ o.hint }}</p>
+              </div>
+              <span class="text-[14px]">🔒</span>
+            </div>
+          </div>
+        </details>
       </Card>
     </template>
   </div>
