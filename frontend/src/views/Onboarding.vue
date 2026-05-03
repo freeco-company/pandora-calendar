@@ -6,6 +6,9 @@ import Character from '../components/Character.vue'
 import OnboardingStep1Period from './onboarding/OnboardingStep1Period.vue'
 import OnboardingStep2CycleLength from './onboarding/OnboardingStep2CycleLength.vue'
 import OnboardingStep3Goal, { type OnboardingGoal } from './onboarding/OnboardingStep3Goal.vue'
+import { useTone } from '../composables/useTone'
+
+const { t } = useTone()
 
 const router = useRouter()
 
@@ -87,7 +90,7 @@ async function submit() {
         <div class="flex justify-center">
           <Character species="dodo" mood="happy" :size="100" :show-halo="true" :floaty="true" />
         </div>
-        <h1 class="font-display text-2xl font-bold text-peach-500">朵朵想多認識妳一點</h1>
+        <h1 class="font-display text-2xl font-bold text-peach-500">{{ t('onboarding_title') }}</h1>
         <div class="flex justify-center gap-1.5 pt-1">
           <span
             v-for="n in 3"
@@ -123,10 +126,9 @@ async function submit() {
 
       <!-- 隱私差異化 -->
       <div class="text-center space-y-1 pt-2" data-test="onboarding-privacy">
-        <p class="font-display font-bold text-peach-500 text-base">妳的資料只屬於妳</p>
+        <p class="font-display font-bold text-peach-500 text-base">{{ t('privacy_yours') }}</p>
         <p class="font-zen text-[12px] text-stone-500 leading-relaxed">
-          我們不賣資料、不放廣告。<br />
-          妳的週期紀錄只用來陪伴妳，不會被當成廣告素材。
+          {{ t('privacy_blurb_long') }}
         </p>
       </div>
     </div>

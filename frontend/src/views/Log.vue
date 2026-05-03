@@ -117,13 +117,14 @@ function pickMood(v: string) {
 </script>
 
 <template>
-  <div class="px-5 pt-10 pb-6 max-w-md mx-auto space-y-5">
+  <div class="px-5 md:px-8 pt-10 pb-6 max-w-md md:max-w-4xl lg:max-w-5xl mx-auto space-y-5">
     <header>
       <p class="font-zen text-xs text-stone-500 tracking-widest uppercase">Log</p>
       <h1 class="font-display text-2xl font-bold text-peach-500 mt-0.5">今天的記錄</h1>
       <p class="font-zen text-sm text-stone-500 mt-1">越記越懂自己 · 朵朵會跟著一起學</p>
     </header>
 
+    <div class="md:grid md:grid-cols-2 md:gap-5 md:items-start space-y-5 md:space-y-0">
     <Card tone="plain" class="space-y-4">
       <div class="flex items-center gap-2">
         <span class="text-2xl">🌙</span>
@@ -261,6 +262,7 @@ function pickMood(v: string) {
         存今日狀態
       </Button>
     </Card>
+    </div>
 
     <p
       v-if="message"

@@ -65,7 +65,7 @@ const points = computed(() => {
 </script>
 
 <template>
-  <div class="px-5 pt-10 pb-12 max-w-md mx-auto space-y-5">
+  <div class="px-5 md:px-8 pt-10 pb-12 max-w-md md:max-w-2xl lg:max-w-3xl mx-auto space-y-5">
     <button @click="router.back()" class="text-stone-500 font-zen text-sm">← 返回</button>
 
     <header>

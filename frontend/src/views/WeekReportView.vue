@@ -34,7 +34,7 @@ async function regen() {
 </script>
 
 <template>
-  <div class="px-5 pt-8 pb-6 max-w-md mx-auto space-y-4">
+  <div class="px-5 md:px-8 pt-8 pb-6 max-w-md md:max-w-2xl lg:max-w-3xl mx-auto space-y-4">
     <button @click="router.push('/me')" class="font-zen text-sm text-peach-500 hover:text-peach-400">
       ← 回我的
     </button>

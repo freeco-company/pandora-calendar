@@ -11,6 +11,9 @@ import Character from '../components/Character.vue'
 import { useSfx } from '../lib/sound'
 import { moodForPhase } from '../lib/character'
 import { getCurrentLevel, awardXp, consumeGamificationPending } from '../lib/gamification'
+import { useTone } from '../composables/useTone'
+
+const { t } = useTone()
 
 const router = useRouter()
 const ent = useEntitlementsStore()
@@ -108,7 +111,7 @@ const dodoMood = computed(() => moodForPhase(todayPhase.value))
 </script>
 
 <template>
-  <div class="px-5 pt-10 pb-6 max-w-md mx-auto space-y-5">
+  <div class="px-5 md:px-8 pt-10 pb-6 max-w-md md:max-w-3xl lg:max-w-4xl mx-auto space-y-5">
     <!-- 朵朵 NPC 角色區 -->
     <header class="text-center space-y-2">
       <div class="flex justify-center">
@@ -125,9 +128,11 @@ const dodoMood = computed(() => moodForPhase(todayPhase.value))
       </div>
       <h1 class="font-display text-2xl font-bold text-peach-500">朵朵 dodo</h1>
       <p class="font-zen text-sm text-stone-600">
-        妳今天感覺如何？
+        {{ t('dodo_today_question') }}
       </p>
     </header>
+
+    <div class="md:grid md:grid-cols-2 md:gap-5 md:items-start space-y-5 md:space-y-0">
 
     <Card tone="plain">
       <p class="font-zen text-xs text-stone-500 text-center mb-3">點一下，告訴朵朵</p>
@@ -160,7 +165,7 @@ const dodoMood = computed(() => moodForPhase(todayPhase.value))
     >
       <p class="font-zen text-xs text-peach-500 mb-2 flex items-center gap-1.5">
         <span class="w-1.5 h-1.5 rounded-full bg-peach-400 animate-sparkle" />
-        朵朵說<span v-if="todayPhase"> · {{ phaseLabels[todayPhase] }}</span>
+        {{ t('dodo_say') }}<span v-if="todayPhase"> · {{ phaseLabels[todayPhase] }}</span>
       </p>
       <p class="text-stone-700 leading-relaxed font-zen">{{ todayResponse }}</p>
     </Card>
@@ -201,7 +206,7 @@ const dodoMood = computed(() => moodForPhase(todayPhase.value))
     <!-- P1-5 朵朵聊天歷史 timeline -->
     <Card tone="plain">
       <h2 class="font-display font-bold text-peach-500 text-base mb-3 flex items-center gap-2">
-        <span class="text-xl">💬</span> 朵朵跟妳的對話
+        <span class="text-xl">💬</span> {{ t('dodo_chat_history') }}
       </h2>
       <Spinner v-if="initialLoading" size="sm" />
       <div v-else-if="history.length" class="space-y-3 font-zen text-sm">
@@ -225,8 +230,9 @@ const dodoMood = computed(() => moodForPhase(todayPhase.value))
         v-else
         icon="🐣"
         title="還沒 check-in 過"
-        subtitle="第一次點一下心情，朵朵就會回覆妳。"
+        :subtitle="t('dodo_silent')"
       />
     </Card>
+    </div>
   </div>
 </template>

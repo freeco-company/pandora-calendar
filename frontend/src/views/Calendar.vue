@@ -6,6 +6,9 @@ import Spinner from '../components/ui/Spinner.vue'
 import EmptyState from '../components/ui/EmptyState.vue'
 import Character from '../components/Character.vue'
 import { getPet, moodForPhase } from '../lib/character'
+import { useTone } from '../composables/useTone'
+
+const { t } = useTone()
 
 const cycles = ref<CycleRecord[]>([])
 const symptoms = ref<SymptomRecord[]>([])
@@ -103,10 +106,10 @@ const daysUntilNext = computed(() => rhythm.value?.days_until_next_period ?? nul
 const countdownLabel = computed(() => {
   const d = daysUntilNext.value
   if (d === null) return null
-  if (d < 0) return '經期已遲到'
-  if (d === 0) return '經期可能今天到'
-  if (d <= 7) return '經期接近中'
-  return '距離下次經期'
+  if (d < 0) return t('countdown_label_late')
+  if (d === 0) return t('countdown_label_today')
+  if (d <= 7) return t('countdown_label_close')
+  return t('countdown_label_normal')
 })
 
 // P1-7 click-day modal
@@ -129,7 +132,7 @@ function openDay(cell: DayMeta) {
 </script>
 
 <template>
-  <div class="px-5 pt-10 pb-6 max-w-md mx-auto">
+  <div class="px-5 md:px-8 pt-10 pb-6 max-w-md md:max-w-4xl lg:max-w-5xl mx-auto">
     <!-- 倒數大字 header -->
     <header class="flex items-start justify-between mb-5">
       <div class="flex-1">
@@ -183,6 +186,8 @@ function openDay(cell: DayMeta) {
     />
 
     <template v-else>
+      <div class="md:grid md:grid-cols-[minmax(0,1fr)_320px] md:gap-6 md:items-start">
+      <div class="md:min-w-0">
       <Card tone="plain" class="mb-4">
         <div class="grid grid-cols-7 text-[11px] font-zen text-center text-stone-400 mb-3">
           <span v-for="w in ['日', '一', '二', '三', '四', '五', '六']" :key="w">{{ w }}</span>
@@ -238,13 +243,64 @@ function openDay(cell: DayMeta) {
         <span class="flex items-center gap-1.5"><span class="w-2.5 h-2.5 rounded-full bg-phase-luteal" />黃體</span>
         <span class="flex items-center gap-1.5"><span class="w-1.5 h-1.5 rounded-full bg-peach-500" />當天有記錄</span>
       </div>
+      </div>
+
+      <!-- iPad / desktop side panel：永久顯示當天 detail（md+ 才出現） -->
+      <aside class="hidden md:block md:sticky md:top-6" data-test="day-detail-side">
+        <Card tone="cream" class="space-y-3">
+          <header class="flex items-center justify-between">
+            <h3 class="font-display text-base font-bold text-peach-500">
+              {{ detailDate || '點選日期看記錄' }}
+            </h3>
+          </header>
+
+          <p v-if="detailDay?.phase" class="font-zen text-[12px] text-stone-500">
+            這天是
+            <span class="font-semibold text-peach-500">{{ phaseLabels[detailDay.phase] }}</span>
+          </p>
+
+          <div v-if="detailCycle" class="bg-white rounded-2xl p-3 text-sm font-zen space-y-1">
+            <p class="text-peach-500 font-bold">🌙 經期記錄</p>
+            <p class="text-stone-600">流量 {{ detailCycle.peak_flow ?? '未填' }} / 5</p>
+            <p v-if="detailCycle.length_days" class="text-stone-500 text-xs">持續 {{ detailCycle.length_days }} 天</p>
+          </div>
+
+          <div v-if="detailSymptom" class="bg-white rounded-2xl p-3 text-sm font-zen space-y-1.5">
+            <p class="text-peach-500 font-bold">🌸 身體記錄</p>
+            <p class="text-stone-600">{{ MOOD_LABEL[detailSymptom.mood ?? ''] || '未記錄心情' }}</p>
+            <div v-if="detailSymptom.tags?.length" class="flex flex-wrap gap-1">
+              <span
+                v-for="t in detailSymptom.tags"
+                :key="t"
+                class="text-[11px] bg-cream-100 text-peach-500 px-2 py-0.5 rounded-full"
+              >
+                {{ TAG_LABEL[t] || t }}
+              </span>
+            </div>
+          </div>
+
+          <p
+            v-if="detailDate && !detailCycle && !detailSymptom"
+            class="text-stone-400 text-[12px] text-center font-zen py-3"
+          >
+            這天沒有記錄
+          </p>
+          <p
+            v-else-if="!detailDate"
+            class="text-stone-400 text-[12px] text-center font-zen py-3"
+          >
+            點月曆任何一天，這裡會顯示細節
+          </p>
+        </Card>
+      </aside>
+      </div>
     </template>
 
     <!-- P1-7 Day detail modal -->
     <Transition name="ach">
       <div
         v-if="detailDate"
-        class="fixed inset-0 z-[70] bg-stone-900/40 backdrop-blur-sm flex items-end sm:items-center justify-center p-4"
+        class="fixed inset-0 z-[70] bg-stone-900/40 backdrop-blur-sm flex items-end sm:items-center justify-center p-4 md:hidden"
         @click.self="detailDate = null"
         data-test="day-detail-modal"
       >

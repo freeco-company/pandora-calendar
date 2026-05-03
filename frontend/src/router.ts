@@ -25,6 +25,7 @@ const routes: RouteRecordRaw[] = [
   { path: '/me/jerosse', component: () => import('./views/JerosseDeep.vue') },
   { path: '/me/journey', component: () => import('./views/JourneyView.vue') },
   { path: '/me/bbt', component: () => import('./views/BbtView.vue') },
+  { path: '/me/health-integration', component: () => import('./views/HealthIntegrationView.vue') },
   { path: '/me/partner', component: () => import('./views/PartnerShareView.vue') },
   { path: '/partner/:token', component: () => import('./views/PartnerPublicView.vue'), meta: { public: true } },
   { path: '/privacy', component: () => import('./views/Privacy.vue'), meta: { public: true } },

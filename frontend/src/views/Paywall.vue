@@ -6,6 +6,9 @@ import { useEntitlementsStore } from '../stores/entitlements'
 import Card from '../components/ui/Card.vue'
 import Spinner from '../components/ui/Spinner.vue'
 import Character from '../components/Character.vue'
+import { useTone } from '../composables/useTone'
+
+const { t } = useTone()
 
 const router = useRouter()
 const ent = useEntitlementsStore()
@@ -134,7 +137,7 @@ function back() {
 </script>
 
 <template>
-  <div class="px-5 pt-8 pb-10 max-w-md mx-auto space-y-5">
+  <div class="px-5 md:px-8 pt-8 pb-10 max-w-md md:max-w-2xl lg:max-w-3xl mx-auto space-y-5">
     <button
       @click="back"
       data-test="paywall-back"
@@ -156,7 +159,7 @@ function back() {
         />
       </div>
       <p class="font-zen text-xs text-stone-500 tracking-widest uppercase">Premium</p>
-      <h1 class="font-display text-3xl font-bold text-peach-500">朵朵陪妳更深一點</h1>
+      <h1 class="font-display text-3xl font-bold text-peach-500">{{ t('paywall_heading') }}</h1>
       <p class="font-zen text-sm text-stone-500 leading-relaxed">
         解鎖完整 PMS 分析、BBT 雙相判讀、每日衛教與伴侶分享。
       </p>

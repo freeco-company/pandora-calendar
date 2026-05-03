@@ -121,7 +121,8 @@ Route::middleware(['auth.platform'])->prefix('v1')->group(function () {
     Route::post('/subscription/verify-google', [SubscriptionController::class, 'verifyGoogle']);
     Route::post('/subscription/ecpay-checkout', [SubscriptionController::class, 'ecpayCheckout']);
 
-    Route::post('/health-samples/import', [HealthSampleController::class, 'importBatch']);
+    Route::post('/health-samples/import', [HealthSampleController::class, 'importBatch'])->middleware('throttle:30,1');
+    Route::post('/health-samples/sync', [HealthSampleController::class, 'import'])->middleware('throttle:30,1');
 
     Route::get('/pregnancy/current', [PregnancyController::class, 'current']);
     Route::post('/pregnancy', [PregnancyController::class, 'start']);

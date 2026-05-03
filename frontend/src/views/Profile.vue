@@ -19,11 +19,20 @@ import {
   type BiometricAvailability,
 } from '../composables/useAppLock'
 import { Capacitor } from '@capacitor/core'
+import { useInclusiveMode } from '../composables/useInclusiveMode'
+import { useTone } from '../composables/useTone'
 
 const router = useRouter()
 const user = getStoredUser()
 const ent = useEntitlementsStore()
 const sfx = useSfx()
+const inclusiveMode = useInclusiveMode()
+const { t } = useTone()
+
+function toggleInclusive() {
+  inclusiveMode.value = !inclusiveMode.value
+  sfx.play('ui_tap')
+}
 const pet = ref(getPet())
 const level = ref(getCurrentLevel())
 const xp = ref(getCurrentXp())
@@ -252,13 +261,13 @@ async function confirmDeleteData() {
 </script>
 
 <template>
-  <div class="px-5 pt-10 pb-6 max-w-md mx-auto space-y-5">
+  <div class="px-5 md:px-8 pt-10 pb-6 max-w-md md:max-w-4xl lg:max-w-5xl mx-auto space-y-5 md:space-y-6">
     <header class="text-center space-y-2">
       <div class="w-24 h-24 mx-auto rounded-full bg-peach-gradient flex items-center justify-center text-4xl shadow-soft">
         👤
       </div>
       <p class="font-zen text-xs text-stone-500">{{ greeting }}，</p>
-      <h1 class="font-display text-2xl font-bold text-peach-500">{{ user?.display_name ?? user?.name ?? '朋友' }}</h1>
+      <h1 class="font-display text-2xl font-bold text-peach-500">{{ user?.display_name ?? user?.name ?? t('profile_greeting_default') }}</h1>
       <p v-if="user?.email" class="text-xs text-stone-400 font-zen">{{ user.email }}</p>
       <p v-else-if="user?.identity_uuid" class="text-[10px] text-stone-300 font-zen tracking-wide">
         ID {{ user.identity_uuid.slice(0, 8) }}
@@ -272,6 +281,7 @@ async function confirmDeleteData() {
       </span>
     </header>
 
+    <div class="md:grid md:grid-cols-2 md:gap-5 md:items-start space-y-5 md:space-y-0">
     <!-- 我的寵物 -->
     <Card tone="cream" class="text-center space-y-3">
       <p class="font-zen text-xs text-stone-500 tracking-widest uppercase">My Pet</p>
@@ -492,6 +502,32 @@ async function confirmDeleteData() {
       <p v-if="pushMessage" class="font-zen text-[11px] text-stone-500">{{ pushMessage }}</p>
     </Card>
 
+    <!-- 個人化（inclusive mode toggle） -->
+    <Card tone="plain" class="space-y-3" data-test="personalize-card">
+      <h3 class="font-display font-bold text-peach-500 text-sm">{{ t('setting_personalize') }}</h3>
+      <label class="flex items-start justify-between cursor-pointer gap-3">
+        <div class="flex-1 pr-2">
+          <p class="font-zen text-sm text-stone-700">{{ t('setting_inclusive_label') }}</p>
+          <p class="font-zen text-[11px] text-stone-500 mt-1 leading-relaxed">
+            {{ t('setting_inclusive_help') }}
+          </p>
+        </div>
+        <button
+          type="button"
+          data-test="inclusive-toggle"
+          class="relative w-12 h-7 rounded-full transition-colors shrink-0"
+          :class="inclusiveMode ? 'bg-peach-400' : 'bg-stone-300'"
+          :aria-pressed="inclusiveMode"
+          @click="toggleInclusive"
+        >
+          <span
+            class="absolute top-0.5 left-0.5 w-6 h-6 bg-white rounded-full shadow transition-transform"
+            :class="inclusiveMode ? 'translate-x-5' : ''"
+          />
+        </button>
+      </label>
+    </Card>
+
     <!-- 安全與隱私 -->
     <Card v-if="isNative" tone="cream" class="space-y-3" data-test="security-card">
       <h3 class="font-display font-bold text-peach-500 text-sm">安全與隱私</h3>
@@ -650,6 +686,8 @@ async function confirmDeleteData() {
       </p>
       <p class="text-stone-500 text-[11px] font-zen">❌ 不做廣告 · ❌ 不賣資料 · ✅ 妳隨時可以刪除帳號</p>
     </Card>
+
+    </div>
 
     <Button variant="secondary" full data-test="logout" sfx="ui_close" @click="doLogout">登出</Button>
 

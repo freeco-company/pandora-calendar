@@ -30,6 +30,9 @@
       "androidMaxAttempts": 3,
       "androidBiometryStrength": "weak",
       "iosFallbackTitle": "使用密碼"
+    },
+    "CapacitorHealth": {
+      "_comment": "iOS 需要在 ios/App/App/Info.plist 手動加 NSHealthShareUsageDescription / NSHealthUpdateUsageDescription（npx cap add ios 後）；Android Health Connect 需在 AndroidManifest.xml 宣告 health permissions（見 README HealthKit / Health Connect 設定 TODO）"
     }
   }
 }

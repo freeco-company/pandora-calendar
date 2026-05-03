@@ -7,6 +7,7 @@ use App\Services\Health\HealthSampleImporter;
 use App\Services\Subscription\FeatureGate;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
+use Illuminate\Validation\Rule;
 
 class HealthSampleController extends Controller
 {
@@ -15,6 +16,44 @@ class HealthSampleController extends Controller
         private readonly FeatureGate $gate,
     ) {}
 
+    /**
+     * 新版 import endpoint：依 kind 分派（前端 useHealthKit composable 用）。
+     * Body: { kind: 'bbt'|'steps'|'sleep'|'menstrual_flow', source?, samples: [{date, value, unit?, datetime?}] }
+     */
+    public function import(Request $request): JsonResponse
+    {
+        if (! $this->gate->isPremium($request->user())) {
+            return response()->json([
+                'error' => 'premium_required',
+                'message' => '自動匯入 HealthKit / Health Connect 是 Premium 功能。',
+                'paywall_redirect' => '/subscription',
+            ], 402);
+        }
+
+        $data = $request->validate([
+            'kind' => ['required', Rule::in(HealthSampleImporter::SUPPORTED_KINDS)],
+            'source' => ['nullable', 'in:healthkit,health_connect,manual'],
+            'samples' => ['required', 'array', 'min:1', 'max:500'],
+            'samples.*.date' => ['nullable', 'date'],
+            'samples.*.datetime' => ['nullable', 'date'],
+            'samples.*.value' => ['required', 'numeric'],
+            'samples.*.unit' => ['nullable', 'string', 'max:16'],
+            'samples.*.meta' => ['nullable', 'array'],
+        ]);
+
+        $result = $this->importer->import(
+            (int) $request->user()->id,
+            $data['kind'],
+            $data['samples'],
+            $data['source'] ?? 'healthkit',
+        );
+
+        return response()->json(['data' => $result], 201);
+    }
+
+    /**
+     * Legacy endpoint — 接受 explicit metric per-sample；保留向後相容。
+     */
     public function importBatch(Request $request): JsonResponse
     {
         if (! $this->gate->isPremium($request->user())) {

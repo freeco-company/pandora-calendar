@@ -6,6 +6,9 @@ import { isLockEnabled, lock } from '../composables/useAppLock'
 import Card from '../components/ui/Card.vue'
 import Button from '../components/ui/Button.vue'
 import Character from '../components/Character.vue'
+import { useTone } from '../composables/useTone'
+
+const { t } = useTone()
 
 const router = useRouter()
 const loading = ref(false)
@@ -102,7 +105,7 @@ async function loginWith(provider: 'google' | 'line' | 'apple') {
         <Character species="dodo" :size="148" mood="happy" :show-halo="true" :floaty="true" />
       </div>
       <h1 class="font-display text-4xl font-bold text-peach-500 tracking-wide">潘朵拉月曆</h1>
-      <p class="font-zen text-stone-600 mt-2 text-sm">妳的週期 · 朵朵陪妳一起記</p>
+      <p class="font-zen text-stone-600 mt-2 text-sm">{{ t('login_subtitle') }}</p>
     </header>
 
     <Card tone="plain" class="w-full max-w-sm space-y-3">
@@ -241,9 +244,9 @@ async function loginWith(provider: 'google' | 'line' | 'apple') {
     </Card>
 
     <div class="mt-6 max-w-sm w-full text-center space-y-1">
-      <p class="font-display font-bold text-peach-500 text-base">妳的資料只屬於妳</p>
+      <p class="font-display font-bold text-peach-500 text-base">{{ t('privacy_yours') }}</p>
       <p class="font-zen text-[11px] text-stone-500 leading-relaxed">
-        我們不賣資料、不放廣告。妳隨時可以刪除妳的紀錄。
+        {{ t('privacy_blurb') }}
       </p>
     </div>
 
