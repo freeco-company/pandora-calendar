@@ -31,11 +31,15 @@ async function load() {
   loading.value = true
   error.value = null
   try {
-    const [c, s] = await Promise.all([CalendarApi.cycles(), CalendarApi.symptoms()])
-    cycles.value = c.data.data
-    symptoms.value = s.data.data
-    prediction.value = c.data.prediction
-    rhythm.value = c.data.body_rhythm
+    const [c, s] = await Promise.allSettled([CalendarApi.cycles(), CalendarApi.symptoms()])
+    if (c.status === 'fulfilled') {
+      cycles.value = c.value.data.data
+      prediction.value = c.value.data.prediction
+      rhythm.value = c.value.data.body_rhythm
+    }
+    if (s.status === 'fulfilled') {
+      symptoms.value = s.value.data.data
+    }
   } catch (e: any) {
     error.value = e?.response?.data?.message ?? t('calendar_error_load')
   } finally {

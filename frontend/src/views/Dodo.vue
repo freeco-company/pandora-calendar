@@ -84,7 +84,7 @@ async function loadHistory() {
 onMounted(async () => {
   ent.load()
   try {
-    await Promise.all([loadRecent(), loadReminder(), loadHistory()])
+    await Promise.allSettled([loadRecent(), loadReminder(), loadHistory()])
   } finally {
     initialLoading.value = false
   }

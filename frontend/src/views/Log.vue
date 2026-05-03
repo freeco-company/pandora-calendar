@@ -37,9 +37,9 @@ function toggleCategory(key: SymptomCategory) {
 }
 
 async function load() {
-  const [c, s] = await Promise.all([CalendarApi.cycles(), CalendarApi.symptoms()])
-  cycles.value = c.data.data
-  symptoms.value = s.data.data
+  const [c, s] = await Promise.allSettled([CalendarApi.cycles(), CalendarApi.symptoms()])
+  if (c.status === 'fulfilled') cycles.value = c.value.data.data
+  if (s.status === 'fulfilled') symptoms.value = s.value.data.data
 }
 onMounted(() => {
   symptomTags.load()

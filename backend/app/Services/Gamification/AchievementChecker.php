@@ -284,13 +284,13 @@ final class AchievementChecker
         $rows = BbtReading::query()
             ->where('user_id', $userId)
             ->orderBy('measured_on')
-            ->get(['measured_on', 'temperature_celsius']);
+            ->get(['measured_on', 'temperature_c']);
 
         if ($rows->count() < 12) {
             return false;
         }
 
-        $temps = $rows->pluck('temperature_celsius')->map(fn ($t) => (float) $t)->all();
+        $temps = $rows->pluck('temperature_c')->map(fn ($t) => (float) $t)->all();
         $n = count($temps);
         for ($i = 6; $i + 6 <= $n; $i++) {
             $pre = array_slice($temps, $i - 6, 6);

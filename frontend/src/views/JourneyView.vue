@@ -64,16 +64,19 @@ const previewOutfit = computed<OutfitRow | null>(() =>
 
 async function load() {
   loading.value = true
+  // allSettled：任一 API 5xx 不會炸整頁，改個別 fallback
   try {
-    const [j, a, o] = await Promise.all([
+    const [j, a, o] = await Promise.allSettled([
       JourneyApi.show(),
       AchievementsApi.list(),
       OutfitsApi.list(),
     ])
-    data.value = j.data.data
-    achievements.value = a.data.data.achievements
-    outfits.value = o.data.data.outfits
-    equippedCode.value = o.data.data.equipped
+    if (j.status === 'fulfilled') data.value = j.value.data.data
+    if (a.status === 'fulfilled') achievements.value = a.value.data.data.achievements
+    if (o.status === 'fulfilled') {
+      outfits.value = o.value.data.data.outfits
+      equippedCode.value = o.value.data.data.equipped
+    }
   } finally {
     loading.value = false
   }
