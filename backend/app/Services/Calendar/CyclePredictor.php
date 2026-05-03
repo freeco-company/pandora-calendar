@@ -93,7 +93,13 @@ class CyclePredictor
         for ($i = 1; $i < $sorted->count(); $i++) {
             $prev = CarbonImmutable::parse($sorted[$i - 1]->start_date);
             $curr = CarbonImmutable::parse($sorted[$i]->start_date);
-            $lengths->push($prev->diffInDays($curr));
+            $diff = (int) $prev->diffInDays($curr);
+            // 防衛：cycle 間隔 < 14 天視為髒料（重複輸入 / 經血崩漏 / 異常）→ 跳過不納入 avg
+            // 同樣間隔 > 60 天也跳（合理週期 21-45，崩漏 / 假數據都不合理）
+            if ($diff < 14 || $diff > 60) {
+                continue;
+            }
+            $lengths->push($diff);
         }
 
         return $lengths;

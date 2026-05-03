@@ -74,6 +74,21 @@ class CycleController extends Controller
         $user = $request->user();
         $existed = Cycle::where('user_id', $user->id)->exists();
 
+        // 防衛：新建 cycle 距最近一筆 < 14 天 → 422 friendly（避免 onboarding 後又補今天造成 avg=1）
+        $latest = Cycle::where('user_id', $user->id)
+            ->where('start_date', '!=', $data['start_date'])
+            ->orderByDesc('start_date')
+            ->first();
+        if ($latest) {
+            $diff = abs((int) \Carbon\Carbon::parse($latest->start_date)->diffInDays($data['start_date']));
+            if ($diff > 0 && $diff < 14) {
+                return response()->json([
+                    'message' => '兩個經期週期太接近（距上次 ' . $diff . ' 天）。如果是同一次經期記錯，請編輯既有那筆；如果真的這麼快又來，建議諮詢婦產科。',
+                    'errors' => ['start_date' => ['cycle 間隔需 ≥ 14 天']],
+                ], 422);
+            }
+        }
+
         $cycle = Cycle::updateOrCreate(
             ['user_id' => $user->id, 'start_date' => $data['start_date']],
             $data,

@@ -23,7 +23,19 @@ class DodoChatHistoryController extends Controller
             ->orderByDesc('checked_on')
             ->orderByDesc('id')
             ->limit($limit)
-            ->get(['id', 'checked_on', 'mood', 'phase', 'cycle_day', 'dodo_response']);
+            ->get(['id', 'checked_on', 'mood', 'phase_at_checkin', 'cycle_day_at_checkin', 'dodo_response']);
+
+        // 對齊前端期望 schema：phase / cycle_day（向後相容）
+        $rows = $rows->map(fn ($r) => [
+            'id' => $r->id,
+            'checked_on' => $r->checked_on instanceof \Carbon\CarbonInterface
+                ? $r->checked_on->toDateString()
+                : (string) $r->checked_on,
+            'mood' => $r->mood,
+            'phase' => $r->phase_at_checkin,
+            'cycle_day' => $r->cycle_day_at_checkin,
+            'dodo_response' => $r->dodo_response,
+        ]);
 
         return response()->json(['data' => $rows]);
     }

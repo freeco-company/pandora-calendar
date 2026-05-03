@@ -343,6 +343,8 @@ export const CalendarApi = {
   cycles: () => api.get<{ data: CycleRecord[]; prediction: CyclePrediction; body_rhythm: BodyRhythm }>('/v1/cycles'),
   storeCycle: (payload: { start_date: string; end_date?: string; peak_flow?: number; notes?: string }) =>
     api.post<{ data: CycleRecord }>('/v1/cycles', payload),
+  updateCycle: (id: number, payload: { start_date?: string; end_date?: string | null; peak_flow?: number; notes?: string }) =>
+    api.patch<{ data: CycleRecord }>(`/v1/cycles/${id}`, payload),
   deleteCycle: (id: number) => api.delete(`/v1/cycles/${id}`),
   symptoms: (params?: { from?: string; to?: string }) =>
     api.get<{ data: SymptomRecord[] }>('/v1/symptoms', { params }),

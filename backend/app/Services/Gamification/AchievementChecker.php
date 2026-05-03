@@ -318,15 +318,19 @@ final class AchievementChecker
         $cycles = Cycle::query()
             ->where('user_id', $userId)
             ->orderBy('start_date')
-            ->get(['id', 'start_date', 'cycle_length_days']);
+            ->get(['id', 'start_date']);
         if ($cycles->isEmpty()) {
             return 0;
         }
 
         $maxPhases = 0;
-        foreach ($cycles as $c) {
+        foreach ($cycles as $idx => $c) {
             $start = \Carbon\Carbon::parse($c->start_date);
-            $length = (int) ($c->cycle_length_days ?? 28);
+            // 用下一個 cycle 起始 - 當前 cycle 起始 算 length；最後一個 fallback 28
+            $next = $cycles[$idx + 1] ?? null;
+            $length = $next
+                ? max(1, (int) \Carbon\Carbon::parse($next->start_date)->diffInDays($start))
+                : 28;
             $end = $start->copy()->addDays($length - 1);
             $logs = CycleSymptom::query()
                 ->where('user_id', $userId)

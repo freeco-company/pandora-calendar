@@ -117,6 +117,54 @@ function pickMood(v: string) {
   sfx.play('choice_select')
   symptomMood.value = v
 }
+
+// === 編輯既有 cycle ===
+const editingCycle = ref<CycleRecord | null>(null)
+const editStartDate = ref('')
+const editEndDate = ref('')
+const editSaving = ref(false)
+const editError = ref<string | null>(null)
+
+function startEditCycle(c: CycleRecord) {
+  editingCycle.value = c
+  editStartDate.value = c.start_date
+  editEndDate.value = c.end_date ?? ''
+  editError.value = null
+}
+
+async function saveCycleEdit() {
+  if (!editingCycle.value) return
+  editSaving.value = true
+  editError.value = null
+  try {
+    await CalendarApi.updateCycle(editingCycle.value.id, {
+      start_date: editStartDate.value,
+      end_date: editEndDate.value || null,
+    })
+    sfx.play('correct')
+    message.value = '已更新'
+    editingCycle.value = null
+    await load()
+  } catch (e: any) {
+    editError.value = e?.response?.data?.message ?? '儲存失敗，請再試一次'
+    sfx.play('wrong')
+  } finally {
+    editSaving.value = false
+  }
+}
+
+async function deleteCycleEntry(c: CycleRecord) {
+  if (!confirm(`刪除 ${c.start_date} 這筆經期記錄？`)) return
+  try {
+    await CalendarApi.deleteCycle(c.id)
+    sfx.play('ui_close')
+    message.value = '已刪除'
+    await load()
+  } catch (e: any) {
+    message.value = e?.response?.data?.message ?? '刪除失敗'
+    sfx.play('wrong')
+  }
+}
 </script>
 
 <template>
@@ -290,18 +338,64 @@ function pickMood(v: string) {
         <li
           v-for="c in cycles.slice(0, 6)"
           :key="c.id"
-          class="py-2.5 flex justify-between text-stone-600"
+          class="py-2.5 flex justify-between items-center text-stone-600"
         >
-          <span>{{ c.start_date }}</span>
-          <span class="text-stone-400">{{ c.length_days ?? t('log_recent_in_progress') }}{{ c.length_days ? ' ' + t('calendar_unit_day') : '' }}</span>
+          <button
+            type="button"
+            class="text-left flex-1 hover:text-peach-500"
+            @click="startEditCycle(c)"
+            data-test="cycle-edit"
+          >
+            <span class="font-medium">{{ c.start_date }}</span>
+            <span class="ml-2 text-xs text-stone-400">{{ c.length_days ?? t('log_recent_in_progress') }}{{ c.length_days ? ' ' + t('calendar_unit_day') : '' }}</span>
+          </button>
+          <button
+            type="button"
+            class="text-stone-300 hover:text-rose-400 text-xs px-2"
+            :aria-label="`刪除 ${c.start_date} 經期`"
+            @click="deleteCycleEntry(c)"
+            data-test="cycle-delete"
+          >✕</button>
         </li>
       </ul>
+      <!-- Edit cycle modal -->
+      <Transition name="ach">
+        <div
+          v-if="editingCycle"
+          class="fixed inset-0 z-[80] bg-stone-900/40 backdrop-blur-sm flex items-end sm:items-center justify-center p-4"
+          @click.self="editingCycle = null"
+        >
+          <div
+            class="w-full max-w-sm bg-cream-50 rounded-3xl p-5 shadow-soft-lg space-y-3"
+            style="margin-bottom: calc(env(safe-area-inset-bottom) + 6.5rem);"
+          >
+            <header class="flex items-center justify-between">
+              <h3 class="font-zen font-bold text-stone-800 text-lg">編輯經期</h3>
+              <button @click="editingCycle = null" class="text-stone-400 text-xl">×</button>
+            </header>
+            <label class="block">
+              <span class="text-xs text-stone-500">開始日</span>
+              <input v-model="editStartDate" type="date" class="field-input mt-1" />
+            </label>
+            <label class="block">
+              <span class="text-xs text-stone-500">結束日（沒填表示還在經期中）</span>
+              <input v-model="editEndDate" type="date" class="field-input mt-1" />
+            </label>
+            <p v-if="editError" class="text-xs text-rose-500">{{ editError }}</p>
+            <div class="flex gap-2 pt-2">
+              <Button variant="ghost" class="flex-1" @click="editingCycle = null">取消</Button>
+              <Button variant="primary" class="flex-1" :loading="editSaving" @click="saveCycleEdit">存檔</Button>
+            </div>
+          </div>
+        </div>
+      </Transition>
       <EmptyState
-        v-else
+        v-if="!cycles.length"
         icon="🌱"
         :title="t('log_empty_title')"
         :subtitle="t('log_empty_subtitle')"
       />
+      <p v-if="cycles.length" class="text-xs text-stone-400 mt-2">點選一筆編輯，或按 ✕ 刪除</p>
     </Card>
   </div>
 </template>
