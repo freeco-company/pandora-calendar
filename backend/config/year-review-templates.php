@@ -23,7 +23,7 @@ return [
     'cycle_count'          => '今年妳走過 {{count}} 個週期，每一次都是身體寫給妳的信。',
 
     // 階段分布
-    'phase_distribution'   => '黃體期 {{luteal_days}} 天，卵泡期 {{follicular_days}} 天，排卵期 {{ovulation_days}} 天，經期 {{menstrual_days}} 天。妳在每個階段都好好待過。',
+    'phase_distribution'   => '經前期 {{luteal_days}} 天，舒緩期 {{follicular_days}} 天，排卵期 {{ovulation_days}} 天，經期 {{menstrual_days}} 天。妳在每個階段都好好待過。',
 
     // 最常的心情
     'top_mood'             => '今年妳最常的心情是「{{top_mood}}」。朵朵幫妳把這份感覺記著。',
@@ -50,7 +50,7 @@ return [
     'avg_cycle_length'     => '妳今年的平均週期長度是 {{avg_length}} 天。每個人都有自己的節奏，妳的節奏是妳的。',
 
     // PMS / 身體訊號的辨識能力（鼓勵自我認識）
-    'self_awareness'       => '黃體期妳記錄到 {{luteal_symptoms}} 次身體訊號，這代表妳真的在認識自己——朵朵覺得這比什麼都珍貴。',
+    'self_awareness'       => '經前期妳記錄到 {{luteal_symptoms}} 次身體訊號，這代表妳真的在認識自己——朵朵覺得這比什麼都珍貴。',
 
     // 跨 App 集團聯動（如果有 meal / 肌膚 等資料）
     'cross_app_summary'    => '加上潘朵拉飲食的紀錄，妳這一年陪自己拍了 {{meal_photos}} 餐、走了 {{step_count}} 步。每一個細節都在說：妳對自己很認真。',

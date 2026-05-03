@@ -8,7 +8,9 @@ import Character from '../components/Character.vue'
 import CalendarGamificationStrip from '../components/CalendarGamificationStrip.vue'
 import TodayActionCard from '../components/TodayActionCard.vue'
 import ProtocolInsightBanner from '../components/ProtocolInsightBanner.vue'
-import { getPet, moodForPhase } from '../lib/character'
+import Icon from '../components/icons/Icon.vue'
+import { moodForPhase } from '../lib/character'
+import { usePet } from '../composables/usePet'
 import { useTone } from '../composables/useTone'
 import { useRouter } from 'vue-router'
 
@@ -21,7 +23,7 @@ const prediction = ref<CyclePrediction | null>(null)
 const rhythm = ref<BodyRhythm | null>(null)
 const loading = ref(true)
 const error = ref<string | null>(null)
-const pet = ref(getPet())
+const { pet } = usePet()
 
 async function load() {
   loading.value = true
@@ -256,11 +258,14 @@ function goPet() {
               v-if="cell.hasLog"
               class="absolute bottom-0.5 right-0.5 w-1.5 h-1.5 rounded-full bg-peach-500"
             />
-            <span
+            <Icon
               v-if="cell.date && streakDates.has(cell.date)"
-              class="absolute top-0.5 right-0.5 text-[10px] leading-none select-none"
-              aria-hidden="true"
-            >✨</span>
+              name="sparkle"
+              size="xs"
+              animated
+              decorative
+              class="absolute top-0.5 right-0.5 text-peach-400"
+            />
           </button>
         </div>
       </Card>
@@ -302,22 +307,22 @@ function goPet() {
         <p v-else class="text-body text-stone-500">{{ t('calendar_no_prediction') }}</p>
       </Card>
 
-      <!-- Legend：色 + 形狀（圓 / 方 / 菱 / 圓邊框）雙重區別，色盲友善 -->
+      <!-- Legend：phase SVG icon + 色 雙重區別，色盲友善；微動 hint -->
       <div class="flex gap-3 text-[11px] text-stone-500 px-2 font-zen flex-wrap">
         <span class="flex items-center gap-1.5">
-          <span class="w-2.5 h-2.5 rounded-full bg-phase-menstrual" aria-hidden="true" />{{ t('calendar_legend_period') }}
+          <Icon name="phase-menstrual" size="sm" decorative />{{ t('calendar_legend_period') }}
         </span>
         <span class="flex items-center gap-1.5">
-          <span class="w-2.5 h-2.5 rounded-sm bg-phase-follicular" aria-hidden="true" />{{ t('calendar_legend_follicular') }}
+          <Icon name="phase-follicular" size="sm" decorative />{{ t('calendar_legend_follicular') }}
         </span>
         <span class="flex items-center gap-1.5">
-          <span class="w-2.5 h-2.5 rotate-45 bg-phase-ovulation" aria-hidden="true" />{{ t('calendar_legend_ovulation') }}
+          <Icon name="phase-ovulation" size="sm" decorative />{{ t('calendar_legend_ovulation') }}
         </span>
         <span class="flex items-center gap-1.5">
-          <span class="w-2.5 h-2.5 rounded-full border-2 border-phase-luteal" aria-hidden="true" />{{ t('calendar_legend_luteal') }}
+          <Icon name="phase-luteal" size="sm" decorative />{{ t('calendar_legend_luteal') }}
         </span>
         <span class="flex items-center gap-1.5">
-          <span class="status-dot bg-peach-500" aria-hidden="true" />{{ t('calendar_legend_logged') }}
+          <Icon name="check" size="sm" decorative class="text-sage-500" />{{ t('calendar_legend_logged') }}
         </span>
       </div>
       </div>

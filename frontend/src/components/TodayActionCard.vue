@@ -8,6 +8,7 @@
 import { computed, onMounted, ref } from 'vue'
 import { useTone } from '../composables/useTone'
 import { useDailyAction } from '../composables/useDailyAction'
+import Icon, { type IconName } from './icons/Icon.vue'
 import type { ActionFeedback, ActionDifficulty } from '../api'
 
 const props = defineProps<{
@@ -47,22 +48,21 @@ const minutesLabel = computed(() => {
   return t('action_minutes', { n: m })
 })
 
-// difficulty → 燈號 emoji + 配色
-const difficultyDot = computed(() => {
+// difficulty → SVG dot + 配色
+const difficultyDot = computed<{ icon: IconName | null; color: string }>(() => {
   const d: ActionDifficulty | undefined = todayAction.value?.difficulty
-  if (d === 'easy') return { emoji: '🟢', color: 'text-sage-500' }
-  if (d === 'medium') return { emoji: '🟡', color: 'text-peach-500' }
-  if (d === 'hard') return { emoji: '🔴', color: 'text-sakura-500' }
-  return { emoji: '', color: '' }
+  if (d === 'easy') return { icon: 'dot-easy', color: 'text-sage-500' }
+  if (d === 'medium') return { icon: 'dot-medium', color: 'text-peach-500' }
+  if (d === 'hard') return { icon: 'dot-hard', color: 'text-sakura-500' }
+  return { icon: null, color: '' }
 })
 
-const phaseEmoji = computed(() => {
+const phaseIcon = computed<IconName>(() => {
   const p = todayAction.value?.phase
-  if (p === 'menstrual') return '🌸'
-  if (p === 'follicular') return '🌱'
-  if (p === 'ovulation') return '☀️'
-  if (p === 'luteal') return '🌙'
-  return '🌙'
+  if (p === 'menstrual') return 'phase-menstrual'
+  if (p === 'follicular') return 'phase-follicular'
+  if (p === 'ovulation') return 'phase-ovulation'
+  return 'phase-luteal'
 })
 
 // optional 給朵朵的 textarea
@@ -118,7 +118,7 @@ async function onFeedback(fb: ActionFeedback) {
 
     <!-- Empty -->
     <div v-else-if="!todayAction" class="text-center py-6 relative" data-test="today-action-empty">
-      <p class="text-4xl mb-2">🌱</p>
+      <Icon name="sprout" size="xl" animated decorative class="mb-2 mx-auto" />
       <p class="font-display font-bold text-stone-700 text-base mb-1">
         {{ t('action_today_heading') }}
       </p>
@@ -129,9 +129,9 @@ async function onFeedback(fb: ActionFeedback) {
 
     <!-- Action：pending or feedback -->
     <div v-else class="relative">
-      <!-- Header：朵朵 emoji + label -->
+      <!-- Header：朵朵 anchor + label -->
       <div class="flex items-center gap-2 mb-2">
-        <span class="text-lg" aria-hidden="true">🐣</span>
+        <Icon name="dodo" size="lg" animated decorative />
         <p class="font-zen text-[11px] tracking-[0.2em] text-peach-500/80 uppercase">
           {{ t('action_today_heading') }}
         </p>
@@ -155,16 +155,16 @@ async function onFeedback(fb: ActionFeedback) {
         {{ todayAction.body }}
       </p>
 
-      <!-- Meta line：⏱ N 分 · 🌙 phase · 燈號 difficulty -->
+      <!-- Meta line：clock · phase · difficulty dot -->
       <div class="flex flex-wrap items-center gap-x-3 gap-y-1 mt-3 text-[12px] font-zen">
         <span v-if="minutesLabel" class="inline-flex items-center gap-1 text-stone-600">
-          <span aria-hidden="true">⏱</span> {{ minutesLabel }}
+          <Icon name="clock" size="sm" decorative /> {{ minutesLabel }}
         </span>
         <span v-if="phaseLabel" class="inline-flex items-center gap-1 text-stone-600">
-          <span aria-hidden="true">{{ phaseEmoji }}</span> {{ phaseLabel }}
+          <Icon :name="phaseIcon" size="sm" animated decorative /> {{ phaseLabel }}
         </span>
-        <span v-if="difficultyLabel" class="inline-flex items-center gap-1" :class="difficultyDot.color">
-          <span aria-hidden="true">{{ difficultyDot.emoji }}</span> {{ difficultyLabel }}
+        <span v-if="difficultyLabel && difficultyDot.icon" class="inline-flex items-center gap-1" :class="difficultyDot.color">
+          <Icon :name="difficultyDot.icon" size="sm" decorative /> {{ difficultyLabel }}
         </span>
       </div>
 
@@ -176,7 +176,7 @@ async function onFeedback(fb: ActionFeedback) {
           class="w-full px-6 py-3.5 rounded-2xl bg-peach-gradient text-white font-display font-black text-base shadow-soft active:scale-[0.98] transition-transform"
           data-test="today-action-complete-btn"
         >
-          {{ t('action_btn_done') }} ✓
+          <span class="inline-flex items-center gap-1.5 justify-center">{{ t('action_btn_done') }} <Icon name="check" size="md" decorative class="text-white" /></span>
         </button>
       </div>
 
@@ -193,7 +193,7 @@ async function onFeedback(fb: ActionFeedback) {
             :class="tappedFb === 'helpful' && 'fb-btn-active'"
             data-test="today-action-fb-helpful"
           >
-            <span class="fb-emoji">💛</span>
+            <Icon name="heart" size="lg" animated decorative class="fb-emoji" />
             <span class="font-zen text-[11px] text-stone-600">{{ t('action_feedback_helpful') }}</span>
           </button>
           <button
@@ -203,7 +203,7 @@ async function onFeedback(fb: ActionFeedback) {
             :class="tappedFb === 'neutral' && 'fb-btn-active'"
             data-test="today-action-fb-neutral"
           >
-            <span class="fb-emoji">😐</span>
+            <Icon name="face-neutral" size="lg" decorative class="fb-emoji" />
             <span class="font-zen text-[11px] text-stone-600">{{ t('action_feedback_neutral') }}</span>
           </button>
           <button
@@ -213,7 +213,7 @@ async function onFeedback(fb: ActionFeedback) {
             :class="tappedFb === 'unhelpful' && 'fb-btn-active'"
             data-test="today-action-fb-unhelpful"
           >
-            <span class="fb-emoji">🌧️</span>
+            <Icon name="rain-cloud" size="lg" animated decorative class="fb-emoji" />
             <span class="font-zen text-[11px] text-stone-600">{{ t('action_feedback_unhelpful') }}</span>
           </button>
         </div>
@@ -231,7 +231,7 @@ async function onFeedback(fb: ActionFeedback) {
 
       <!-- Feedback already in -->
       <div v-else class="mt-5 flex items-center justify-center gap-2 text-sage-500 font-zen text-sm" data-test="today-action-thanks">
-        <span aria-hidden="true">✓</span>
+        <Icon name="check" size="sm" decorative />
         <span>{{ t('action_dodo_thanks') }}</span>
       </div>
     </div>

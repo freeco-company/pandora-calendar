@@ -215,6 +215,7 @@ export async function logout() {
   try {
     localStorage.removeItem('pandora_calendar_xp_total')
     localStorage.removeItem('pandora_calendar_level')
+    localStorage.removeItem('pandora_calendar_pet')
   } catch {
     /* localStorage may be disabled in private mode */
   }

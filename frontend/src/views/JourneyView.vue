@@ -9,7 +9,7 @@ import {
 import Card from '../components/ui/Card.vue'
 import Spinner from '../components/ui/Spinner.vue'
 import Character from '../components/Character.vue'
-import { getPet } from '../lib/character'
+import { usePet } from '../composables/usePet'
 import { useTone } from '../composables/useTone'
 
 const { t } = useTone()
@@ -19,7 +19,7 @@ const achievements = ref<AchievementRow[]>([])
 const outfits = ref<OutfitRow[]>([])
 const equippedCode = ref<string>('none')
 const loading = ref(true)
-const pet = ref(getPet())
+const { pet } = usePet()
 const user = getStoredUser()
 
 const RARITY_COLOR: Record<string, string> = {

@@ -3,6 +3,7 @@ import { onMounted, onUnmounted, ref } from 'vue'
 import { useSfx } from '../lib/sound'
 import type { LevelUpDetail } from '../lib/gamification'
 import Character from './Character.vue'
+import Icon from './icons/Icon.vue'
 import Button from './ui/Button.vue'
 
 const sfx = useSfx()
@@ -34,7 +35,7 @@ onUnmounted(() => window.removeEventListener('pandora:level_up', onLevelUp))
     >
       <div class="absolute inset-0 bg-gradient-to-br from-peach-100/90 to-lavender-100/90 backdrop-blur-md animate-fadein" />
       <div class="relative w-full max-w-sm surface-card p-7 text-center animate-pop space-y-4">
-        <p class="font-zen text-xs text-stone-500 tracking-widest">LEVEL UP ✨</p>
+        <p class="font-zen text-xs text-stone-500 tracking-widest inline-flex items-center justify-center gap-1.5">LEVEL UP <Icon name="sparkle" size="sm" animated decorative class="text-peach-500" /></p>
         <h2 class="font-display text-3xl font-bold text-peach-500">LV.{{ detail.level }} に昇進！</h2>
 
         <div class="flex justify-center my-3">

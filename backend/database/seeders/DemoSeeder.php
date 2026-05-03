@@ -62,7 +62,7 @@ class DemoSeeder extends Seeder
                 ]);
             }
 
-            // Symptoms: 每個週期黃體期前 3 天標 craving_sweet + mood_swing
+            // Symptoms: 每個週期經前期前 3 天標 craving_sweet + mood_swing
             foreach ($cycleStarts as $start) {
                 for ($d = -5; $d <= -1; $d++) {
                     $loggedOn = $start->addDays($d);

@@ -1,6 +1,7 @@
 <script setup lang="ts">
 import { onMounted, onUnmounted, ref } from 'vue'
 import { useSfx } from '../lib/sound'
+import Icon from './icons/Icon.vue'
 import type { AchievementDetail } from '../lib/gamification'
 
 const sfx = useSfx()
@@ -28,7 +29,8 @@ onUnmounted(() => window.removeEventListener('pandora:achievement', onAchievemen
       data-test="achievement-toast"
     >
       <div class="rounded-3xl backdrop-blur-sm animate-pop bg-gradient-to-br from-cream-100 to-peach-100 px-6 py-5 text-center shadow-soft-lg max-w-xs">
-        <p class="text-3xl mb-1">{{ item.icon || '🏆' }}</p>
+        <p v-if="item.icon" class="text-3xl mb-1">{{ item.icon }}</p>
+        <Icon v-else name="trophy" size="xl" animated decorative class="mb-1 mx-auto" />
         <p class="font-zen text-[10px] tracking-widest text-peach-500">ACHIEVEMENT</p>
         <h3 class="font-display text-lg font-bold text-peach-500 mt-1">{{ item.title }}</h3>
         <p v-if="item.description" class="text-xs text-stone-600 mt-1 font-zen">{{ item.description }}</p>

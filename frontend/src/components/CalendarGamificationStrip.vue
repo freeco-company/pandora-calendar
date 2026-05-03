@@ -11,7 +11,9 @@ import { computed, onActivated, onMounted, ref } from 'vue'
 import { useRouter } from 'vue-router'
 import { ActionApi, JourneyApi, type DailyAction, type JourneyData } from '../api'
 import Character from './Character.vue'
-import { getPet, moodForPhase } from '../lib/character'
+import Icon, { type IconName } from './icons/Icon.vue'
+import { moodForPhase } from '../lib/character'
+import { usePet } from '../composables/usePet'
 import { useTone } from '../composables/useTone'
 import { useDailyQuest } from '../composables/useDailyQuest'
 
@@ -21,7 +23,7 @@ const props = defineProps<{
 
 const { t } = useTone()
 const router = useRouter()
-const pet = ref(getPet())
+const { pet } = usePet()
 const journey = ref<JourneyData | null>(null)
 const loading = ref(true)
 const { current: quest, isCompleted, markCompleted, refresh } = useDailyQuest()
@@ -90,16 +92,15 @@ const streakClasses = computed(() => {
   }
 })
 
-const streakIcon = computed(() => {
+const streakIcon = computed<IconName>(() => {
   switch (streakTier.value) {
     case 'legend':
-      return '✨'
+      return 'sparkle'
     case 'fire':
-      return '🔥'
     case 'good':
-      return '🔥'
+      return 'flame'
     default:
-      return '🌱'
+      return 'sprout'
   }
 })
 
@@ -167,7 +168,7 @@ function goQuest() {
       :class="streakClasses"
       data-test="gam-strip-streak"
     >
-      <span class="text-2xl shrink-0" aria-hidden="true">{{ streakIcon }}</span>
+      <Icon :name="streakIcon" size="lg" :animated="streakTier !== 'fresh'" decorative class="shrink-0" />
       <div class="min-w-0">
         <p class="font-display font-bold text-xl leading-none">{{ streakDays }}</p>
         <p class="font-zen text-[11px] mt-0.5 truncate">{{ t('gam_strip_streak_label') }}</p>
@@ -187,7 +188,7 @@ function goQuest() {
     >
       <p class="font-zen text-[10px] uppercase tracking-wider text-peach-500/80 flex items-center gap-1">
         <span>{{ t('gam_strip_quest_today') }}</span>
-        <span v-if="usePersonalizedAction ? personalizedDone : isCompleted" class="text-sage-500" aria-hidden="true">✓</span>
+        <Icon v-if="usePersonalizedAction ? personalizedDone : isCompleted" name="check" size="sm" decorative class="text-sage-500" />
       </p>
       <p
         class="font-zen text-[12px] leading-tight mt-0.5 line-clamp-2"

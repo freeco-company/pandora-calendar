@@ -277,14 +277,18 @@ export function moodForPhase(phase: string | null | undefined, userMood?: Mood):
   }
 }
 
-// 預設用戶寵物資訊（mock，未接後端前用 localStorage 持久化）
-const PET_LS_KEY = 'pandora_calendar_pet'
+// 用戶寵物資訊：source of truth 是後端 GET /v1/me/pet。
+// localStorage 只是同步快取（避免 view 初始化閃爍），login / 換寵物時會被主動覆寫。
+export const PET_LS_KEY = 'pandora_calendar_pet'
 export interface PetState {
   species: Species
   nickname: string
   level: number
   outfit: Outfit
 }
+
+const DEFAULT_PET: PetState = { species: 'rabbit', nickname: '小兔', level: 3, outfit: 'ribbon' }
+
 export function getPet(): PetState {
   try {
     const raw = localStorage.getItem(PET_LS_KEY)
@@ -292,11 +296,20 @@ export function getPet(): PetState {
   } catch {
     /* ignore */
   }
-  return { species: 'rabbit', nickname: '小兔', level: 3, outfit: 'ribbon' }
+  return DEFAULT_PET
 }
 export function savePet(p: PetState) {
   try {
     localStorage.setItem(PET_LS_KEY, JSON.stringify(p))
+    // 通知所有 view 重讀寵物資訊；不依賴 location.reload()
+    window.dispatchEvent(new CustomEvent('pandora:pet-updated', { detail: p }))
+  } catch {
+    /* ignore */
+  }
+}
+export function clearPetCache() {
+  try {
+    localStorage.removeItem(PET_LS_KEY)
   } catch {
     /* ignore */
   }

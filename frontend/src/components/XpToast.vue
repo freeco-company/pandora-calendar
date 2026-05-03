@@ -1,6 +1,7 @@
 <script setup lang="ts">
 import { onMounted, onUnmounted, ref } from 'vue'
 import { useSfx } from '../lib/sound'
+import Icon from './icons/Icon.vue'
 import type { XpDetail } from '../lib/gamification'
 
 const sfx = useSfx()
@@ -34,7 +35,7 @@ onUnmounted(() => window.removeEventListener('pandora:xp', onXp))
       class="animate-slidein px-4 py-3 flex items-center gap-3 min-w-[200px] bg-peach-gradient text-white shadow-soft-lg rounded-3xl backdrop-blur-sm"
       data-test="xp-toast"
     >
-      <span class="text-2xl animate-sparkle">✨</span>
+      <Icon name="sparkle" size="lg" animated decorative class="text-white" />
       <div class="leading-tight">
         <p class="font-display font-bold text-lg">+{{ item.amount }} XP</p>
         <p v-if="item.reason" class="text-xs opacity-90 font-zen">{{ item.reason }}</p>

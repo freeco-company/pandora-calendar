@@ -8,7 +8,9 @@ import Card from '../components/ui/Card.vue'
 import Button from '../components/ui/Button.vue'
 import Character from '../components/Character.vue'
 import { useSfx } from '../lib/sound'
-import { getPet, savePet } from '../lib/character'
+import { savePet } from '../lib/character'
+import { usePet } from '../composables/usePet'
+import { getSpeciesPersonality } from '../lib/petPersonality'
 import { getCurrentLevel, getCurrentXp } from '../lib/gamification'
 import { JourneyApi, type JourneyData, ExportApi, PaywallRequiredError } from '../api'
 import {
@@ -41,7 +43,8 @@ function toggleInclusive() {
   inclusiveMode.value = !inclusiveMode.value
   sfx.play('ui_tap')
 }
-const pet = ref(getPet())
+const { pet } = usePet()
+const personality = computed(() => getSpeciesPersonality(pet.value.species))
 const level = ref(getCurrentLevel())
 const xp = ref(getCurrentXp())
 const muted = ref(sfx.isMuted())
@@ -206,8 +209,8 @@ function toggleMute() {
 function editPetName() {
   const name = prompt(t('profile_pet_name_prompt'), pet.value.nickname)
   if (name && name.trim()) {
-    pet.value = { ...pet.value, nickname: name.trim() }
-    savePet(pet.value)
+    // savePet dispatch 'pandora:pet-updated' → usePet listener 更新 ref
+    savePet({ ...pet.value, nickname: name.trim() })
     sfx.play('correct')
   }
 }
@@ -415,6 +418,12 @@ function toggleSection(key: string) {
               {{ t('profile_pet_outfit_btn') }}
             </RouterLink>
           </div>
+          <p
+            class="font-zen text-[12px] text-stone-500 leading-relaxed px-2"
+            data-test="pet-personality-description"
+          >
+            {{ personality.description }}
+          </p>
           <p class="font-zen text-xs text-stone-500">
             {{ t('profile_pet_xp_hint', { xp }) }}
           </p>

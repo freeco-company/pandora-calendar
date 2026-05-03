@@ -1,9 +1,11 @@
 <script setup lang="ts">
-import { onMounted, ref } from 'vue'
+import { onMounted, ref, computed } from 'vue'
 import { PetApi } from '../api'
 import Character from './Character.vue'
 import Button from './ui/Button.vue'
 import { useSfx } from '../lib/sound'
+import { savePet, getPet, type Species } from '../lib/character'
+import { getSpeciesPersonality } from '../lib/petPersonality'
 
 const sfx = useSfx()
 const props = defineProps<{ forceOpen?: boolean }>()
@@ -85,18 +87,27 @@ async function confirm() {
   loading.value = true
   error.value = null
   try {
-    await PetApi.update(species.value, nickname.value.trim())
+    const res = await PetApi.update(species.value, nickname.value.trim())
+    // 後端是 source of truth；以回傳值寫入 LS，避免 stale closure / 並發改名衝突
+    const prev = getPet()
+    savePet({
+      species: (res.data.data.species ?? species.value) as Species,
+      nickname: res.data.data.nickname ?? nickname.value.trim(),
+      level: prev.level,
+      outfit: prev.outfit,
+    })
     sfx.play('correct')
     open.value = false
     emit('close')
-    // reload page so all components pick up new pet
-    location.reload()
+    // 不再 location.reload()：透過 pandora:pet-updated 事件讓所有 view 自行更新
   } catch (e: any) {
     error.value = e?.response?.data?.message ?? '存檔失敗'
   } finally {
     loading.value = false
   }
 }
+
+const personality = computed(() => getSpeciesPersonality(species.value as Species))
 
 function cancel() {
   open.value = false
@@ -138,6 +149,14 @@ function cancel() {
             :floaty="true"
           />
         </div>
+
+        <!-- Personality hint：每隻 species 有自己的個性描述 -->
+        <p
+          class="font-zen text-[12px] text-stone-500 text-center px-2 leading-relaxed"
+          data-test="pet-personality-hint"
+        >
+          {{ personality.description }}
+        </p>
 
         <!-- Species grid -->
         <div class="grid grid-cols-4 gap-2">

@@ -163,7 +163,7 @@ return [
             'condition'       => 'luteal_phase_length < 10 && observed_cycles >= 2',
             'action'          => '紀錄並諮詢',
             'urgency'         => 'medium',
-            'message'         => '黃體期長度持續低於 10 天，可能是黃體功能訊號，特別在備孕期間值得跟婦產科聊聊。',
+            'message'         => '經前期（黃體期）長度持續低於 10 天，可能是黃體功能訊號，特別在備孕期間值得跟婦產科聊聊。',
             'find_doctor_url' => 'https://www.tw.gov.tw/health/find-obgyn',
         ],
         [
