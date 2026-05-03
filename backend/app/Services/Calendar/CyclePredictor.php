@@ -27,9 +27,15 @@ class CyclePredictor
         }
 
         $cycleLengths = $this->computeCycleLengths($cycles);
-        $avgCycleLength = $cycleLengths->isEmpty()
+
+        // 離群值處理：> 2 SD 的歷史週期不納入計算（樣本 >= 3 才篩，否則沒意義）
+        $cleanLengths = $this->trimOutliers($cycleLengths);
+
+        $avgCycleLength = $cleanLengths->isEmpty()
             ? self::DEFAULT_CYCLE_LENGTH
-            : (int) round($cycleLengths->avg());
+            : (int) round($cleanLengths->avg());
+
+        $stdDev = $cleanLengths->count() >= 2 ? $this->stdDev($cleanLengths) : 0.0;
 
         $periodLengths = $cycles
             ->filter(fn (Cycle $c) => $c->end_date !== null)
@@ -43,6 +49,10 @@ class CyclePredictor
         $latestStart = CarbonImmutable::parse($latest->start_date);
         $nextStart = $latestStart->addDays($avgCycleLength);
 
+        // 信心區間：±1 SD（68%）四捨五入
+        $confidenceLevel = $this->classifyConfidence($cycles->count(), $stdDev);
+        [$low, $high] = $this->computeConfidenceWindow($nextStart, $stdDev, $cycles->count());
+
         return new CyclePrediction(
             today: $today,
             latestCycleStart: $latestStart,
@@ -51,6 +61,10 @@ class CyclePredictor
             nextPeriodEta: $nextStart,
             ovulationEta: $nextStart->subDays(14),
             sampleSize: $cycles->count(),
+            stdDev: $stdDev,
+            confidenceLow: $low,
+            confidenceHigh: $high,
+            confidenceLevel: $confidenceLevel,
         );
     }
 
@@ -66,5 +80,70 @@ class CyclePredictor
         }
 
         return $lengths;
+    }
+
+    /**
+     * 移除超過 mean ± 2 SD 的值（樣本 >= 3 才動，避免樣本太少把資料砍光）
+     */
+    private function trimOutliers(Collection $lengths): Collection
+    {
+        if ($lengths->count() < 3) {
+            return $lengths;
+        }
+
+        $mean = $lengths->avg();
+        $sd = $this->stdDev($lengths);
+        if ($sd <= 0.0) {
+            return $lengths;
+        }
+
+        $cleaned = $lengths->filter(fn (float|int $x) => abs($x - $mean) <= 2 * $sd);
+
+        // 全砍光的極端 case：fallback 用原資料
+        return $cleaned->isEmpty() ? $lengths : $cleaned->values();
+    }
+
+    private function stdDev(Collection $values): float
+    {
+        $n = $values->count();
+        if ($n < 2) {
+            return 0.0;
+        }
+        $mean = $values->avg();
+        $variance = $values->reduce(fn ($carry, $v) => $carry + (($v - $mean) ** 2), 0) / ($n - 1);
+
+        return sqrt($variance);
+    }
+
+    private function classifyConfidence(int $sampleSize, float $stdDev): string
+    {
+        // 完整 cycle 才能算 cycle length（n cycles 給 n-1 個 length）。
+        if ($sampleSize < 2) {
+            return 'unknown';
+        }
+        if ($sampleSize < 3) {
+            return 'low'; // 一個 length 沒辦法判斷穩定性
+        }
+        // 標準差越小 → 越穩定
+        return match (true) {
+            $stdDev <= 1.5 => 'high',
+            $stdDev <= 3.5 => 'medium',
+            default => 'low',
+        };
+    }
+
+    /**
+     * @return array{0: ?CarbonImmutable, 1: ?CarbonImmutable}
+     */
+    private function computeConfidenceWindow(CarbonImmutable $eta, float $stdDev, int $sampleSize): array
+    {
+        if ($sampleSize < 2 || $stdDev <= 0.0) {
+            return [null, null];
+        }
+
+        // 用 ±1 SD 表達 ~68% 區間，至少 ±1 天讓前端能畫範圍
+        $delta = max(1, (int) round($stdDev));
+
+        return [$eta->subDays($delta), $eta->addDays($delta)];
     }
 }

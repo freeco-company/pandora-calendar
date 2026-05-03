@@ -6,6 +6,7 @@ import Button from '../components/ui/Button.vue'
 import EmptyState from '../components/ui/EmptyState.vue'
 import { useSfx } from '../lib/sound'
 import { awardXp, emitAchievement, consumeGamificationPending } from '../lib/gamification'
+import { useSymptomTags, type SymptomCategory } from '../composables/useSymptomTags'
 
 const sfx = useSfx()
 const startDate = ref(new Date().toISOString().slice(0, 10))
@@ -19,25 +20,28 @@ const symptoms = ref<SymptomRecord[]>([])
 const saving = ref(false)
 const message = ref<string | null>(null)
 
-const tags = [
-  { v: 'cramp', label: '經痛' },
-  { v: 'headache', label: '頭痛' },
-  { v: 'fatigue', label: '疲倦' },
-  { v: 'bloating', label: '腹脹' },
-  { v: 'breast_tender', label: '胸脹' },
-  { v: 'acne', label: '冒痘' },
-  { v: 'mood_swing', label: '情緒起伏' },
-  { v: 'craving_sweet', label: '想吃甜' },
-  { v: 'insomnia', label: '失眠' },
-  { v: 'back_pain', label: '腰痠' },
-]
+const symptomTags = useSymptomTags()
+const expandedCategories = ref<Record<SymptomCategory, boolean>>({
+  body: true,
+  mood: true,
+  intimacy: false,
+  fertility: false,
+})
+
+function toggleCategory(key: SymptomCategory) {
+  expandedCategories.value[key] = !expandedCategories.value[key]
+  sfx.play('ui_tap')
+}
 
 async function load() {
   const [c, s] = await Promise.all([CalendarApi.cycles(), CalendarApi.symptoms()])
   cycles.value = c.data.data
   symptoms.value = s.data.data
 }
-onMounted(load)
+onMounted(() => {
+  symptomTags.load()
+  load()
+})
 
 async function saveCycle() {
   saving.value = true
@@ -183,21 +187,48 @@ function pickMood(v: string) {
           class="mt-1 w-full px-3 py-2.5 rounded-2xl border border-cream-200 bg-cream-50 focus:outline-none focus:border-peach-300 focus:bg-white transition-colors text-sm"
         />
       </label>
-      <div class="flex flex-wrap gap-2">
-        <button
-          v-for="t in tags"
-          :key="t.v"
-          @click="toggleTag(t.v)"
-          :data-test="`tag-${t.v}`"
-          class="px-3.5 py-1.5 rounded-full text-xs font-zen border transition-all active:scale-95"
-          :class="
-            selectedTags.includes(t.v)
-              ? 'bg-peach-gradient text-white border-transparent shadow-soft'
-              : 'bg-cream-50 text-peach-500 border-cream-200 hover:bg-peach-50'
-          "
+      <div class="space-y-2.5">
+        <div
+          v-for="group in symptomTags.grouped()"
+          :key="group.key"
+          class="border border-cream-200 rounded-2xl overflow-hidden bg-white"
         >
-          {{ t.label }}
-        </button>
+          <button
+            type="button"
+            @click="toggleCategory(group.key)"
+            :data-test="`tag-cat-${group.key}`"
+            class="w-full px-3.5 py-2.5 flex items-center justify-between bg-cream-50 hover:bg-peach-50 transition-colors"
+          >
+            <span class="font-zen text-sm text-peach-500 flex items-center gap-1.5">
+              <span>{{ group.emoji }}</span>
+              <span>{{ group.title }}</span>
+              <span class="text-[10px] text-stone-400">{{ group.tags.length }}</span>
+            </span>
+            <span class="text-stone-400 text-xs">
+              {{ expandedCategories[group.key] ? '−' : '+' }}
+            </span>
+          </button>
+          <div
+            v-if="expandedCategories[group.key]"
+            class="flex flex-wrap gap-2 p-3"
+          >
+            <button
+              v-for="t in group.tags"
+              :key="t.value"
+              @click="toggleTag(t.value)"
+              :data-test="`tag-${t.value}`"
+              class="px-3 py-1.5 rounded-full text-xs font-zen border transition-all active:scale-95 flex items-center gap-1"
+              :class="
+                selectedTags.includes(t.value)
+                  ? 'bg-peach-gradient text-white border-transparent shadow-soft'
+                  : 'bg-cream-50 text-peach-500 border-cream-200 hover:bg-peach-50'
+              "
+            >
+              <span>{{ t.emoji }}</span>
+              <span>{{ t.label }}</span>
+            </button>
+          </div>
+        </div>
       </div>
       <div class="grid grid-cols-3 gap-2">
         <button

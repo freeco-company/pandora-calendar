@@ -4,6 +4,7 @@ namespace App\Http\Controllers\Api\V1;
 
 use App\Http\Controllers\Controller;
 use App\Models\BbtReading;
+use App\Services\Health\BbtAnalyzer;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 
@@ -12,6 +13,15 @@ use Illuminate\Http\Request;
  */
 class BbtController extends Controller
 {
+    public function __construct(private readonly BbtAnalyzer $analyzer) {}
+
+    public function biphasic(Request $request): JsonResponse
+    {
+        return response()->json([
+            'data' => $this->analyzer->detectBiphasicShift($request->user()->id),
+        ]);
+    }
+
     public function index(Request $request): JsonResponse
     {
         $from = $request->query('from', now()->subDays(60)->toDateString());

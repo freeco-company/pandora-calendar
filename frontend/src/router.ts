@@ -1,9 +1,20 @@
 import { createRouter, createWebHashHistory, type RouteRecordRaw } from 'vue-router'
 import { getToken } from './api'
 
+const ONBOARDING_DONE_KEY = 'pandora_calendar_onboarding_done'
+
+export function isOnboardingDone(): boolean {
+  try {
+    return localStorage.getItem(ONBOARDING_DONE_KEY) === '1'
+  } catch {
+    return true // 私密模式，避免導向 loop
+  }
+}
+
 const routes: RouteRecordRaw[] = [
   { path: '/', redirect: '/calendar' },
   { path: '/login', component: () => import('./views/Login.vue'), meta: { public: true } },
+  { path: '/onboarding', component: () => import('./views/Onboarding.vue') },
   { path: '/calendar', component: () => import('./views/Calendar.vue') },
   { path: '/log', component: () => import('./views/Log.vue') },
   { path: '/dodo', component: () => import('./views/Dodo.vue') },
@@ -28,5 +39,15 @@ export const router = createRouter({
 router.beforeEach((to) => {
   if (!to.meta.public && !getToken()) {
     return { path: '/login', query: { from: to.fullPath } }
+  }
+  // 已登入但還沒走完 onboarding → 強制導向（除非正在 onboarding 頁本身）
+  if (
+    getToken() &&
+    !isOnboardingDone() &&
+    to.path !== '/onboarding' &&
+    to.path !== '/login' &&
+    !to.meta.public
+  ) {
+    return { path: '/onboarding' }
   }
 })

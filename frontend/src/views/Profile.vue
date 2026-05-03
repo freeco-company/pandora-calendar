@@ -10,6 +10,7 @@ import Character from '../components/Character.vue'
 import { useSfx } from '../lib/sound'
 import { getPet, savePet } from '../lib/character'
 import { getCurrentLevel, getCurrentXp } from '../lib/gamification'
+import { JourneyApi, type JourneyData } from '../api'
 
 const router = useRouter()
 const user = getStoredUser()
@@ -43,7 +44,36 @@ async function togglePush() {
   pushBusy.value = false
 }
 
-onMounted(() => ent.load())
+const journey = ref<JourneyData | null>(null)
+const journeyLoading = ref(true)
+
+const nextMilestone = computed(() => {
+  if (!journey.value) return null
+  return (
+    journey.value.milestones.find(
+      (m) => !m.unlocked && m.target && (m.progress ?? 0) < m.target,
+    ) ?? null
+  )
+})
+
+const levelProgressPct = computed(() => {
+  if (!journey.value) return 0
+  const need = journey.value.need_for_next_level
+  if (!need || need <= 0) return 100
+  return Math.min(100, Math.round((journey.value.progress_in_level / need) * 100))
+})
+
+onMounted(async () => {
+  ent.load()
+  try {
+    const res = await JourneyApi.show()
+    journey.value = res.data.data
+  } catch {
+    journey.value = null
+  } finally {
+    journeyLoading.value = false
+  }
+})
 
 const greeting = computed(() => {
   const h = new Date().getHours()
@@ -165,6 +195,70 @@ async function confirmDeleteData() {
       <p class="font-zen text-xs text-stone-500">
         XP {{ xp }} · 連續記錄會讓寵物升級
       </p>
+    </Card>
+
+    <!-- 成就進度條 -->
+    <Card v-if="!journeyLoading && journey" tone="plain" class="space-y-3" data-test="achievement-progress">
+      <div class="flex items-center justify-between">
+        <h3 class="font-display font-bold text-peach-500 text-sm">朵朵旅程</h3>
+        <RouterLink to="/me/journey" class="text-[11px] font-zen text-peach-400 hover:text-peach-500">
+          看全部 →
+        </RouterLink>
+      </div>
+
+      <!-- Streak -->
+      <div class="flex items-center gap-3">
+        <div class="text-3xl">🔥</div>
+        <div class="flex-1">
+          <p class="font-zen text-[11px] text-stone-500">連用天數</p>
+          <p class="font-display font-bold text-peach-500 text-xl leading-none">
+            {{ journey.streak_days }} <span class="text-xs text-stone-400 font-zen">天</span>
+          </p>
+        </div>
+        <div class="text-right">
+          <p class="font-zen text-[11px] text-stone-500">Level</p>
+          <p class="font-display font-bold text-peach-500 text-xl leading-none">{{ journey.level }}</p>
+        </div>
+      </div>
+
+      <!-- Level 進度 -->
+      <div class="space-y-1">
+        <div class="flex justify-between text-[11px] font-zen text-stone-500">
+          <span>距離 Lv {{ journey.level + 1 }}</span>
+          <span>{{ journey.progress_in_level }} / {{ journey.need_for_next_level }} XP</span>
+        </div>
+        <div class="h-2 rounded-full bg-cream-100 overflow-hidden">
+          <div
+            class="h-full bg-peach-gradient transition-all duration-500"
+            :style="{ width: levelProgressPct + '%' }"
+          />
+        </div>
+      </div>
+
+      <!-- 下一個成就 -->
+      <div v-if="nextMilestone" class="bg-cream-50 rounded-2xl p-3 space-y-1.5">
+        <div class="flex items-center gap-2">
+          <span class="text-xl">{{ nextMilestone.icon }}</span>
+          <div class="flex-1">
+            <p class="font-zen text-sm text-stone-700">下一個成就：{{ nextMilestone.name }}</p>
+            <p class="font-zen text-[11px] text-stone-500">
+              {{ nextMilestone.progress ?? 0 }} / {{ nextMilestone.target }}
+            </p>
+          </div>
+        </div>
+        <div class="h-1.5 rounded-full bg-white overflow-hidden">
+          <div
+            class="h-full bg-sakura-300"
+            :style="{
+              width:
+                Math.min(
+                  100,
+                  Math.round(((nextMilestone.progress ?? 0) / (nextMilestone.target || 1)) * 100),
+                ) + '%',
+            }"
+          />
+        </div>
+      </div>
     </Card>
 
     <Card tone="plain" :padded="false" class="overflow-hidden">
@@ -331,8 +425,12 @@ async function confirmDeleteData() {
       <a href="mailto:support@js-store.com.tw" class="hover:text-peach-500 transition-colors">客服</a>
     </div>
 
-    <p class="text-center text-[10px] text-stone-400 pt-1 font-zen">
-      Pandora Calendar v0.4.0 · P1 Identity · P3 Gamification
-    </p>
+    <!-- 隱私強化 -->
+    <Card tone="cream" class="space-y-1.5 text-center">
+      <p class="font-display font-bold text-peach-500 text-base">妳的資料只屬於妳</p>
+      <p class="font-zen text-[12px] text-stone-600 leading-relaxed">
+        我們不賣資料、不放廣告。妳隨時可以匯出或刪除妳的紀錄。
+      </p>
+    </Card>
   </div>
 </template>

@@ -6,6 +6,7 @@ use App\Http\Controllers\Controller;
 use App\Models\Cycle;
 use App\Services\BodyRhythm\BodyRhythmSyncService;
 use App\Services\Calendar\BodyRhythmCalculator;
+use App\Services\Calendar\CycleLateMessageProvider;
 use App\Services\Calendar\CyclePredictor;
 use App\Services\Conversion\LoyaltySignalEvaluator;
 use App\Models\CycleSymptom;
@@ -25,6 +26,7 @@ class CycleController extends Controller
         private readonly BodyRhythmSyncService $bodyRhythmSync,
         private readonly LoyaltySignalEvaluator $loyalty,
         private readonly AchievementChecker $achievements,
+        private readonly CycleLateMessageProvider $lateMessages,
     ) {}
 
     public function index(Request $request): JsonResponse
@@ -47,10 +49,21 @@ class CycleController extends Controller
         $prediction = $this->predictor->predict($userId);
         $rhythm = $this->rhythm->compute($prediction);
 
+        // 經期延遲分支：next_period_eta < today 時帶安撫訊息
+        $lateMessage = null;
+        $eta = $prediction->nextPeriodEta;
+        if ($eta !== null) {
+            $daysLate = $eta->diffInDays(\Carbon\CarbonImmutable::today(), false);
+            if ($daysLate >= 1) {
+                $lateMessage = $this->lateMessages->getMessage((int) $daysLate);
+            }
+        }
+
         return response()->json([
             'data' => $cycles,
             'prediction' => $prediction->toArray(),
             'body_rhythm' => $rhythm->toArray(),
+            'late_message' => $lateMessage,
         ]);
     }
 

@@ -16,10 +16,36 @@ class SymptomController extends Controller
         private readonly GamificationPublisher $gamification,
     ) {}
 
+    /**
+     * Allowed tag keys 走 config/symptom-tags.php（22+，narrative agent 可擴 key）。
+     * 保留 const 是為了 fallback；若 config 沒載入仍能維持基本 10 tag 不破測試。
+     */
     public const ALLOWED_TAGS = [
         'cramp', 'headache', 'fatigue', 'bloating', 'breast_tender',
         'acne', 'mood_swing', 'craving_sweet', 'insomnia', 'back_pain',
     ];
+
+    private function allowedTagsFromConfig(): array
+    {
+        $cfg = config('symptom-tags');
+        if (! is_array($cfg) || empty($cfg)) {
+            return self::ALLOWED_TAGS;
+        }
+
+        $keys = [];
+        foreach ($cfg as $group) {
+            if (! is_array($group)) {
+                continue;
+            }
+            foreach ($group as $tag) {
+                if (isset($tag['key']) && is_string($tag['key'])) {
+                    $keys[] = $tag['key'];
+                }
+            }
+        }
+
+        return $keys ?: self::ALLOWED_TAGS;
+    }
 
     public function index(Request $request): JsonResponse
     {
@@ -55,7 +81,7 @@ class SymptomController extends Controller
         $data = $request->validate([
             'logged_on' => ['required', 'date'],
             'tags' => ['array'],
-            'tags.*' => ['string', 'in:'.implode(',', self::ALLOWED_TAGS)],
+            'tags.*' => ['string', 'in:'.implode(',', $this->allowedTagsFromConfig())],
             'mood' => ['nullable', 'string', 'in:good,okay,bad'],
             'basal_temperature' => ['nullable', 'numeric', 'between:34,42'],
             'note' => ['nullable', 'string', 'max:500'],

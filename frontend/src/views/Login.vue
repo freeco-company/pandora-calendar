@@ -232,9 +232,12 @@ async function loginWith(provider: 'google' | 'line' | 'apple') {
       </button>
     </Card>
 
-    <p class="font-zen text-[10px] text-stone-400 mt-6 leading-relaxed text-center">
-      ❌ 不做廣告 · ❌ 不賣資料 · 妳的週期資料只屬於妳
-    </p>
+    <div class="mt-6 max-w-sm w-full text-center space-y-1">
+      <p class="font-display font-bold text-peach-500 text-base">妳的資料只屬於妳</p>
+      <p class="font-zen text-[11px] text-stone-500 leading-relaxed">
+        我們不賣資料、不放廣告。妳隨時可以刪除妳的紀錄。
+      </p>
+    </div>
 
     <p class="font-zen text-[10px] text-stone-400 mt-2 text-center space-x-2">
       <RouterLink to="/privacy" class="hover:text-peach-500 transition-colors">隱私權</RouterLink>

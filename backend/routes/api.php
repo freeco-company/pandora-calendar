@@ -87,6 +87,17 @@ Route::middleware(['auth.platform'])->prefix('v1')->group(function () {
 
     Route::get('/symptoms', [SymptomController::class, 'index']);
     Route::post('/symptoms', [SymptomController::class, 'store']);
+    Route::get('/symptom-tags', [\App\Http\Controllers\Api\V1\SymptomTagsController::class, 'index']);
+
+    // P0+P1 Onboarding
+    Route::post('/onboarding/complete', [\App\Http\Controllers\Api\V1\OnboardingController::class, 'complete']);
+    Route::get('/onboarding/status', [\App\Http\Controllers\Api\V1\OnboardingController::class, 'status']);
+
+    // P1 Daily insights（衛教文章）
+    Route::get('/insights/today', [\App\Http\Controllers\Api\V1\DailyInsightController::class, 'today']);
+
+    // P1 BBT 雙相 shift 偵測
+    Route::get('/bbt/biphasic', [\App\Http\Controllers\Api\V1\BbtController::class, 'biphasic']);
 
     Route::post('/dodo/checkin', [DodoController::class, 'checkin']);
     Route::get('/dodo/recent', [DodoController::class, 'recent']);

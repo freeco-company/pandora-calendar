@@ -28,7 +28,7 @@ class DodoController extends Controller
     public function checkin(Request $request): JsonResponse
     {
         $data = $request->validate([
-            'mood' => ['required', 'string', 'in:good,okay,bad'],
+            'mood' => ['required', 'string', 'in:good,okay,bad,tired,cramping'],
             'checked_on' => ['nullable', 'date'],
         ]);
 
@@ -49,7 +49,11 @@ class DodoController extends Controller
 
         $prediction = $this->predictor->predict($user->id, $checkedOn);
         $rhythm = $this->rhythmCalc->compute($prediction, $checkedOn);
-        $response = $this->responder->respond($data['mood'], $rhythm);
+
+        // 里程碑（7/14/30/60/90）優先 — 踩到那天朵朵說里程碑句，否則 mood × phase 變體
+        $streakDays = $this->computeStreak($user->id, $checkedOn);
+        $milestone = $this->responder->streakMilestone($streakDays);
+        $response = $milestone ?? $this->responder->respond($data['mood'], $rhythm);
 
         $checkin = DodoCheckin::updateOrCreate(
             ['user_id' => $user->id, 'checked_on' => $checkedOn->toDateString()],
@@ -82,6 +86,36 @@ class DodoController extends Controller
                 'dodo_response' => $checkin->dodo_response,
             ],
         ], 201);
+    }
+
+    /**
+     * 連續打卡天數（從 checked_on 往回算，必須每天連著）
+     */
+    private function computeStreak(int $userId, CarbonImmutable $checkedOn): int
+    {
+        $dates = \App\Models\DodoCheckin::where('user_id', $userId)
+            ->where('checked_on', '<=', $checkedOn->toDateString())
+            ->orderByDesc('checked_on')
+            ->limit(120)
+            ->pluck('checked_on')
+            ->map(fn ($d) => $d instanceof \Carbon\Carbon ? $d->toDateString() : (string) $d)
+            ->all();
+
+        // 今日 checkin 還沒寫入 DB，從 1 起算（含今天），往前找連續日
+        $streak = 1;
+        $cursor = $checkedOn->subDay();
+        foreach ($dates as $d) {
+            if ($d === $cursor->toDateString()) {
+                $streak++;
+                $cursor = $cursor->subDay();
+            } elseif ($d === $checkedOn->toDateString()) {
+                continue; // 今日若已存在（updateOrCreate path），略過避免重複算
+            } else {
+                break;
+            }
+        }
+
+        return $streak;
     }
 
     public function recent(Request $request): JsonResponse
