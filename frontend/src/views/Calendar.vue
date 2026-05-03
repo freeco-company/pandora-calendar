@@ -8,6 +8,8 @@ import Character from '../components/Character.vue'
 import CalendarGamificationStrip from '../components/CalendarGamificationStrip.vue'
 import TodayActionCard from '../components/TodayActionCard.vue'
 import ProtocolInsightBanner from '../components/ProtocolInsightBanner.vue'
+import SolarTermBanner from '../components/SolarTermBanner.vue'
+import RandomEventCard from '../components/RandomEventCard.vue'
 import Icon from '../components/icons/Icon.vue'
 import { moodForPhase } from '../lib/character'
 import { usePet } from '../composables/usePet'
@@ -243,6 +245,12 @@ function goPet() {
 
     <!-- 朵朵主動報「我發現 X 對妳 work」— 沒 insight 不 render -->
     <ProtocolInsightBanner />
+
+    <!-- 24 節氣 active 期間 banner（沒節氣不 render）-->
+    <SolarTermBanner />
+
+    <!-- 每天首訪可能彈出隨機事件（沒事件 / 已 dismiss 不 render）-->
+    <RandomEventCard />
 
     <TodayActionCard class="mb-6" :compact="true" />
 

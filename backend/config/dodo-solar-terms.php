@@ -1,41 +1,240 @@
 <?php
 
 /*
-| Wave 13 — 24 節氣 stub。
+| Wave 13 — 24 節氣（narrative content live）
+|
 | 月份 + 大致日期（節氣每年實際日期會差 1 天，這裡用「常年中位日期」做粗略）。
 | 期間 ±1 天（共 3 天 window）內完成記錄即算 participation。
 |
-| narrative agent 補 description / outfit unlock / dialog flavor。
+| Schema：
+|   key / label / month / day / outfit_unlock — 沿用既有 SolarTermService consumer
+|   description    朵朵語氣 100 字內，禁療效詞
+|   wisdom         節氣短語 ~50 字（「許多朋友會」「妳可以試試」軟性句型）
+|   dialogs        3 變體（DodoSolarTermResolver 隨機抽）
+|
+| 撰寫規範：0 療效詞 / 0 商品名；中醫節氣養生改寫成軟性陪伴語氣
 */
 
 return [
     'terms' => [
-        ['key' => 'lichun', 'label' => '立春', 'month' => 2, 'day' => 4, 'description' => 'TODO', 'outfit_unlock' => null],
-        ['key' => 'yushui', 'label' => '雨水', 'month' => 2, 'day' => 19, 'description' => 'TODO', 'outfit_unlock' => null],
-        ['key' => 'jingzhe', 'label' => '驚蟄', 'month' => 3, 'day' => 6, 'description' => 'TODO', 'outfit_unlock' => null],
-        ['key' => 'chunfen', 'label' => '春分', 'month' => 3, 'day' => 21, 'description' => 'TODO', 'outfit_unlock' => 'cherry_blossom_kimono'],
-        ['key' => 'qingming', 'label' => '清明', 'month' => 4, 'day' => 5, 'description' => 'TODO', 'outfit_unlock' => null],
-        ['key' => 'guyu', 'label' => '穀雨', 'month' => 4, 'day' => 20, 'description' => 'TODO', 'outfit_unlock' => null],
-        ['key' => 'lixia', 'label' => '立夏', 'month' => 5, 'day' => 6, 'description' => 'TODO', 'outfit_unlock' => null],
-        ['key' => 'xiaoman', 'label' => '小滿', 'month' => 5, 'day' => 21, 'description' => 'TODO', 'outfit_unlock' => null],
-        ['key' => 'mangzhong', 'label' => '芒種', 'month' => 6, 'day' => 6, 'description' => 'TODO', 'outfit_unlock' => null],
-        ['key' => 'xiazhi', 'label' => '夏至', 'month' => 6, 'day' => 21, 'description' => 'TODO', 'outfit_unlock' => 'summer_yukata'],
-        ['key' => 'xiaoshu', 'label' => '小暑', 'month' => 7, 'day' => 7, 'description' => 'TODO', 'outfit_unlock' => null],
-        ['key' => 'dashu', 'label' => '大暑', 'month' => 7, 'day' => 23, 'description' => 'TODO', 'outfit_unlock' => null],
-        ['key' => 'liqiu', 'label' => '立秋', 'month' => 8, 'day' => 8, 'description' => 'TODO', 'outfit_unlock' => null],
-        ['key' => 'chushu', 'label' => '處暑', 'month' => 8, 'day' => 23, 'description' => 'TODO', 'outfit_unlock' => null],
-        ['key' => 'bailu', 'label' => '白露', 'month' => 9, 'day' => 8, 'description' => 'TODO', 'outfit_unlock' => null],
-        ['key' => 'qiufen', 'label' => '秋分', 'month' => 9, 'day' => 23, 'description' => 'TODO', 'outfit_unlock' => 'autumn_maple'],
-        ['key' => 'hanlu', 'label' => '寒露', 'month' => 10, 'day' => 8, 'description' => 'TODO', 'outfit_unlock' => null],
-        ['key' => 'shuangjiang', 'label' => '霜降', 'month' => 10, 'day' => 23, 'description' => 'TODO', 'outfit_unlock' => null],
-        ['key' => 'lidong', 'label' => '立冬', 'month' => 11, 'day' => 7, 'description' => 'TODO', 'outfit_unlock' => null],
-        ['key' => 'xiaoxue', 'label' => '小雪', 'month' => 11, 'day' => 22, 'description' => 'TODO', 'outfit_unlock' => null],
-        ['key' => 'daxue', 'label' => '大雪', 'month' => 12, 'day' => 7, 'description' => 'TODO', 'outfit_unlock' => null],
-        ['key' => 'dongzhi', 'label' => '冬至', 'month' => 12, 'day' => 22, 'description' => 'TODO', 'outfit_unlock' => 'winter_scarf'],
-        ['key' => 'xiaohan', 'label' => '小寒', 'month' => 1, 'day' => 6, 'description' => 'TODO', 'outfit_unlock' => null],
-        ['key' => 'dahan', 'label' => '大寒', 'month' => 1, 'day' => 20, 'description' => 'TODO', 'outfit_unlock' => null],
+
+        ['key' => 'lichun',     'label' => '立春', 'month' => 2,  'day' => 4,  'outfit_unlock' => null,
+         'description' => '春天從這天開始。朵朵覺得不用急著「煥然一新」，先把肩膀放下，呼吸深一點就好。',
+         'wisdom' => '春天是身體開始醒的季節，許多朋友會多吃一點當季的綠色蔬菜，少熬夜。',
+         'dialogs' => [
+            '立春了。朵朵悄悄跟妳說：「今年慢慢來，不用急。」',
+            '冬天的疲倦還在妳身上，朵朵不催妳立刻換季。',
+            '今天願意多走幾步路，就算妳跟立春打招呼了。',
+         ]],
+
+        ['key' => 'yushui',     'label' => '雨水', 'month' => 2,  'day' => 19, 'outfit_unlock' => null,
+         'description' => '雨水開始落下。朵朵說：水是身體最需要的禮物，今天記得喝溫的。',
+         'wisdom' => '春雨多濕，許多朋友會少吃太冰太寒的東西，溫水溫食讓身體比較接得住。',
+         'dialogs' => [
+            '下雨了。朵朵泡了一壺溫水放妳手邊。',
+            '雨水節氣，外面濕，妳體內也容易濕。今天減一杯冰飲試試。',
+            '聽雨是免費的。今晚少滑一輪手機，多聽 5 分鐘的雨。',
+         ]],
+
+        ['key' => 'jingzhe',    'label' => '驚蟄', 'month' => 3,  'day' => 6,  'outfit_unlock' => null,
+         'description' => '春雷把蟲叫醒了，也把妳叫醒了。朵朵說：今天可以走出戶外，曬一下太陽。',
+         'wisdom' => '驚蟄是身體開始活潑的時候，許多朋友會在這時候開始恢復運動，從散步開始。',
+         'dialogs' => [
+            '春雷了。朵朵覺得妳今天可以走出去走 10 分鐘。',
+            '不用一下子很激烈。先散步，身體會自己想動更多。',
+            '驚蟄的太陽特別新，曬一下會比咖啡更有用。',
+         ]],
+
+        ['key' => 'chunfen',    'label' => '春分', 'month' => 3,  'day' => 21, 'outfit_unlock' => 'cherry_blossom_kimono',
+         'description' => '日夜各半。朵朵說這是平衡的日子——工作跟休息、付出跟接收，都試著對半。',
+         'wisdom' => '春分日夜平分，許多朋友會在這天檢視自己最近有沒有偏一邊：太忙、太懶、太緊、太鬆。',
+         'dialogs' => [
+            '今天日夜各半。朵朵想跟妳說：「妳的生活也可以」。',
+            '春分是大自然在示範平衡。妳今天有為自己留 30 分鐘嗎？',
+            '櫻花開了。朵朵幫妳留了一件和服，妳明天打開更衣室看看。',
+         ]],
+
+        ['key' => 'qingming',   'label' => '清明', 'month' => 4,  'day' => 5,  'outfit_unlock' => null,
+         'description' => '清明是想念的日子。朵朵說，記得身體的同時，也記得那些一起長大過的人。',
+         'wisdom' => '清明是過渡天氣，溫差大，許多朋友會在這時候特別注意保暖跟睡眠。',
+         'dialogs' => [
+            '清明了。朵朵今天有點安靜，想跟妳一起想念一些人。',
+            '天氣忽冷忽熱，今晚多蓋一條被。',
+            '想念是身體的一部分。記下來、好好哭、好好吃。',
+         ]],
+
+        ['key' => 'guyu',       'label' => '穀雨', 'month' => 4,  'day' => 20, 'outfit_unlock' => null,
+         'description' => '春天最後一個節氣。朵朵說：把春天該做的事收尾，妳已經做得夠多了。',
+         'wisdom' => '穀雨後濕氣重，許多朋友會在這時候減少冰飲、生食，多吃當季的山蔬。',
+         'dialogs' => [
+            '穀雨。春天要結束了，朵朵幫妳清點一下春天有過的小成就。',
+            '濕氣重的時候身體比較重，今晚可以泡腳 10 分鐘。',
+            '收尾不是趕完。是「好的，這個季節我做到這裡」。',
+         ]],
+
+        ['key' => 'lixia',      'label' => '立夏', 'month' => 5,  'day' => 6,  'outfit_unlock' => null,
+         'description' => '夏天從這天開始。朵朵說：天熱了，但別讓自己「熱得不耐煩」。慢慢來。',
+         'wisdom' => '立夏天氣轉熱，許多朋友會早一點睡，因為夏天容易心浮氣躁。',
+         'dialogs' => [
+            '立夏。朵朵幫妳把冰箱裡的冰飲少放兩瓶，慢慢過渡。',
+            '天熱了，但身體還在記得春天的節奏，不用一下子衝。',
+            '今晚早一點睡，夏天的早晨值得妳清醒地看到。',
+         ]],
+
+        ['key' => 'xiaoman',    'label' => '小滿', 'month' => 5,  'day' => 21, 'outfit_unlock' => null,
+         'description' => '小滿是「滿了一點點，但還沒滿」的意思。朵朵說：人也是，不用追求完美。',
+         'wisdom' => '小滿是身體飽滿的時候，許多朋友會在這時候開始覺得活力回來，可以排運動了。',
+         'dialogs' => [
+            '小滿。妳的生活也只要 80%，剩下 20% 留白。',
+            '不滿是力氣。完全滿了反而會洩。',
+            '今天看見自己「有做到一點點」就值得記下來。',
+         ]],
+
+        ['key' => 'mangzhong',  'label' => '芒種', 'month' => 6,  'day' => 6,  'outfit_unlock' => null,
+         'description' => '芒種是農人最忙的時候。朵朵說：忙也要記得喝水、抬頭看雲。',
+         'wisdom' => '芒種濕熱，許多朋友會多喝水、少吃油膩，給身體留一點空間。',
+         'dialogs' => [
+            '芒種了。妳這陣子忙嗎？朵朵幫妳記得喝水。',
+            '農人這時候最辛苦。妳是自己的農人，今天拜託溫柔對自己。',
+            '抬頭看雲 30 秒，是芒種留給妳的休息卡。',
+         ]],
+
+        ['key' => 'xiazhi',     'label' => '夏至', 'month' => 6,  'day' => 21, 'outfit_unlock' => 'summer_yukata',
+         'description' => '一年最長的白天。朵朵說：今天太陽待得久，妳的事情也不用全擠在這天做。',
+         'wisdom' => '夏至陽氣最盛，許多朋友會早睡晚起、午休 20 分鐘，讓身體跟著太陽走。',
+         'dialogs' => [
+            '夏至。今天最長，但妳不必最累。',
+            '中午躺 20 分鐘，是夏至送的禮物。',
+            '夏天浴衣準備好了，明天打開更衣室看一下。',
+         ]],
+
+        ['key' => 'xiaoshu',    'label' => '小暑', 'month' => 7,  'day' => 7,  'outfit_unlock' => null,
+         'description' => '小暑是熱的開始。朵朵說：吃喝清淡一點，給身體留一點呼吸的空間。',
+         'wisdom' => '小暑開始熱，許多朋友會多吃當季的瓜類，少喝太冰的飲料避免腸胃打結。',
+         'dialogs' => [
+            '小暑了。妳今天的飲食可以再簡單一點。',
+            '太冰太燙都不舒服。中庸最舒服。',
+            '汗多的時候多喝溫水，身體會接得住。',
+         ]],
+
+        ['key' => 'dashu',      'label' => '大暑', 'month' => 7,  'day' => 23, 'outfit_unlock' => null,
+         'description' => '一年最熱的時候。朵朵說：累就累、慢就慢，這是大自然給的「請放慢」訊號。',
+         'wisdom' => '大暑酷熱，許多朋友會在這時候特別注意中午不外出、晚餐簡單、午睡固定。',
+         'dialogs' => [
+            '大暑。今天連太陽都要喘口氣，妳也是。',
+            '大熱天本來就動得慢，不是妳懶。',
+            '今晚簡單吃。一碗清湯麵，朵朵覺得就很好。',
+         ]],
+
+        ['key' => 'liqiu',      'label' => '立秋', 'month' => 8,  'day' => 8,  'outfit_unlock' => null,
+         'description' => '秋天從這天開始。朵朵說：身體會在這幾天開始變一個節奏，跟自己對話一下。',
+         'wisdom' => '立秋是身體換季的信號，許多朋友會在這時候開始留意是否睡得比較好、皮膚是否變乾。',
+         'dialogs' => [
+            '立秋了。換季妳要慢慢來，不用一夜變秋天。',
+            '皮膚這陣子比較乾，多塗一次乳液。',
+            '今晚記得多蓋一條薄被，半夜會冷。',
+         ]],
+
+        ['key' => 'chushu',     'label' => '處暑', 'month' => 8,  'day' => 23, 'outfit_unlock' => null,
+         'description' => '處暑是「暑氣要走了」。朵朵說：跟夏天告別之前，把這個夏天有過的好事寫一寫。',
+         'wisdom' => '處暑暑氣漸退，許多朋友會在這時候慢慢調整作息，從「夏夜活躍」回到「秋夜安靜」。',
+         'dialogs' => [
+            '處暑。夏天要走了，妳這個夏天最開心的事是什麼？',
+            '今天可以開始 23 點前躺床，夏天那套「半夜兩點睡」可以收了。',
+            '夕陽變早了，提早 10 分鐘下班看一眼。',
+         ]],
+
+        ['key' => 'bailu',      'label' => '白露', 'month' => 9,  'day' => 8,  'outfit_unlock' => null,
+         'description' => '白露是清晨葉上有露水的日子。朵朵說：早晚溫差大了，今晚多穿一件出門。',
+         'wisdom' => '白露天涼，許多朋友會在這時候開始喝溫水、避免吃太涼的水果。',
+         'dialogs' => [
+            '白露了。早晚溫差變大，外套放包包裡。',
+            '冰飲先暫停一下，溫的反而更解渴。',
+            '今晚的月亮會比較亮，記得抬頭看。',
+         ]],
+
+        ['key' => 'qiufen',     'label' => '秋分', 'month' => 9,  'day' => 23, 'outfit_unlock' => 'autumn_maple',
+         'description' => '秋分日夜各半。朵朵說：跟春分一樣是平衡的日子，這次檢查一下「給」跟「接」是否對等。',
+         'wisdom' => '秋分天氣轉涼，許多朋友會在這時候特別注意保暖、減少生冷食物。',
+         'dialogs' => [
+            '秋分。日夜平等，妳的「付出 vs 接受」也試試看。',
+            '楓葉開始紅了，朵朵留了一件給妳，更衣室打開看看。',
+            '溫差最大的時候。今晚一杯熱茶。',
+         ]],
+
+        ['key' => 'hanlu',      'label' => '寒露', 'month' => 10, 'day' => 8,  'outfit_unlock' => null,
+         'description' => '寒露是真的開始冷了。朵朵說：冰飲收起來、把保暖衣物拿出來。',
+         'wisdom' => '寒露天涼，許多朋友會在這時候多喝溫水、晚上泡腳，幫身體穩住節奏。',
+         'dialogs' => [
+            '寒露了。今晚的腳冰嗎？泡 10 分鐘溫水會有差。',
+            '冰咖啡可以先換成熱拿鐵了。',
+            '出門前摸一下脖子後面，冷的話就加一件。',
+         ]],
+
+        ['key' => 'shuangjiang','label' => '霜降', 'month' => 10, 'day' => 23, 'outfit_unlock' => null,
+         'description' => '霜降是秋天最後一個節氣。朵朵說：把秋天的事情收尾，準備過冬。',
+         'wisdom' => '霜降後氣溫驟降，許多朋友會在這時候開始準備暖暖包、保暖內衣，也讓睡眠時間早一點。',
+         'dialogs' => [
+            '霜降。秋天到了尾聲，妳的能量也可以開始收。',
+            '暖暖包可以開始備著。經期那幾天會用得到。',
+            '今晚提早 30 分鐘關燈試試。',
+         ]],
+
+        ['key' => 'lidong',     'label' => '立冬', 'month' => 11, 'day' => 7,  'outfit_unlock' => null,
+         'description' => '冬天開始。朵朵說：冬天是身體要好好休息的季節，不是要妳衝刺的季節。',
+         'wisdom' => '立冬是身體進入內收的時候，許多朋友會開始多睡、多吃溫熱的食物。',
+         'dialogs' => [
+            '立冬。妳今年冬天的目標是「好好休息」就夠。',
+            '不是每個季節都要衝。冬天就是慢的。',
+            '今晚一鍋熱湯。簡單一點就好。',
+         ]],
+
+        ['key' => 'xiaoxue',    'label' => '小雪', 'month' => 11, 'day' => 22, 'outfit_unlock' => null,
+         'description' => '小雪是冬天第一場雪的訊號。朵朵說：把厚衣服洗好掛好，妳已經準備好過冬。',
+         'wisdom' => '小雪後氣候乾冷，許多朋友會在這時候多喝水、多吃富含水分的食材。',
+         'dialogs' => [
+            '小雪。今晚特別乾，多喝兩杯溫水。',
+            '皮膚開始緊了？護手霜放包包裡。',
+            '厚襪子洗好了嗎？冷腳會睡不好。',
+         ]],
+
+        ['key' => 'daxue',      'label' => '大雪', 'month' => 12, 'day' => 7,  'outfit_unlock' => null,
+         'description' => '大雪是真的冷的時候。朵朵說：今天可以多睡一點點，身體會謝謝妳。',
+         'wisdom' => '大雪寒氣重，許多朋友會在這時候特別注意手腳保暖、晚上 11 點前睡覺。',
+         'dialogs' => [
+            '大雪。冷到不想出門很正常。',
+            '今晚 11 點前躺床，身體會記得這份善待。',
+            '手套圍巾準備好。冷的時候朵朵會更想抱妳。',
+         ]],
+
+        ['key' => 'dongzhi',    'label' => '冬至', 'month' => 12, 'day' => 22, 'outfit_unlock' => 'winter_scarf',
+         'description' => '一年最長的夜晚。朵朵說：黑得久，但這之後白天會慢慢變長。希望也是。',
+         'wisdom' => '冬至是身體最內收的一天，許多朋友會在這時候特別早睡，吃一碗暖暖的湯圓。',
+         'dialogs' => [
+            '冬至。今晚最長，但明天起白天就會變長。',
+            '冬天圍巾準備好了，更衣室打開看看。',
+            '一碗熱湯圓，朵朵陪妳吃。',
+         ]],
+
+        ['key' => 'xiaohan',    'label' => '小寒', 'month' => 1,  'day' => 6,  'outfit_unlock' => null,
+         'description' => '小寒是一年最冷的時段之一。朵朵說：冷的時候縮起來不可恥，是身體在保護自己。',
+         'wisdom' => '小寒酷寒，許多朋友會在這時候更注意起床慢一點、出門慢一點，避免溫差太大。',
+         'dialogs' => [
+            '小寒。今天起床慢一點沒關係。',
+            '出門前先在被窩坐 30 秒，給身體緩衝。',
+            '冷到只想躲被窩——身體在保護妳，不是妳偷懶。',
+         ]],
+
+        ['key' => 'dahan',      'label' => '大寒', 'month' => 1,  'day' => 20, 'outfit_unlock' => null,
+         'description' => '大寒是冬天最後一個節氣。朵朵說：撐到這裡了，下一個節氣就是立春。',
+         'wisdom' => '大寒是身體休養生息的最後階段，許多朋友會在這時候特別注重睡眠跟保暖，為春天蓄力。',
+         'dialogs' => [
+            '大寒。撐到這裡了。下一個節氣就是立春，妳快了。',
+            '冬天最後一段最冷。多吃一點熱的、多睡一點。',
+            '春天會來。朵朵保證。',
+         ]],
     ],
 
-    'window_days' => 1, // 節氣前後各 1 天 = 3 天 window
+    'window_days' => 1,                  // 節氣前後各 1 天 = 3 天 window
     'participation_reward_coins' => 50,
 ];

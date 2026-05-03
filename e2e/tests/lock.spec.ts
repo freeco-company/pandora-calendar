@@ -1,5 +1,5 @@
 import { test, expect } from '@playwright/test'
-import { loginDemo } from './_helpers'
+import { expandProfileSection, loginDemo } from './_helpers'
 
 /**
  * App Lock（生物辨識）
@@ -14,7 +14,8 @@ test.describe('app lock', () => {
   test('Web 環境 security-card 隱藏（isNative=false）', async ({ page }) => {
     await loginDemo(page)
     await page.click('a[href="#/me"]')
-    // security-card 只在 isNative 才 render
+    await expandProfileSection(page, 'security')
+    // security-card 只在 isNative 才 render（即使 section 展開也不該 render）
     await expect(page.locator('[data-test="security-card"]')).toHaveCount(0)
   })
 
@@ -22,11 +23,12 @@ test.describe('app lock', () => {
     // 先正常登入拿 token
     await loginDemo(page)
 
-    // 設 lock_enabled，然後 reload，App.vue onMounted 應該 lock()
+    // 設 lock_enabled + app_locked，然後 full reload（page.goto 同 URL 不 reload SPA）
     await page.evaluate(() => {
       localStorage.setItem('pandora_calendar_lock_enabled', '1')
+      sessionStorage.setItem('app_locked', '1')
     })
-    await page.goto('/#/calendar')
+    await page.reload()
 
     // overlay 出現（即使 verify 會失敗 — web 沒 biometric plugin）
     await expect(page.locator('[data-test="app-lock-screen"]')).toBeVisible({ timeout: 5000 })
@@ -36,10 +38,11 @@ test.describe('app lock', () => {
     await loginDemo(page)
     await page.evaluate(() => {
       localStorage.setItem('pandora_calendar_lock_enabled', '1')
+      sessionStorage.setItem('app_locked', '1')
     })
-    await page.goto('/#/calendar')
+    await page.reload()
 
-    await expect(page.locator('[data-test="app-lock-unlock"]')).toBeVisible()
+    await expect(page.locator('[data-test="app-lock-unlock"]')).toBeVisible({ timeout: 5000 })
     await expect(page.locator('[data-test="app-lock-exit"]')).toBeVisible()
   })
 
@@ -47,8 +50,9 @@ test.describe('app lock', () => {
     await loginDemo(page)
     await page.evaluate(() => {
       localStorage.setItem('pandora_calendar_lock_enabled', '1')
+      sessionStorage.setItem('app_locked', '1')
     })
-    await page.goto('/#/calendar')
+    await page.reload()
     await expect(page.locator('[data-test="app-lock-screen"]')).toBeVisible({ timeout: 5000 })
     await page.click('[data-test="app-lock-exit"]')
     await page.waitForURL(/login/)

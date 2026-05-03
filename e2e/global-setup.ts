@@ -1,6 +1,11 @@
 import { execSync } from 'node:child_process'
 import { existsSync } from 'node:fs'
 import path from 'node:path'
+import { fileURLToPath } from 'node:url'
+
+// ESM 環境補 __dirname
+const __filename = fileURLToPath(import.meta.url)
+const __dirname = path.dirname(__filename)
 
 /**
  * 在跑 e2e 前確保 backend 已遷移 + demo seed 完成。

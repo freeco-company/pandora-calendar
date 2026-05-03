@@ -12,10 +12,14 @@ import { useRouter } from 'vue-router'
 import { ActionApi, JourneyApi, type DailyAction, type JourneyData } from '../api'
 import Character from './Character.vue'
 import Icon, { type IconName } from './icons/Icon.vue'
+import DodoCoinDisplay from './DodoCoinDisplay.vue'
+import RankBadge from './RankBadge.vue'
 import { moodForPhase } from '../lib/character'
 import { usePet } from '../composables/usePet'
 import { useTone } from '../composables/useTone'
 import { useDailyQuest } from '../composables/useDailyQuest'
+import { useEconomy } from '../composables/useEconomy'
+import { useGameDepth } from '../composables/useGameDepth'
 
 const props = defineProps<{
   phase?: string | null
@@ -27,6 +31,8 @@ const { pet } = usePet()
 const journey = ref<JourneyData | null>(null)
 const loading = ref(true)
 const { current: quest, isCompleted, markCompleted, refresh } = useDailyQuest()
+const economy = useEconomy()
+const gameDepth = useGameDepth()
 
 // 個人化 daily action — 若 backend 有資料則優先顯示，沒有 fallback 既有 quest pool
 const personalizedAction = ref<DailyAction | null>(null)
@@ -55,11 +61,15 @@ async function loadPersonalizedAction() {
 onMounted(() => {
   load()
   loadPersonalizedAction()
+  economy.refresh()
+  gameDepth.refreshRank()
 })
 onActivated(() => {
   refresh()
   load()
   loadPersonalizedAction()
+  economy.refresh()
+  gameDepth.refreshRank()
 })
 
 // 是否走個人化 action 模式
@@ -133,7 +143,7 @@ function goQuest() {
 </script>
 
 <template>
-  <div class="grid grid-cols-2 sm:grid-cols-4 gap-2.5 mb-4" data-test="gam-strip">
+  <div class="grid grid-cols-2 sm:grid-cols-5 gap-2.5 mb-4" data-test="gam-strip">
     <!-- 1. Pet -->
     <button
       type="button"
@@ -209,6 +219,26 @@ function goQuest() {
       >
         {{ t('quest_done') }}
       </p>
+    </button>
+
+    <!-- 5. Coin + rank（合併區塊：朵朵幣 balance + 段位徽章）-->
+    <button
+      type="button"
+      @click="router.push('/me/rank')"
+      class="rounded-2xl p-3 bg-gradient-to-br from-peach-50 to-cream-50 shadow-soft flex flex-col gap-1 items-start text-left active:scale-95 transition-transform min-h-[72px]"
+      data-test="gam-strip-coin-rank"
+    >
+      <DodoCoinDisplay size="sm" :hide-tooltip="true" />
+      <RankBadge
+        v-if="gameDepth.rank.value"
+        :state="gameDepth.rank.value"
+        :size="20"
+        variant="compact"
+      />
+      <span
+        v-else
+        class="font-zen text-[10px] text-stone-400"
+      >{{ t('rank_label_short') }}</span>
     </button>
 
     <!-- 4. Next milestone progress -->

@@ -9,11 +9,15 @@ import {
 import Card from '../components/ui/Card.vue'
 import Spinner from '../components/ui/Spinner.vue'
 import Character from '../components/Character.vue'
+import PetBondMeter from '../components/PetBondMeter.vue'
+import RankBadge from '../components/RankBadge.vue'
 import { usePet } from '../composables/usePet'
 import { useTone } from '../composables/useTone'
+import { useGameDepth } from '../composables/useGameDepth'
 
 const { t } = useTone()
 const router = useRouter()
+const gameDepth = useGameDepth()
 const data = ref<JourneyData | null>(null)
 const achievements = ref<AchievementRow[]>([])
 const outfits = ref<OutfitRow[]>([])
@@ -81,7 +85,10 @@ async function load() {
     loading.value = false
   }
 }
-onMounted(load)
+onMounted(() => {
+  load()
+  gameDepth.refreshRank().catch(() => {})
+})
 
 function preview(code: string) {
   // 點同一件 = 取消預覽
@@ -200,6 +207,44 @@ function closeAchievement() {
           {{ t('journey_total_xp', { cur: data.progress_in_level, need: data.need_for_next_level, total: data.total_xp }) }}
         </p>
       </Card>
+
+      <!-- 寵物羈絆條 -->
+      <PetBondMeter :show-pet-head-button="true" data-test="journey-bond-meter" />
+
+      <!-- 段位 + game-depth quick cards -->
+      <div class="grid grid-cols-3 gap-2.5" data-test="journey-quick-links">
+        <button
+          @click="router.push('/me/rank')"
+          class="rounded-2xl bg-white p-3 shadow-soft text-center active:scale-95 transition-transform"
+          data-test="journey-link-rank"
+        >
+          <RankBadge
+            v-if="gameDepth.rank.value"
+            :state="gameDepth.rank.value"
+            :size="28"
+            variant="compact"
+            class="justify-center"
+          />
+          <span v-else class="text-2xl block" aria-hidden="true">⭐</span>
+          <p class="font-zen text-[11px] text-stone-600 mt-1">{{ t('journey_quick_rank') }}</p>
+        </button>
+        <button
+          @click="router.push('/me/body-dex')"
+          class="rounded-2xl bg-white p-3 shadow-soft text-center active:scale-95 transition-transform"
+          data-test="journey-link-bodydex"
+        >
+          <span class="text-2xl block" aria-hidden="true">📔</span>
+          <p class="font-zen text-[11px] text-stone-600 mt-1">{{ t('journey_quick_bodydex') }}</p>
+        </button>
+        <button
+          @click="router.push('/me/stories')"
+          class="rounded-2xl bg-white p-3 shadow-soft text-center active:scale-95 transition-transform"
+          data-test="journey-link-stories"
+        >
+          <span class="text-2xl block" aria-hidden="true">📖</span>
+          <p class="font-zen text-[11px] text-stone-600 mt-1">{{ t('journey_quick_stories') }}</p>
+        </button>
+      </div>
 
       <!-- 連勝 + 30 天統計 -->
       <Card tone="plain" class="space-y-2.5">

@@ -13,7 +13,9 @@ export default defineConfig({
   timeout: 30_000,
   expect: { timeout: 5_000 },
   fullyParallel: false,
-  retries: 0,
+  // hash route + Vite + Capacitor App.vue mount race 偶爾讓 goto('/#/X') 不切 view；
+  // 給 1 個 retry 吸收（重跑時 Vite warm，第二次都過）
+  retries: 1,
   workers: 1,
   reporter: [['list']],
   globalSetup: './global-setup.ts',

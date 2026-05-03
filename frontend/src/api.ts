@@ -1035,3 +1035,177 @@ export const PhotoJournalApi = {
   removeCloudOnly: (id: number) =>
     api.delete<{ data: PhotoJournalEntry }>(`/v1/photo-journal/${id}/cloud-only`),
 }
+
+// =====================================================================
+// Game Depth — 朵朵幣 / 寵物羈絆 / 段位 / 路徑 / 圖鑑 / 故事 / 隨機事件 / 節氣
+// 後端 endpoints 規劃中（agent A 同步寫），UI 寫 graceful empty state
+// =====================================================================
+
+export interface EconomyTransaction {
+  id: number
+  delta: number
+  balance_after: number
+  source: string
+  reason: string | null
+  created_at: string
+}
+
+export interface EconomyBalance {
+  balance: number
+}
+
+export const EconomyApi = {
+  balance: () => api.get<{ data: EconomyBalance }>('/v1/economy/balance'),
+  history: (limit = 50) =>
+    api.get<{ data: { transactions: EconomyTransaction[] } }>('/v1/economy/history', { params: { limit } }),
+  spend: (item_code: string, cost: number) =>
+    api.post<{ data: { balance: number; item_code: string } }>('/v1/economy/spend', { item_code, cost }),
+}
+
+export type IntimacyTier = 'stranger' | 'familiar' | 'friendly' | 'close' | 'soulmate' | 'legendary'
+
+export interface PetBondState {
+  species: string | null
+  bond_xp: number
+  bond_level: number
+  intimacy_tier: IntimacyTier
+  next_tier_at: number
+  progress_percent: number
+}
+
+export const PetBondApi = {
+  show: () => api.get<{ data: PetBondState }>('/v1/me/pet/bond'),
+  feed: (item_code: string) =>
+    api.post<{ data: PetBondState & { delta: number } }>('/v1/me/pet/feed', { item_code }),
+  petHead: () => api.post<{ data: PetBondState & { delta: number } }>('/v1/me/pet/pet-head'),
+}
+
+export type RankTier = 'stone' | 'cream' | 'gold' | 'rose' | 'purple' | 'indigo'
+
+export interface RankState {
+  tier: RankTier
+  tier_index: number
+  xp: number
+  next_threshold: number
+  progress_percent: number
+  philosophy?: string | null
+}
+
+export const RankApi = {
+  show: () => api.get<{ data: RankState }>('/v1/me/rank'),
+}
+
+export type SkillPathKey = 'fertility' | 'wellness' | 'beauty' | null
+
+export interface SkillQuest {
+  key: string
+  title: string
+  description: string
+  reward_coin: number
+  reward_xp: number
+  dodo_intro: string
+  dodo_complete: string
+  is_completed: boolean
+  progress: number
+  target: number
+}
+
+export interface SkillPathState {
+  path: SkillPathKey
+  progress: number
+  total_quests: number
+  changed_at: string | null
+  can_change: boolean
+}
+
+export const SkillPathApi = {
+  show: () => api.get<{ data: SkillPathState }>('/v1/me/skill-path'),
+  choose: (path: NonNullable<SkillPathKey>) =>
+    api.post<{ data: SkillPathState }>('/v1/me/skill-path', { path }),
+  quests: () => api.get<{ data: { quests: SkillQuest[] } }>('/v1/me/skill-path/quests'),
+}
+
+export type DexRarity = 'common' | 'rare' | 'epic' | 'legendary'
+
+export interface BodyDexEntry {
+  code: string
+  name: string
+  emoji: string
+  rarity: DexRarity
+  description: string
+  why_text: string
+  comfort_action_keys: string[]
+  dodo_companion: string
+  collected: boolean
+  count: number
+  first_collected_at: string | null
+}
+
+export const BodyDexApi = {
+  show: () => api.get<{ data: { collected: BodyDexEntry[]; locked: BodyDexEntry[]; total: number; collected_count: number } }>(
+    '/v1/me/body-dex',
+  ),
+}
+
+export interface StoryDialog {
+  speaker: 'dodo' | 'user' | 'narration'
+  text: string
+}
+
+export interface StoryChapter {
+  chapter: number
+  title: string
+  emoji: string
+  unlocked: boolean
+  unlock_hint: string | null
+  unlock_cost_coin: number | null
+  read_at: string | null
+  dialog?: StoryDialog[]
+}
+
+export const StoryApi = {
+  chapters: () =>
+    api.get<{ data: { unlocked: number[]; current: number; chapters: StoryChapter[] } }>('/v1/me/stories/chapters'),
+  unlock: (chapter: number) =>
+    api.post<{ data: { chapter: number; balance: number; chapter_data: StoryChapter } }>(
+      `/v1/me/stories/${chapter}/unlock`,
+    ),
+  read: (chapter: number) =>
+    api.post<{ data: { chapter: number } }>(`/v1/me/stories/${chapter}/read`),
+}
+
+export interface RandomEvent {
+  id: number
+  event_kind: string
+  title: string
+  emoji: string
+  dodo_dialog: string
+  reward_coin: number
+  reward_xp: number
+  expires_at: string | null
+  claimed: boolean
+}
+
+export const RandomEventApi = {
+  today: () => api.get<{ data: RandomEvent | null }>('/v1/me/random-event/today'),
+  claim: (id: number) =>
+    api.post<{ data: { id: number; balance: number; xp: number; reward_coin: number } }>(
+      `/v1/me/random-event/${id}/claim`,
+    ),
+}
+
+export interface SolarTermBanner {
+  term_key: string
+  term_name: string
+  start_date: string
+  end_date: string
+  dodo_message: string
+  reward_coin: number
+  participated: boolean
+}
+
+export const SolarTermApi = {
+  current: () => api.get<{ data: SolarTermBanner | null }>('/v1/solar-term/current'),
+  participate: (term: string) =>
+    api.post<{ data: { term: string; balance: number } }>(`/v1/solar-term/${term}/participate`),
+}

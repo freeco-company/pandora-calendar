@@ -29,6 +29,10 @@ const routes: RouteRecordRaw[] = [
   // P5 — 新版婕樂纖會員深層頁（走 /v1/ecommerce/* endpoints + gate composable）
   { path: '/me/jerosse-member', component: () => import('./views/EcommerceMemberView.vue') },
   { path: '/me/journey', component: () => import('./views/JourneyView.vue') },
+  { path: '/me/body-dex', component: () => import('./views/BodyDexView.vue') },
+  { path: '/me/stories', component: () => import('./views/StoryChaptersView.vue') },
+  { path: '/me/skill-path', component: () => import('./views/SkillPathView.vue') },
+  { path: '/me/rank', component: () => import('./views/RankView.vue') },
   { path: '/me/action-today', name: 'action-today', component: () => import('./views/DailyActionView.vue') },
   { path: '/me/pattern-report', name: 'pattern-report', component: () => import('./views/PatternReportView.vue') },
   { path: '/me/bbt', component: () => import('./views/BbtView.vue') },

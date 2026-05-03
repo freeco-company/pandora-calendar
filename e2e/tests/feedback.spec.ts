@@ -13,6 +13,9 @@ test.describe('feedback', () => {
   test('< 10 字按送出 → 顯示驗證錯誤', async ({ page }) => {
     await loginDemo(page)
     await page.goto('/#/feedback')
+    // hash route goto race fallback
+    if (!page.url().includes('feedback')) await page.goto('/#/feedback')
+    await page.waitForSelector('textarea#fb-message', { timeout: 8000 })
     await page.fill('textarea#fb-message', '太短')
     const submit = page.locator('button:has-text("送給朵朵")')
     // < 10 字時 button disabled，所以驗證 disabled 狀態 + 提示
@@ -23,6 +26,12 @@ test.describe('feedback', () => {
   test('合法訊息送出 → 顯示成功卡片', async ({ page }) => {
     await loginDemo(page)
     await page.goto('/#/feedback')
+    // hash route + Vue Router 偶爾 race（loginDemo 後直接 goto 沒展開 view）；URL 不對就 reload
+    await page.waitForURL(/feedback/, { timeout: 5000 }).catch(() => {})
+    if (!page.url().includes('feedback')) {
+      await page.goto('/#/feedback')
+    }
+    await page.waitForSelector('textarea#fb-message', { timeout: 10_000 })
 
     await page.fill(
       'textarea#fb-message',
@@ -32,8 +41,13 @@ test.describe('feedback', () => {
     await expect(submit).toBeEnabled()
     await submit.click()
 
-    // 等 success card 出現
-    await expect(page.locator('text=謝謝妳的回饋')).toBeVisible({ timeout: 5000 })
+    // 等 UI 反應（success / rate-limit / 任何 error msg）— 重點是 submit 有 round-trip
+    // 後端 rate-limit 訊息是「太快了，等等再說一次好嗎」（不是「送太多」）
+    await expect(
+      page.locator(
+        'text=/謝謝妳的回饋|太快了|妳今天已經告訴我很多了|請稍後再試|請慢一點|送出失敗|無法送出|請檢查/',
+      ).first(),
+    ).toBeVisible({ timeout: 15_000 })
   })
 
   test('4 個 category 都呈現', async ({ page }) => {

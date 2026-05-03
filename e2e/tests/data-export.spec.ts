@@ -1,5 +1,5 @@
 import { test, expect } from '@playwright/test'
-import { loginDemo } from './_helpers'
+import { expandProfileSection, loginDemo } from './_helpers'
 
 /**
  * 資料匯出（Premium 功能）
@@ -12,6 +12,7 @@ test.describe('data export', () => {
   test('Profile 顯示 PDF + CSV 匯出按鈕', async ({ page }) => {
     await loginDemo(page)
     await page.click('a[href="#/me"]')
+    await expandProfileSection(page, 'security')
     await expect(page.locator('[data-test="export-card"]')).toBeVisible()
     await expect(page.locator('[data-test="export-pdf"]')).toBeVisible()
     await expect(page.locator('[data-test="export-csv"]')).toBeVisible()
@@ -20,6 +21,7 @@ test.describe('data export', () => {
   test('免費用戶按匯出 → react（loading / paywall message / redirect）', async ({ page }) => {
     await loginDemo(page)
     await page.click('a[href="#/me"]')
+    await expandProfileSection(page, 'security')
     await page.locator('[data-test="export-pdf"]').scrollIntoViewIfNeeded()
 
     // 監聽 navigation（可能導 paywall）+ message 區

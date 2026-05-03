@@ -29,10 +29,16 @@ import { useTone } from '../composables/useTone'
 import { useI18n, type Locale } from '../composables/useI18n'
 import { usePregnancyMode } from '../composables/usePregnancyMode'
 import { useEcommerceGate } from '../composables/useEcommerceGate'
+import DodoCoinDisplay from '../components/DodoCoinDisplay.vue'
+import RankBadge from '../components/RankBadge.vue'
+import { useEconomy } from '../composables/useEconomy'
+import { useGameDepth } from '../composables/useGameDepth'
 
 const router = useRouter()
 const user = getStoredUser()
 const ent = useEntitlementsStore()
+const economy = useEconomy()
+const gameDepth = useGameDepth()
 const sfx = useSfx()
 const inclusiveMode = useInclusiveMode()
 const { t } = useTone()
@@ -243,6 +249,9 @@ onMounted(async () => {
   refreshPushDeviceCount()
   // 不 await — gate 決定一個深層 link 顯不顯示，loading 期間先隱藏即可
   ecommerceGate.load().catch(() => {})
+  // game-depth：朵朵幣 + 段位（fail 不炸頁）
+  economy.refresh().catch(() => {})
+  gameDepth.refreshRank().catch(() => {})
 })
 
 const greeting = computed(() => {
@@ -424,6 +433,20 @@ function toggleSection(key: string) {
         <Icon name="gem" :size="14" decorative class="mr-0.5" /> Premium
       </span>
 
+      <!-- Game depth row：朵朵幣 + 段位徽章（hero 上方）-->
+      <div
+        class="mt-3 flex items-center justify-center gap-3"
+        data-test="profile-hero-game-depth"
+      >
+        <DodoCoinDisplay size="md" />
+        <RankBadge
+          v-if="gameDepth.rank.value"
+          :state="gameDepth.rank.value"
+          :size="32"
+          variant="compact"
+        />
+      </div>
+
       <!-- Hero stat row：Lv / streak / XP，重要資訊不藏在 accordion 裡 -->
       <div
         v-if="!journeyLoading && journey"
@@ -571,6 +594,43 @@ function toggleSection(key: string) {
             @click="sfx.play('ui_tap')"
           >
             <span class="font-zen text-peach-500 text-sm">{{ t('profile_link_journey') }}</span>
+            <span class="text-stone-400">→</span>
+          </RouterLink>
+          <!-- 深度遊戲化 4 entry：圖鑑 / 段位 / 路徑 / 故事 -->
+          <RouterLink
+            to="/me/body-dex"
+            data-test="link-bodydex"
+            class="flex items-center justify-between px-5 py-4 hover:bg-peach-50 transition-colors border-b border-cream-100"
+            @click="sfx.play('ui_tap')"
+          >
+            <span class="font-zen text-peach-500 text-sm">📔 {{ t('profile_link_bodydex') }}</span>
+            <span class="text-stone-400">→</span>
+          </RouterLink>
+          <RouterLink
+            to="/me/rank"
+            data-test="link-rank"
+            class="flex items-center justify-between px-5 py-4 hover:bg-peach-50 transition-colors border-b border-cream-100"
+            @click="sfx.play('ui_tap')"
+          >
+            <span class="font-zen text-peach-500 text-sm">⭐ {{ t('profile_link_rank') }}</span>
+            <span class="text-stone-400">→</span>
+          </RouterLink>
+          <RouterLink
+            to="/me/skill-path"
+            data-test="link-skill-path"
+            class="flex items-center justify-between px-5 py-4 hover:bg-peach-50 transition-colors border-b border-cream-100"
+            @click="sfx.play('ui_tap')"
+          >
+            <span class="font-zen text-peach-500 text-sm">🌱 {{ t('profile_link_skill_path') }}</span>
+            <span class="text-stone-400">→</span>
+          </RouterLink>
+          <RouterLink
+            to="/me/stories"
+            data-test="link-stories"
+            class="flex items-center justify-between px-5 py-4 hover:bg-peach-50 transition-colors border-b border-cream-100"
+            @click="sfx.play('ui_tap')"
+          >
+            <span class="font-zen text-peach-500 text-sm">📖 {{ t('profile_link_stories') }}</span>
             <span class="text-stone-400">→</span>
           </RouterLink>
           <RouterLink

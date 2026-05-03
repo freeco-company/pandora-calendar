@@ -31,6 +31,7 @@ test.describe('dodo dialog', () => {
       try {
         localStorage.clear()
         localStorage.setItem('pandora_calendar_onboarding_done', '1')
+        localStorage.setItem('locale', 'zh-TW')
       } catch {}
     })
     await page.goto('/')

@@ -1,4 +1,5 @@
 import { test, expect } from '@playwright/test'
+import { pinLocaleZh } from './_helpers'
 
 /**
  * FAQ — 公開頁（未登入也能看，meta.public=true + backend /api/v1/faq 不需 auth）
@@ -6,11 +7,13 @@ import { test, expect } from '@playwright/test'
 
 test.describe('faq', () => {
   test('未登入也能進 FAQ 頁', async ({ page }) => {
+    await pinLocaleZh(page)
     await page.goto('/#/faq')
     await expect(page.locator('h1:has-text("常見問題")')).toBeVisible()
   })
 
   test('FAQ 載入完成後 → 看到 category accordion 或 empty state', async ({ page }) => {
+    await pinLocaleZh(page)
     await page.goto('/#/faq')
 
     // 等 spinner 消失
@@ -28,6 +31,7 @@ test.describe('faq', () => {
   })
 
   test('展開 accordion item（若有資料）', async ({ page }) => {
+    await pinLocaleZh(page)
     await page.goto('/#/faq')
     await page.waitForTimeout(1000)
     const firstQuestion = page.locator('button[aria-expanded]').first()
@@ -39,6 +43,7 @@ test.describe('faq', () => {
   })
 
   test('「給朵朵的話」CTA → 進 feedback 頁（需登入會被擋去 login，行為合理）', async ({ page }) => {
+    await pinLocaleZh(page)
     await page.goto('/#/faq')
     await page.waitForTimeout(800)
     const cta = page.locator('button:has-text("給朵朵的話")')
