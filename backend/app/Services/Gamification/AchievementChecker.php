@@ -11,6 +11,7 @@ use App\Models\DodoCheckin;
 use App\Models\HealthSample;
 use App\Models\Pregnancy;
 use App\Models\User;
+use App\Services\Economy\DodoCoinService;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Schema;
 
@@ -31,7 +32,10 @@ use Illuminate\Support\Facades\Schema;
  */
 final class AchievementChecker
 {
-    public function __construct(private GamificationPublisher $publisher) {}
+    public function __construct(
+        private GamificationPublisher $publisher,
+        private ?DodoCoinService $coins = null,
+    ) {}
 
     /**
      * 檢查 user 所有可能解鎖的成就，回傳本次新解鎖的 keys。
@@ -113,6 +117,23 @@ final class AchievementChecker
                 // 不另發 publisher event：成就 XP 是 conceptual layer，本機判定即可。
                 // 用戶 XP 已經透過原本的 cycle_logged / symptom_logged / dodo_checkin 等
                 // event 進 py-service ledger 累積。
+
+                // Wave 13 — 解成就同時 award 朵朵幣（依 rarity / catalog coin_reward）
+                if ($this->coins !== null) {
+                    $coinReward = (int) ($a['coin_reward'] ?? $this->defaultCoinByRarity($a['rarity'] ?? 'common'));
+                    if ($coinReward > 0) {
+                        try {
+                            $this->coins->earn(
+                                (int) $user->id,
+                                $coinReward,
+                                DodoCoinService::SOURCE_ACHIEVEMENT,
+                                ['achievement_key' => $a['key']],
+                            );
+                        } catch (\Throwable $e) {
+                            report($e);
+                        }
+                    }
+                }
             } catch (\Throwable) {
                 // race / unique constraint — silent
             }
@@ -356,5 +377,18 @@ final class AchievementChecker
         }
 
         return $maxPhases;
+    }
+
+    /**
+     * Wave 13 — fallback coin reward when catalog 沒明寫 coin_reward。
+     */
+    private function defaultCoinByRarity(string $rarity): int
+    {
+        return match ($rarity) {
+            'legendary' => 200,
+            'epic' => 100,
+            'rare' => 50,
+            default => 30,
+        };
     }
 }

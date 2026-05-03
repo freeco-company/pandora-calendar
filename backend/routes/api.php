@@ -200,6 +200,32 @@ Route::middleware(['auth.platform'])->prefix('v1')->group(function () {
     Route::get('/me/push/subscriptions', [\App\Http\Controllers\Api\V1\PushSubscriptionController::class, 'index']);
     Route::post('/me/push/test', [\App\Http\Controllers\Api\V1\PushSubscriptionController::class, 'test']);
 
+    // Wave 13 — 深度遊戲化（economy / bond / rank / skill / dex / story / event / solar）
+    Route::get('/economy/balance', [\App\Http\Controllers\Api\V1\EconomyController::class, 'balance']);
+    Route::get('/economy/history', [\App\Http\Controllers\Api\V1\EconomyController::class, 'history']);
+
+    Route::get('/me/rank', [\App\Http\Controllers\Api\V1\GameDepthController::class, 'rank']);
+
+    Route::get('/me/skill-path', [\App\Http\Controllers\Api\V1\GameDepthController::class, 'skillPath']);
+    Route::post('/me/skill-path', [\App\Http\Controllers\Api\V1\GameDepthController::class, 'chooseSkillPath']);
+    Route::get('/me/skill-path/quests', [\App\Http\Controllers\Api\V1\GameDepthController::class, 'skillPathQuests']);
+
+    Route::get('/me/body-dex', [\App\Http\Controllers\Api\V1\GameDepthController::class, 'bodyDex']);
+
+    Route::get('/me/stories/chapters', [\App\Http\Controllers\Api\V1\GameDepthController::class, 'storyChapters']);
+    Route::post('/me/stories/{chapter}/unlock', [\App\Http\Controllers\Api\V1\GameDepthController::class, 'unlockStoryChapter'])->whereNumber('chapter');
+    Route::post('/me/stories/{chapter}/read', [\App\Http\Controllers\Api\V1\GameDepthController::class, 'readStoryChapter'])->whereNumber('chapter');
+
+    Route::get('/me/random-event/today', [\App\Http\Controllers\Api\V1\GameDepthController::class, 'todayRandomEvent']);
+    Route::post('/me/random-event/{id}/claim', [\App\Http\Controllers\Api\V1\GameDepthController::class, 'claimRandomEvent'])->whereNumber('id');
+
+    Route::get('/solar-term/current', [\App\Http\Controllers\Api\V1\GameDepthController::class, 'currentSolarTerm']);
+    Route::post('/solar-term/{term}/participate', [\App\Http\Controllers\Api\V1\GameDepthController::class, 'participateSolarTerm']);
+
+    Route::get('/me/pet/bond', [\App\Http\Controllers\Api\V1\GameDepthController::class, 'petBond']);
+    Route::post('/me/pet/feed', [\App\Http\Controllers\Api\V1\GameDepthController::class, 'feedPet'])->middleware('throttle:30,1');
+    Route::post('/me/pet/pet-head', [\App\Http\Controllers\Api\V1\GameDepthController::class, 'petHead'])->middleware('throttle:60,1');
+
     // 資料匯出（Premium）
     Route::post('/export/pdf', [\App\Http\Controllers\Api\V1\ExportController::class, 'pdf']);
     Route::post('/export/csv', [\App\Http\Controllers\Api\V1\ExportController::class, 'csv']);

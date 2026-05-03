@@ -8,6 +8,8 @@ use App\Models\UserActionProtocol;
 use App\Services\Action\ActionFeedbackProcessor;
 use App\Services\Action\ActionRecommender;
 use App\Services\Action\ProtocolInsightSurfacer;
+use App\Services\Economy\DodoCoinService;
+use App\Services\Pet\PetBondService;
 use App\Services\Subscription\FeatureGate;
 use Carbon\CarbonImmutable;
 use Illuminate\Http\JsonResponse;
@@ -26,6 +28,8 @@ class DailyActionController extends Controller
         private readonly ActionFeedbackProcessor $feedbackProcessor,
         private readonly ProtocolInsightSurfacer $insightSurfacer,
         private readonly FeatureGate $gate,
+        private readonly DodoCoinService $coins,
+        private readonly PetBondService $petBond,
     ) {}
 
     public function today(Request $request): JsonResponse
@@ -66,6 +70,32 @@ class DailyActionController extends Controller
                 'is_completed' => true,
                 'completed_at' => CarbonImmutable::now(),
             ]);
+
+            // Wave 13 — 完成行動 → 朵朵幣 + bond xp
+            // 紅線：每張 rec 只獎勵 1 次（is_completed gate 已防重）
+            $cards = (array) config('daily-actions', []);
+            $card = $cards[$rec->action_key] ?? [];
+            $difficulty = (string) ($card['difficulty'] ?? 'easy');
+            $coinReward = DodoCoinService::DAILY_ACTION_REWARDS[$difficulty] ?? 5;
+            $bondReward = match ($difficulty) {
+                'hard' => 10,
+                'medium' => 6,
+                default => 3,
+            };
+
+            try {
+                $this->coins->earn((int) $user->id, $coinReward, DodoCoinService::SOURCE_DAILY_ACTION, [
+                    'rec_id' => $rec->id,
+                    'action_key' => $rec->action_key,
+                    'difficulty' => $difficulty,
+                ]);
+                if (! empty($user->pet_species)) {
+                    $this->petBond->award((int) $user->id, $user->pet_species, $bondReward, 'daily_action');
+                }
+            } catch (\Throwable $e) {
+                // 給獎失敗不擋 action complete（log 後 fall-through）
+                report($e);
+            }
         }
 
         return response()->json(['data' => $this->present($rec->fresh())]);

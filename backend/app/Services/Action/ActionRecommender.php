@@ -6,6 +6,7 @@ use App\Models\DailyActionRecommendation;
 use App\Models\UserActionProtocol;
 use App\Services\Calendar\BodyRhythmCalculator;
 use App\Services\Calendar\CyclePredictor;
+use App\Services\Gamification\SkillPathService;
 use App\Services\Health\HealthSampleReflection;
 use Carbon\CarbonImmutable;
 
@@ -38,6 +39,7 @@ class ActionRecommender
         private readonly CyclePredictor $predictor,
         private readonly BodyRhythmCalculator $rhythmCalc,
         private readonly ?HealthSampleReflection $reflection = null,
+        private readonly ?SkillPathService $skillPath = null,
     ) {}
 
     public function recommendForToday(int $userId, ?CarbonImmutable $today = null): ?DailyActionRecommendation
@@ -115,6 +117,14 @@ class ActionRecommender
 
             if ($healthBoostType !== null && $type === $healthBoostType) {
                 $score += 0.25;
+            }
+
+            // Wave 13 — SkillPath preferred type 加權（fertility / wellness / beauty）
+            if ($this->skillPath !== null && $type !== '') {
+                $preferred = $this->skillPath->preferredActionTypes($userId);
+                if (! empty($preferred) && in_array($type, $preferred, true)) {
+                    $score += $this->skillPath->recommenderWeight();
+                }
             }
 
             $score += mt_rand(0, 100) / 1000;

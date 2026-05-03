@@ -4,9 +4,11 @@ namespace App\Http\Controllers\Api\V1;
 
 use App\Http\Controllers\Controller;
 use App\Models\CycleSymptom;
+use App\Services\Gamification\BodyDexService;
 use App\Services\Gamification\CalendarEventCatalog;
 use App\Services\Gamification\GamificationPublisher;
 use App\Services\Gamification\IdempotencyKey;
+use Carbon\CarbonImmutable;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 
@@ -14,6 +16,7 @@ class SymptomController extends Controller
 {
     public function __construct(
         private readonly GamificationPublisher $gamification,
+        private readonly BodyDexService $bodyDex,
     ) {}
 
     /**
@@ -110,6 +113,16 @@ class SymptomController extends Controller
                 ['symptom_id' => $symptom->id, 'mood' => $symptom->mood, 'logged_on' => $symptom->logged_on->toDateString()],
                 IdempotencyKey::make(CalendarEventCatalog::MOOD_LOGGED, $user->id, $symptom->id, $symptom->logged_on->toDateString()),
             );
+        }
+
+        // Wave 13 — BodyDex：每個 tag 各記一筆（30 種 catalog 收集）
+        $loggedOn = CarbonImmutable::parse($symptom->logged_on->toDateString());
+        foreach ((array) $symptom->tags as $tag) {
+            try {
+                $this->bodyDex->record((int) $user->id, (string) $tag, $loggedOn);
+            } catch (\Throwable $e) {
+                report($e);
+            }
         }
 
         return response()->json([
