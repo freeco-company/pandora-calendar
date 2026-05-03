@@ -29,16 +29,15 @@ class DailyReminderController extends Controller
         $rhythm = $this->calc->compute($prediction, $today);
 
         $phase = $rhythm->phase;
-        $cycleDay = $rhythm->cycle_day;
+        $cycleDay = $rhythm->cycleDay;
 
-        // 細分相位內天數，給更精準提醒
         $tip = $this->buildTip($phase, $cycleDay);
 
         return response()->json([
             'data' => [
                 'phase' => $phase,
                 'cycle_day' => $cycleDay,
-                'days_until_next_period' => $rhythm->days_until_next_period,
+                'days_until_next_period' => $rhythm->daysUntilNextPeriod,
                 'icon' => $tip['icon'],
                 'title' => $tip['title'],
                 'body' => $tip['body'],

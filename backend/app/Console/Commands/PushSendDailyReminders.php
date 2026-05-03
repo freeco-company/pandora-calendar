@@ -132,15 +132,15 @@ class PushSendDailyReminders extends Command
         $rhythm = $this->calc->compute($prediction, $today);
 
         // 經期前一天
-        if ($rhythm->days_until_next_period === 1) {
+        if ($rhythm->daysUntilNextPeriod === 1) {
             return ['title' => '朵朵想跟妳說', 'body' => '經期可能明天到，記得備好妳的小工具，今天多照顧自己一點。'];
         }
         // 經期當天
-        if ($rhythm->days_until_next_period === 0) {
+        if ($rhythm->daysUntilNextPeriod === 0) {
             return ['title' => '朵朵在這', 'body' => '今天可能是經期第一天，多喝溫水、別硬撐。'];
         }
         // 排卵期前一天
-        if ($rhythm->phase === 'follicular' && $rhythm->cycle_day === $prediction->avg_cycle_length - 14 - 1) {
+        if ($rhythm->phase === 'follicular' && $rhythm->cycleDay === $prediction->avgCycleLength - 14 - 1) {
             return ['title' => '能量高峰要來了', 'body' => '明天進入排卵期，朵朵覺得妳會發光。'];
         }
 
