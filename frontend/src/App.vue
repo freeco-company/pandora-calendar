@@ -23,6 +23,7 @@ import StreakToast from './components/StreakToast.vue'
 import { useStreakToast } from './composables/useStreakToast'
 import LockView from './views/Lock.vue'
 import CoachmarkOverlay from './components/CoachmarkOverlay.vue'
+import ErrorBoundary from './components/ErrorBoundary.vue'
 
 const route = useRoute()
 const showTabBar = computed(
@@ -150,11 +151,13 @@ onUnmounted(() => {
     <AmbientSparkles />
 
     <main class="flex-1 relative">
-      <RouterView v-slot="{ Component }">
-        <Transition name="page" mode="out-in">
-          <component :is="Component" />
-        </Transition>
-      </RouterView>
+      <ErrorBoundary>
+        <RouterView v-slot="{ Component }">
+          <Transition name="page" mode="out-in">
+            <component :is="Component" />
+          </Transition>
+        </RouterView>
+      </ErrorBoundary>
     </main>
 
     <!--
