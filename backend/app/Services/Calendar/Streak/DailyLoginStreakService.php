@@ -124,6 +124,12 @@ class DailyLoginStreakService
         $milestoneLabel = $isMilestone ? $this->milestoneLabel($result['streak']) : null;
 
         if ($result['is_first_today']) {
+            // Cross-App master streak — fires every first-login-of-day so py-service
+            // `group_user_daily_streaks` advances. Without this, calendar would never
+            // bump the FP-team-wide streak that overlay/toast surfaces.
+            $this->safePublishGroupStreak($user, $result['streak'], $today);
+
+            // Per-App milestone XP (only streak=30 currently in calendar catalog).
             $this->safePublish($user, $result['streak'], $today);
         }
 
@@ -188,6 +194,36 @@ class DailyLoginStreakService
             100 => '連續 100 天',
             default => "連續 {$streak} 天",
         };
+    }
+
+    /**
+     * Publish `calendar.daily_login_streak_extended` on every first-login-of-day.
+     * py-service uses this to bump cross-App `group_user_daily_streaks`.
+     * Fail-soft: any publisher exception is swallowed so the local streak still works.
+     */
+    private function safePublishGroupStreak(User $user, int $streak, string $today): void
+    {
+        if (empty($user->identity_uuid)) {
+            return;
+        }
+
+        $kind = CalendarEventCatalog::DAILY_LOGIN_STREAK_EXTENDED;
+
+        try {
+            $this->gamification->publish(
+                $user,
+                $kind,
+                ['streak_days' => $streak, 'source' => 'daily_login'],
+                IdempotencyKey::make($kind, $user->id, 0, $today),
+            );
+        } catch (Throwable $e) {
+            Log::warning('[DailyLoginStreak] group streak publish failed (soft)', [
+                'user_id' => $user->id,
+                'kind' => $kind,
+                'streak' => $streak,
+                'error' => $e->getMessage(),
+            ]);
+        }
     }
 
     /**
