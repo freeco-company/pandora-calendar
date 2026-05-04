@@ -53,10 +53,12 @@ class AdminPanelProvider extends PanelProvider
             ->darkMode(false)
 
             ->navigationGroups([
+                '核心數據',
                 '社群審查',
                 '用戶反饋',
                 '訂閱',
                 '使用者',
+                '進階管理',
                 '系統',
             ])
 
@@ -78,6 +80,12 @@ class AdminPanelProvider extends PanelProvider
                 \App\Filament\Widgets\ModerationQueueWidget::class,
                 \App\Filament\Widgets\UsageOverviewWidget::class,
                 \App\Filament\Widgets\LlmCostWidget::class,
+                // wave 14 expanded monitoring — 對齊 wave 11-13 新功能
+                \App\Filament\Widgets\LlmCostBreakdownWidget::class,
+                \App\Filament\Widgets\PushSendBreakdownWidget::class,
+                \App\Filament\Widgets\EconomyHealthWidget::class,
+                \App\Filament\Widgets\UserHealthWidget::class,
+                \App\Filament\Widgets\ContentEngagementWidget::class,
             ])
 
             ->middleware([
