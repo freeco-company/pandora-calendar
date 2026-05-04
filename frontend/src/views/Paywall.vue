@@ -1,19 +1,36 @@
 <script setup lang="ts">
+/**
+ * Paywall — freemium funnel narrative 文案重寫版（v2）。
+ *
+ * 結構：Hero(emotional + sunk-cost) → trial hint → 5 v2 benefits →
+ *       free_forever_promise（核心差異化）→ 2 plan cards → social proof →
+ *       privacy promise → restore + legal → 黏底 CTA。
+ */
 import { computed, onMounted, ref } from 'vue'
 import { useRouter } from 'vue-router'
-import { SubscriptionApi, type SubscriptionProduct } from '../api'
+import {
+  SubscriptionApi,
+  JourneyApi,
+  AchievementsApi,
+  type SubscriptionProduct,
+  type JourneyData,
+} from '../api'
 import { useEntitlementsStore } from '../stores/entitlements'
+import { useTrial } from '../composables/useTrial'
 import Card from '../components/ui/Card.vue'
 import Spinner from '../components/ui/Spinner.vue'
 import Character from '../components/Character.vue'
 import { useTone } from '../composables/useTone'
 
 const { t } = useTone()
-
 const router = useRouter()
 const ent = useEntitlementsStore()
+const trial = useTrial()
+
 const products = ref<SubscriptionProduct[]>([])
 const features = ref<string[]>([])
+const journey = ref<JourneyData | null>(null)
+const achievementsCount = ref<number | null>(null)
 const loading = ref(false)
 const initialLoad = ref(true)
 const restoring = ref(false)
@@ -22,14 +39,27 @@ const message = ref<string | null>(null)
 const selectedId = ref<string | null>(null)
 
 onMounted(async () => {
-  ent.load()
+  ent.load().catch(() => {})
+  const tasks: Promise<unknown>[] = [
+    SubscriptionApi.products()
+      .then((res) => {
+        products.value = res.data.data
+        features.value = res.data.features
+        selectedId.value =
+          res.data.data.find((p) => p.id.endsWith('annual'))?.id
+          ?? res.data.data[0]?.id
+          ?? null
+      })
+      .catch(() => {}),
+    JourneyApi.show()
+      .then((res) => { journey.value = res.data.data })
+      .catch(() => {}),
+    AchievementsApi.list()
+      .then((res) => { achievementsCount.value = res.data.data.unlocked_count })
+      .catch(() => {}),
+  ]
   try {
-    const res = await SubscriptionApi.products()
-    products.value = res.data.data
-    features.value = res.data.features
-    selectedId.value = res.data.data.find((p) => p.id.endsWith('annual'))?.id
-      ?? res.data.data[0]?.id
-      ?? null
+    await Promise.allSettled(tasks)
   } finally {
     initialLoad.value = false
   }
@@ -38,18 +68,37 @@ onMounted(async () => {
 const annualProduct = computed(() => products.value.find((p) => p.id.endsWith('annual')))
 const selectedProduct = computed(() => products.value.find((p) => p.id === selectedId.value))
 
+const daysUsed = computed(() => journey.value?.streak_days ?? 0)
+const recordsCount = computed(() => {
+  const j = journey.value?.last_30_days
+  if (!j) return 0
+  return (j.cycles_logged ?? 0) + (j.symptoms_logged ?? 0) + (j.dodo_checkins ?? 0)
+})
+const achievementsUnlocked = computed(() => achievementsCount.value ?? 0)
+
+const heroSubtitle = computed(() => {
+  if (daysUsed.value > 0 || recordsCount.value > 0 || achievementsUnlocked.value > 0) {
+    return t('paywall_hero_subtitle', {
+      days_used: daysUsed.value,
+      records_count: recordsCount.value,
+      achievements_count: achievementsUnlocked.value,
+    })
+  }
+  return t('paywall_hero_subtitle_no_data')
+})
+
 const PREMIUM_BENEFITS = computed<Array<{ emoji: string; title: string; desc: string }>>(() => [
-  { emoji: '🌙', title: t('paywall_benefit_1_title'), desc: t('paywall_benefit_1_desc') },
-  { emoji: '🌡', title: t('paywall_benefit_2_title'), desc: t('paywall_benefit_2_desc') },
-  { emoji: '📰', title: t('paywall_benefit_3_title'), desc: t('paywall_benefit_3_desc') },
-  { emoji: '💞', title: t('paywall_benefit_4_title'), desc: t('paywall_benefit_4_desc') },
-  { emoji: '🚫', title: t('paywall_benefit_5_title'), desc: t('paywall_benefit_5_desc') },
+  { emoji: '🌙', title: t('paywall_v2_benefit_1_title'), desc: t('paywall_v2_benefit_1_body') },
+  { emoji: '📖', title: t('paywall_v2_benefit_2_title'), desc: t('paywall_v2_benefit_2_body') },
+  { emoji: '📸', title: t('paywall_v2_benefit_3_title'), desc: t('paywall_v2_benefit_3_body') },
+  { emoji: '💬', title: t('paywall_v2_benefit_4_title'), desc: t('paywall_v2_benefit_4_body') },
+  { emoji: '✨', title: t('paywall_v2_benefit_5_title'), desc: t('paywall_v2_benefit_5_body') },
 ])
 
 const benefits = computed(() => {
   if (features.value.length >= 3) {
     return features.value.map((f, idx) => ({
-      emoji: ['🌙', '🌡', '📰', '💞', '🚫', '✨'][idx] ?? '✨',
+      emoji: ['🌙', '📖', '📸', '💬', '✨', '🌸'][idx] ?? '✨',
       title: f,
       desc: '',
     }))
@@ -101,7 +150,6 @@ function back() {
 </script>
 
 <template>
-  <!-- Emotional 漸層底；CTA 黏底，main 區留 pb-32 給 thumb-zone 黏底 CTA -->
   <div class="min-h-screen bg-gradient-to-b from-peach-50 via-sakura-50 to-cream-50">
     <div class="px-5 md:px-8 pt-6 pb-32 max-w-md md:max-w-2xl lg:max-w-3xl mx-auto space-y-6">
       <button
@@ -112,8 +160,7 @@ function back() {
         {{ t('paywall_btn_back') }}
       </button>
 
-      <!-- Hero：朵朵大圖 + emotional 大標 -->
-      <header class="text-center space-y-3 pt-2">
+      <header class="text-center space-y-3 pt-2" data-test="paywall-hero">
         <div class="flex justify-center relative">
           <div class="absolute inset-0 bg-gradient-radial from-peach-200/40 to-transparent blur-2xl" aria-hidden="true" />
           <Character
@@ -128,10 +175,17 @@ function back() {
         </div>
         <p class="font-zen text-[11px] text-peach-500/70 tracking-[0.3em] uppercase">{{ t('paywall_eyebrow_premium') }}</p>
         <h1 class="font-display text-[28px] md:text-4xl font-black text-peach-500 leading-tight px-4">
-          {{ t('paywall_heading') }}
+          {{ t('paywall_hero_title') }}
         </h1>
         <p class="font-zen text-sm text-stone-600 leading-relaxed max-w-sm mx-auto px-2">
-          {{ t('paywall_subtitle') }}
+          {{ heroSubtitle }}
+        </p>
+        <p
+          v-if="trial.isInTrial.value && (trial.daysRemaining.value ?? 0) > 0"
+          class="font-zen text-[11px] text-peach-500/80 px-3"
+          data-test="paywall-trial-hint"
+        >
+          {{ t('paywall_trial_in_progress_hint', { days: trial.daysRemaining.value ?? 0 }) }}
         </p>
       </header>
 
@@ -159,7 +213,6 @@ function back() {
       </Card>
 
       <template v-else>
-        <!-- 5 賣點 — 大字 title + emoji icon + 副標 -->
         <section class="space-y-3" data-test="premium-benefits">
           <h3 class="font-display font-bold text-stone-700 text-lg text-center">
             {{ t('paywall_section_unlock') }}
@@ -183,10 +236,28 @@ function back() {
           </div>
         </section>
 
-        <!-- Plan cards：月 / 年並列；年方案 highlight 推薦 + 省 24% -->
+        <Card
+          tone="plain"
+          data-test="paywall-free-forever-promise"
+          class="text-center space-y-2 bg-gradient-to-br from-sage-50 to-cream-50 ring-1 ring-sage-200/50"
+        >
+          <p class="font-zen text-[11px] text-sage-500/80 tracking-wider">
+            {{ t('paywall_free_forever_badge') }}
+          </p>
+          <p class="font-display font-bold text-sage-600 text-base">
+            {{ t('paywall_free_forever_title') }}
+          </p>
+          <p class="font-zen text-[13px] text-stone-600 leading-relaxed px-2">
+            {{ t('paywall_free_forever_body') }}
+          </p>
+          <p class="font-zen text-[11px] text-sage-500/80 px-2 leading-relaxed">
+            {{ t('paywall_free_forever_sub') }}
+          </p>
+        </Card>
+
         <section class="space-y-2" data-test="paywall-plans">
           <p class="font-display font-bold text-stone-700 text-lg text-center mb-1">
-            {{ t('paywall_section_plan_pick') || '選一個適合妳的方案' }}
+            {{ t('paywall_section_plan_pick') }}
           </p>
           <div class="grid grid-cols-2 gap-3">
             <button
@@ -207,7 +278,7 @@ function back() {
                 v-if="p === annualProduct"
                 class="absolute -top-2.5 left-1/2 -translate-x-1/2 bg-gradient-to-r from-peach-400 to-sakura-400 text-white text-[10px] font-zen font-bold px-3 py-1 rounded-full shadow-soft whitespace-nowrap"
               >
-                {{ t('paywall_badge_popular') }}
+                {{ t('paywall_plan_yearly_badge') }}
               </span>
               <p class="font-display font-bold text-stone-700 text-sm">{{ p.title }}</p>
               <div class="mt-2 flex items-baseline gap-0.5">
@@ -231,7 +302,6 @@ function back() {
           </div>
         </section>
 
-        <!-- Social proof：陪伴 N 個朋友 -->
         <Card tone="plain" class="text-center space-y-1.5 bg-white/60">
           <div class="flex justify-center gap-1 text-peach-400 text-sm">
             <span v-for="i in 5" :key="i">★</span>
@@ -244,15 +314,13 @@ function back() {
         <p v-if="message" class="text-center text-peach-500 text-sm font-zen">{{ message }}</p>
         <p v-if="error" class="text-center text-sakura-500 text-sm font-zen">{{ error }}</p>
 
-        <!-- 隱私承諾再強調 -->
         <Card tone="plain" class="text-center space-y-1 bg-sage-50/60 border border-sage-100">
-          <p class="font-display font-bold text-sage-500 text-sm">🔒 {{ t('paywall_privacy_promise_title') || '朵朵的承諾' }}</p>
+          <p class="font-display font-bold text-sage-500 text-sm">🔒 {{ t('paywall_privacy_promise_title') }}</p>
           <p class="font-zen text-[12px] text-stone-600 leading-relaxed px-2">
             {{ t('paywall_footer_no_ads') }}
           </p>
         </Card>
 
-        <!-- Restore + 法律連結整齊排列 -->
         <div class="space-y-2 pt-1">
           <button
             type="button"
@@ -298,7 +366,6 @@ function back() {
       </template>
     </div>
 
-    <!-- 黏底 CTA（thumb zone）— 只在未訂閱 + 已 load 時露出 -->
     <div
       v-if="!initialLoad && !ent.isPremium()"
       class="fixed bottom-0 inset-x-0 z-30 bg-gradient-to-t from-cream-50 via-cream-50/95 to-transparent pt-6 pb-5 px-5 md:px-8"
@@ -311,7 +378,7 @@ function back() {
           class="w-full py-4 rounded-2xl bg-peach-gradient text-white font-display font-black text-base shadow-lg transition-all active:scale-[0.99] disabled:opacity-50"
           @click="ecpayCheckout"
         >
-          {{ loading ? t('paywall_btn_subscribe_loading') : t('paywall_btn_subscribe') }}
+          {{ loading ? t('paywall_btn_subscribe_loading') : t('paywall_cta_subscribe_v2') }}
         </button>
       </div>
     </div>

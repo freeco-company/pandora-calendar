@@ -12,7 +12,14 @@ export const useEntitlementsStore = defineStore('entitlements', () => {
       const res = await SubscriptionApi.me()
       data.value = res.data.data
     } catch {
-      data.value = { premium: false, premium_until: null, product_id: null, platform: null, auto_renew: false }
+      data.value = {
+        premium: false,
+        premium_until: null,
+        product_id: null,
+        platform: null,
+        auto_renew: false,
+        trial: { is_trial: false, days_remaining: null, ends_at: null, trial_used: false },
+      }
     } finally {
       loading.value = false
     }

@@ -281,12 +281,20 @@ export interface DodoCheckin {
   dodo_response: string
 }
 
+export interface TrialState {
+  is_trial: boolean
+  days_remaining: number | null
+  ends_at: string | null
+  trial_used: boolean
+}
+
 export interface Entitlements {
   premium: boolean
   premium_until: string | null
   product_id: string | null
   platform: string | null
   auto_renew: boolean
+  trial?: TrialState | null
 }
 
 export interface SubscriptionProduct {

@@ -10,10 +10,13 @@ import TodayActionCard from '../components/TodayActionCard.vue'
 import ProtocolInsightBanner from '../components/ProtocolInsightBanner.vue'
 import SolarTermBanner from '../components/SolarTermBanner.vue'
 import RandomEventCard from '../components/RandomEventCard.vue'
+import TrialBanner from '../components/TrialBanner.vue'
+import TrialStartedToast from '../components/TrialStartedToast.vue'
 import Icon from '../components/icons/Icon.vue'
 import { moodForPhase } from '../lib/character'
 import { usePet } from '../composables/usePet'
 import { useTone } from '../composables/useTone'
+import { useTrial } from '../composables/useTrial'
 import { useRouter } from 'vue-router'
 import { usePregnancyMode } from '../composables/usePregnancyMode'
 import { useOnboardingTour } from '../composables/useOnboardingTour'
@@ -30,6 +33,7 @@ const rhythm = ref<BodyRhythm | null>(null)
 const loading = ref(true)
 const error = ref<string | null>(null)
 const { pet } = usePet()
+const trial = useTrial()
 
 async function load() {
   loading.value = true
@@ -53,6 +57,7 @@ async function load() {
 
 onMounted(() => {
   load()
+  trial.refresh().catch(() => {})
   // First-visit tour for /calendar (the app's "front door"). Module singleton
   // dedupes against later view changes in same session.
   tour.startIfNew('first_calendar')
@@ -258,6 +263,9 @@ function goPet() {
       <ProtocolInsightBanner />
     </div>
 
+    <!-- Freemium 7-day Premium trial banner（trial 期 / 結束 24h 內才 render）-->
+    <TrialBanner />
+
     <!-- 24 節氣 active 期間 banner（沒節氣不 render）-->
     <SolarTermBanner />
 
@@ -425,6 +433,9 @@ function goPet() {
       </aside>
       </div>
     </template>
+
+    <!-- Onboarding 完成後一次性 trial 啟動慶祝 modal（pending flag 控制） -->
+    <TrialStartedToast />
 
     <!-- P1-7 Day detail modal -->
     <Transition name="ach">

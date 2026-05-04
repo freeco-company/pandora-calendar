@@ -26,6 +26,7 @@ import {
 import { Capacitor } from '@capacitor/core'
 import { useInclusiveMode } from '../composables/useInclusiveMode'
 import { useTone } from '../composables/useTone'
+import { useTrial } from '../composables/useTrial'
 import { useI18n, type Locale } from '../composables/useI18n'
 import { usePregnancyMode } from '../composables/usePregnancyMode'
 import { useEcommerceGate } from '../composables/useEcommerceGate'
@@ -54,6 +55,7 @@ const gameDepth = useGameDepth()
 const sfx = useSfx()
 const inclusiveMode = useInclusiveMode()
 const { t } = useTone()
+const trial = useTrial()
 const { locale: currentLocale } = useI18n()
 
 // === P4 孕期模式 toggle ===
@@ -755,6 +757,35 @@ function toggleSection(key: string) {
             </span>
             <span class="text-stone-400">→</span>
           </RouterLink>
+
+          <!-- Freemium trial state row（trial 期 / 已結束 / 已訂閱 三狀態） -->
+          <div
+            v-if="trial.isInTrial.value"
+            data-test="profile-trial-active"
+            class="bg-gradient-to-br from-peach-50 to-sakura-50 rounded-2xl p-3 space-y-1 ring-1 ring-peach-200/50"
+          >
+            <p class="font-zen text-[11px] text-peach-500/80 tracking-wider uppercase">
+              ✨ {{ t('profile_trial_active_label') }}
+            </p>
+            <p class="font-zen text-sm text-stone-700">
+              {{ t('profile_trial_days_left', { days: trial.daysRemaining.value ?? 0 }) }}
+            </p>
+            <p v-if="trial.endsAt.value" class="font-zen text-[11px] text-stone-500">
+              {{ t('profile_trial_ends_prefix') }}{{ String(trial.endsAt.value).slice(0, 10) }}
+            </p>
+          </div>
+          <div
+            v-else-if="trial.trialUsed.value && !ent.isPremium()"
+            data-test="profile-trial-ended"
+            class="bg-cream-50 rounded-2xl p-3 space-y-1 ring-1 ring-cream-200"
+          >
+            <p class="font-zen text-[11px] text-stone-500 tracking-wider uppercase">
+              🌸 {{ t('profile_trial_ended_label') }}
+            </p>
+            <p class="font-zen text-sm text-stone-600">
+              {{ t('profile_trial_ended_blurb') }}
+            </p>
+          </div>
 
           <template v-if="subStatus.kind === 'active'">
             <div class="bg-cream-50 rounded-2xl p-3 space-y-1">

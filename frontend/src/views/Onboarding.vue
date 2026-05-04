@@ -75,6 +75,8 @@ async function submit() {
   } finally {
     try {
       localStorage.setItem(ONBOARDING_DONE_KEY, '1')
+      // 7-day Premium trial 啟動 — 通知下一個 Calendar mount 顯示 TrialStartedToast 一次
+      localStorage.setItem('pandora_calendar_trial_started_toast_pending', '1')
     } catch {
       /* localStorage 可能在 private mode 被擋 */
     }
