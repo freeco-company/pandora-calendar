@@ -8,8 +8,15 @@ use App\Services\Subscription\FeatureGate;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 
+/**
+ * 年度回顧（freemium 放寬 2026-05-04）：
+ *   - free：4 卡 basic（cover / phase_distribution / top_mood / closing）
+ *   - premium / trial：完整 12 卡
+ */
 class YearReviewController extends Controller
 {
+    private const FREE_CARD_IDS = ['cover', 'phase_distribution', 'top_mood', 'closing'];
+
     public function __construct(
         private readonly YearReviewService $service,
         private readonly FeatureGate $gate,
@@ -17,21 +24,35 @@ class YearReviewController extends Controller
 
     public function show(Request $request, int $year): JsonResponse
     {
-        // 限制範圍避免抓未來 / 太久遠（資料只有 ≤ 2 年）
         $current = (int) now()->year;
         abort_if($year < $current - 5 || $year > $current, 404, 'year out of range');
 
-        // Premium gate（年度回顧是 Premium 限定）
-        if (! $this->gate->isPremium($request->user())) {
-            return response()->json([
-                'error' => 'premium_required',
-                'message' => '年度回顧是 Premium 功能。',
-                'paywall_redirect' => '/subscription',
-            ], 402);
+        $user = $request->user();
+        $isPremium = $this->gate->isPremium($user);
+        $tier = $this->gate->effectiveTier($user);
+
+        $result = $this->service->generate($user->id, $year);
+
+        if ($isPremium) {
+            return response()->json(['data' => $result, 'tier' => $tier]);
         }
 
-        $result = $this->service->generate($request->user()->id, $year);
+        $cards = collect($result['cards'] ?? [])
+            ->filter(fn ($c) => in_array($c['id'] ?? '', self::FREE_CARD_IDS, true))
+            ->values()
+            ->all();
 
-        return response()->json(['data' => $result]);
+        return response()->json([
+            'data' => [
+                'cards' => $cards,
+                'stats' => $result['stats'] ?? [],
+                'locked_card_ids' => array_values(array_diff(
+                    array_map(fn ($c) => $c['id'], $result['cards'] ?? []),
+                    self::FREE_CARD_IDS,
+                )),
+                'locked_features' => ['full_12_cards', 'historical_years', 'high_res_share'],
+            ],
+            'tier' => 'free',
+        ]);
     }
 }

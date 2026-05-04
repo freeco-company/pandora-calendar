@@ -44,8 +44,9 @@ it('lets premium user generate week report with summary', function () {
     expect($res->json('data.summary.cycles_started'))->toBeGreaterThanOrEqual(1);
 });
 
-it('blocks free user from PMS analysis', function () {
-    $this->getJson('/api/v1/insight/pms')->assertStatus(402);
+it('lets free user see PMS basic shape (freemium 2026-05-04 放寬，不再 402)', function () {
+    $res = $this->getJson('/api/v1/insight/pms');
+    $res->assertOk()->assertJsonPath('tier', 'free');
 });
 
 it('blocks free user from pregnancy', function () {

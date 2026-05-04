@@ -129,6 +129,7 @@ Route::middleware(['auth.platform', 'daily.streak'])->prefix('v1')->group(functi
     Route::get('/body-rhythm/me', [BodyRhythmController::class, 'me']);
 
     Route::get('/subscription/me', [SubscriptionController::class, 'me']);
+    Route::get('/subscription/trial', [SubscriptionController::class, 'trial']);
     Route::get('/subscription/products', [SubscriptionController::class, 'products']);
     Route::post('/subscription/verify-apple', [SubscriptionController::class, 'verifyApple']);
     Route::post('/subscription/verify-google', [SubscriptionController::class, 'verifyGoogle']);

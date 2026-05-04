@@ -92,6 +92,10 @@ class GameDepthController extends Controller
     public function storyChapters(Request $request): JsonResponse
     {
         $user = $request->user();
+
+        // freemium：每次取列表前先 auto-unlock 滿足 cycle 條件的章節（ch 1-5 unlock_cycle=0 故必解）
+        $this->stories->autoUnlockByCycles((int) $user->id);
+
         $unlocked = $this->stories->unlocked((int) $user->id);
         $chapters = $this->stories->chapters();
         $rows = [];

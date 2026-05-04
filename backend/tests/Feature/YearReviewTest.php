@@ -29,9 +29,11 @@ beforeEach(function () {
     Sanctum::actingAs($this->user);
 });
 
-it('blocks free user from year review', function () {
-    $this->getJson('/api/v1/year-review/'.now()->year)
-        ->assertStatus(402);
+it('lets free user see basic year review (freemium 2026-05-04 放寬：4 卡 + locked_features)', function () {
+    $res = $this->getJson('/api/v1/year-review/'.now()->year);
+    $res->assertOk()
+        ->assertJsonPath('tier', 'free')
+        ->assertJsonPath('data.locked_features.0', 'full_12_cards');
 });
 
 it('returns at least 8 cards on happy path', function () {

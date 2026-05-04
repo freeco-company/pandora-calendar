@@ -115,14 +115,14 @@ it('falls back to safe response when LLM output hits compliance redline', functi
 // Premium gate: free 3/day
 // ============================================================
 
-it('blocks free user after 3 questions in a day with 402', function () {
-    config(['llm.provider' => 'null']); // null provider 一樣會記 1 次
+it('blocks free user after 5 questions in a day with 402 (freemium 2026-05-04 放寬：3 → 5)', function () {
+    config(['llm.provider' => 'null']);
 
-    $this->postJson('/api/v1/qna/ask', ['question' => '第一個問題'])->assertOk();
-    $this->postJson('/api/v1/qna/ask', ['question' => '第二個問題'])->assertOk();
-    $this->postJson('/api/v1/qna/ask', ['question' => '第三個問題'])->assertOk();
+    for ($i = 1; $i <= 5; $i++) {
+        $this->postJson('/api/v1/qna/ask', ['question' => "問題 {$i}"])->assertOk();
+    }
 
-    $res = $this->postJson('/api/v1/qna/ask', ['question' => '第四個問題']);
+    $res = $this->postJson('/api/v1/qna/ask', ['question' => '第 6 個問題']);
     $res->assertStatus(402)->assertJsonPath('error', 'quota_exceeded');
 });
 
