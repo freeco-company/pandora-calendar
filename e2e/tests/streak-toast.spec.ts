@@ -41,3 +41,45 @@ test('streak milestone toast shows unlocks reveal at day 1 (cards)', async ({ pa
   await expect(unlocks).toBeVisible()
   await expect(unlocks).toContainText('初心徽章')
 })
+
+/**
+ * Phase 5B — group streak (cross-App master) overlay subline.
+ *
+ * Mock /api/streak/today response 以注入 group payload，避免依賴 prod py-service。
+ * 紅線：subline 只在 group.today_in_streak=true 且 current_streak ≥ 2 才顯示「FP 團隊」。
+ */
+test('streak toast shows FP group subline when group streak active', async ({ page }) => {
+  // 在 page route 攔截 /api/streak/today，回傳含 group payload 的 milestone 狀態
+  await page.route('**/api/streak/today', async (route) => {
+    await route.fulfill({
+      status: 200,
+      contentType: 'application/json',
+      body: JSON.stringify({
+        current_streak: 3,
+        longest_streak: 3,
+        is_first_today: true,
+        is_milestone: true,
+        milestone_label: '三日小步',
+        today_date: '2026-05-04',
+        unlocks: null,
+        group: {
+          current_streak: 12,
+          longest_streak: 30,
+          last_login_date: '2026-05-04',
+          last_seen_app: 'meal',
+          today_in_streak: true,
+        },
+      }),
+    })
+  })
+
+  await loginDemo(page)
+  await expect(page).toHaveURL(/calendar/)
+
+  const toast = page.locator('[data-test="streak-toast"]')
+  await expect(toast).toBeVisible({ timeout: 8000 })
+
+  const subline = page.locator('[data-test="group-streak-subline"]')
+  await expect(subline).toBeVisible()
+  await expect(subline).toContainText('FP 團隊連續第 12 天')
+})
