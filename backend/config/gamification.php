@@ -59,4 +59,19 @@ return [
     | app_opened 每日上限（client side hint；最終 cap 由 py-service catalog 決定）
     */
     'app_opened_daily_cap' => env('PANDORA_GAMIFICATION_APP_OPENED_DAILY_CAP', 3),
+
+    /*
+    | Phase 5B — cross-App master streak read endpoint on py-service.
+    |
+    | Calendar 在 GET /api/streak/today 順手帶上集團 streak（FP 團隊連續第 N 天）
+    | overlay 到自家 toast 上。fail-soft：py-service 掛 / timeout / 401 → 回 group=null
+    | （toast 只顯示 calendar 自家 streak，不阻塞 boot）。
+    |
+    | 預設 fallback 到 publisher base_url + internal_secret，prod 也可獨立設
+    | GROUP_STREAK_API_URL / GROUP_STREAK_HMAC_SECRET 切到別的 host。
+    */
+    'group_streak_url' => env('GROUP_STREAK_API_URL', env('PANDORA_GAMIFICATION_BASE_URL')),
+    'group_streak_secret' => env('GROUP_STREAK_HMAC_SECRET', env('PANDORA_GAMIFICATION_INTERNAL_SECRET', env('PANDORA_GAMIFICATION_HMAC_SECRET'))),
+    'group_streak_cache_ttl' => (int) env('GROUP_STREAK_CACHE_TTL', 30),
+    'group_streak_timeout' => (int) env('GROUP_STREAK_TIMEOUT', 5),
 ];

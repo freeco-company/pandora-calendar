@@ -29,6 +29,19 @@ export interface StreakUnlocks {
   total_xp_after: number | null
 }
 
+/**
+ * Phase 5B — cross-App master streak overlay payload (mirrors py-service
+ * `/internal/group-streak/{uuid}` response). Null when user is unbound
+ * (no identity_uuid yet) or py-service is unavailable (fail-soft).
+ */
+export interface GroupStreakState {
+  current_streak: number
+  longest_streak: number
+  last_login_date: string | null
+  last_seen_app: string | null
+  today_in_streak: boolean
+}
+
 export interface StreakState {
   current_streak: number
   longest_streak: number
@@ -38,6 +51,8 @@ export interface StreakState {
   today_date: string
   /** present when `is_milestone=true`; null on non-milestone days */
   unlocks: StreakUnlocks | null
+  /** Phase 5B — null when fail-soft / unbound user */
+  group: GroupStreakState | null
 }
 
 const state = ref<StreakState | null>(null)

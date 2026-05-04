@@ -61,6 +61,19 @@ const outfitName = computed(() => {
   if (!code) return null
   return OUTFIT_NAMES[code] ?? code
 })
+
+/**
+ * Phase 5B — cross-App master streak overlay copy。
+ * 紅線：稱「FP 團隊」非「集團 / 公司」；不出現的條件 = group=null（unbound user
+ * 或 py-service 掛）— 這時 toast 只顯示自家 calendar streak。
+ *
+ * 只在 group.current_streak ≥ 2 時顯示，避免「FP 團隊連續 1 天」這種雜訊文案。
+ */
+const groupSubline = computed(() => {
+  const g = state.value?.group
+  if (!g || !g.today_in_streak || g.current_streak < 2) return null
+  return `FP 團隊連續第 ${g.current_streak} 天`
+})
 </script>
 
 <template>
@@ -108,7 +121,15 @@ const outfitName = computed(() => {
         <p class="text-xl font-bold text-stone-700 mb-1">
           {{ state.milestone_label || `連續 ${streak} 天` }} 🌸
         </p>
-        <p class="text-sm text-stone-600 mb-4">{{ milestoneMessage }}</p>
+        <p class="text-sm text-stone-600 mb-1">{{ milestoneMessage }}</p>
+        <p
+          v-if="groupSubline"
+          class="text-xs text-stone-500 mb-4"
+          data-test="group-streak-subline"
+        >
+          {{ groupSubline }} 🌟
+        </p>
+        <div v-else class="mb-4" />
 
         <!-- Unlock reveal stack -->
         <div v-if="hasUnlocks" class="space-y-2 text-sm" data-test="streak-unlocks">
@@ -201,7 +222,15 @@ const outfitName = computed(() => {
             >
               {{ milestoneMessage }}
             </p>
-            <p v-else class="text-xs opacity-80">朵朵看見妳今天又來了</p>
+            <p
+              v-if="isMilestone && groupSubline"
+              class="text-xs opacity-90 mt-0.5"
+              style="text-shadow: 0 1px 2px rgba(80,40,30,0.3)"
+              data-test="group-streak-subline"
+            >
+              {{ groupSubline }} 🌟
+            </p>
+            <p v-if="!isMilestone" class="text-xs opacity-80">朵朵看見妳今天又來了</p>
           </div>
         </div>
 
