@@ -56,6 +56,7 @@ class DailyLoginStreakService
 
     public function __construct(
         private readonly GamificationPublisher $gamification,
+        private readonly StreakMilestoneRewardService $milestoneRewards,
     ) {}
 
     /**
@@ -66,6 +67,13 @@ class DailyLoginStreakService
      *     is_milestone: bool,
      *     milestone_label: ?string,
      *     today_date: string,
+     *     unlocks: ?array{
+     *         outfit_unlocked: ?string,
+     *         outfit_skipped: ?string,
+     *         cards_unlocked: list<array{code:string,label:string}>,
+     *         xp_bonus: int,
+     *         total_xp_after: ?int,
+     *     },
      * }
      */
     public function recordLogin(User $user): array
@@ -119,6 +127,20 @@ class DailyLoginStreakService
             $this->safePublish($user, $result['streak'], $today);
         }
 
+        $unlocks = null;
+        if ($isMilestone) {
+            try {
+                $unlocks = $this->milestoneRewards->unlockForMilestone($user, $result['streak']);
+            } catch (Throwable $e) {
+                // Reward unlock failure must never break the streak record path.
+                Log::warning('[DailyLoginStreak] milestone reward failed (soft)', [
+                    'user_id' => $user->id,
+                    'streak' => $result['streak'],
+                    'error' => $e->getMessage(),
+                ]);
+            }
+        }
+
         return [
             'streak' => $result['streak'],
             'longest_streak' => $result['longest'],
@@ -126,6 +148,7 @@ class DailyLoginStreakService
             'is_milestone' => $isMilestone,
             'milestone_label' => $milestoneLabel,
             'today_date' => $today,
+            'unlocks' => $unlocks,
         ];
     }
 

@@ -22,3 +22,22 @@ test('streak toast appears on first login of the day', async ({ page }) => {
   // 內文檢查（不死綁字串完整匹配，避免 emoji / 標點變動造成 flaky）
   await expect(toast).toContainText('連續')
 })
+
+test('streak milestone toast shows unlocks reveal at day 1 (cards)', async ({ page }) => {
+  // Demo seed → fresh user → first login is streak=1, which is itself a milestone.
+  // unlocks.cards_unlocked: [{ code: 'streak_1', label: '初心徽章' }]
+  await loginDemo(page)
+  await expect(page).toHaveURL(/calendar/)
+
+  const toast = page.locator('[data-test="streak-toast"]')
+  await expect(toast).toBeVisible({ timeout: 8000 })
+
+  // Milestone variant attribute check (data-variant=milestone OR fullscreen)
+  const variant = await toast.getAttribute('data-variant')
+  expect(['milestone', 'fullscreen']).toContain(variant)
+
+  // Card reveal item should be present (initial 初心徽章 card unlocked at streak=1)
+  const unlocks = page.locator('[data-test="streak-unlocks"]')
+  await expect(unlocks).toBeVisible()
+  await expect(unlocks).toContainText('初心徽章')
+})
