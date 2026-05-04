@@ -88,28 +88,37 @@ final class StoryChapterService
      */
     public function unlockWithCoins(int $userId, int $chapter): bool
     {
+        return $this->unlockWithCoinsResult($userId, $chapter) === 'success';
+    }
+
+    /**
+     * 同 unlockWithCoins 但回 string reason code（給 controller 給 friendly error）
+     * 'success' | 'already_unlocked' | 'not_found' | 'insufficient_balance'
+     */
+    public function unlockWithCoinsResult(int $userId, int $chapter): string
+    {
         if ($this->isUnlocked($userId, $chapter)) {
-            return false;
+            return 'already_unlocked';
         }
         $meta = $this->chapter($chapter);
         if ($meta === null) {
-            return false;
+            return 'not_found';
         }
         $cost = (int) ($meta['coin_cost'] ?? 100);
         if ($cost <= 0) {
             $this->doUnlock($userId, $chapter, 'coin');
 
-            return true;
+            return 'success';
         }
         $spend = $this->coins->spend($userId, $cost, DodoCoinService::SOURCE_SPEND_STORY_CHAPTER, [
             'chapter' => $chapter,
         ]);
         if ($spend === null) {
-            return false;
+            return 'insufficient_balance';
         }
         $this->doUnlock($userId, $chapter, 'coin');
 
-        return true;
+        return 'success';
     }
 
     public function markRead(int $userId, int $chapter): bool

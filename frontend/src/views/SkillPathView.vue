@@ -79,7 +79,7 @@ onMounted(load)
 <template>
   <div class="px-5 md:px-8 pt-10 pb-12 max-w-md md:max-w-2xl mx-auto space-y-5">
     <button @click="router.back()" class="text-stone-500 font-zen text-sm">
-      ← {{ t('common_back') }}
+      {{ t('common_back') }}
     </button>
 
     <header class="flex items-start justify-between gap-3">

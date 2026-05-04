@@ -117,14 +117,25 @@ class GameDepthController extends Controller
     public function unlockStoryChapter(Request $request, int $chapter): JsonResponse
     {
         $user = $request->user();
-        $ok = $this->stories->unlockWithCoins((int) $user->id, $chapter);
-        if (! $ok) {
-            return response()->json([
-                'errors' => ['chapter' => ['unlock_failed_or_already_unlocked_or_insufficient_balance']],
-            ], 422);
+        $result = $this->stories->unlockWithCoinsResult((int) $user->id, $chapter);
+
+        if ($result === 'success') {
+            return response()->json(['data' => ['chapter' => $chapter, 'unlocked' => true]]);
         }
 
-        return response()->json(['data' => ['chapter' => $chapter, 'unlocked' => true]]);
+        // friendly error message + reason code 給 frontend 切文案
+        $message = match ($result) {
+            'already_unlocked' => '這個章節已經解鎖了，可以直接看 💛',
+            'not_found' => '找不到這個章節',
+            'insufficient_balance' => '朵朵幣不夠喔，記錄一些事情累積一下再回來看吧',
+            default => '解鎖失敗，等等再試',
+        };
+
+        return response()->json([
+            'errors' => ['chapter' => [$result]],
+            'message' => $message,
+            'reason' => $result,
+        ], 422);
     }
 
     public function readStoryChapter(Request $request, int $chapter): JsonResponse

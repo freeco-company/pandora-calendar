@@ -70,9 +70,9 @@ async function payToUnlock(c: StoryChapter) {
     }
     economy.refresh()
     if (fresh && fresh.unlocked) openChapter(fresh)
-  } catch {
-    // graceful — show error toast inline
-    error.value = t('story_unlock_failed')
+  } catch (e: any) {
+    // backend 回 friendly message + reason — 顯示具體原因（朵朵幣不夠 / 已解鎖 / 找不到）
+    error.value = e?.response?.data?.message ?? t('story_unlock_failed')
   } finally {
     unlocking.value = null
   }
@@ -99,7 +99,7 @@ onMounted(load)
 <template>
   <div class="px-5 md:px-8 pt-10 pb-12 max-w-md md:max-w-2xl mx-auto space-y-5">
     <button @click="router.back()" class="text-stone-500 font-zen text-sm">
-      ← {{ t('common_back') }}
+      {{ t('common_back') }}
     </button>
 
     <header class="flex items-start justify-between gap-3">

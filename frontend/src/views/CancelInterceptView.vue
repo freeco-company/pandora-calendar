@@ -166,7 +166,7 @@ function iconFor(code: string) {
     <div class="px-5 pt-6 pb-10 max-w-md mx-auto space-y-5">
       <header class="space-y-3">
         <button class="text-xs text-stone-500 font-zen" @click="router.back()">
-          ← {{ t('common_back') }}
+          {{ t('common_back') }}
         </button>
         <!-- Step 進度條 4 段 -->
         <div class="flex gap-1.5" aria-label="step progress">

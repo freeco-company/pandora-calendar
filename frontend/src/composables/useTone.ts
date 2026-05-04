@@ -42,8 +42,12 @@ export function useTone() {
   function t(key: string, params?: Record<string, string | number>): string {
     const raw = dict.value[key] ?? zhTW[key] ?? key
     if (!params) return raw
+    // 支援 {{var}} 雙花括號（既有規範）+ {var} 單花括號（向後相容 wave 13 narrative）
     return Object.keys(params).reduce(
-      (acc, k) => acc.replace(new RegExp(`\\{\\{\\s*${k}\\s*\\}\\}`, 'g'), String(params[k])),
+      (acc, k) =>
+        acc
+          .replace(new RegExp(`\\{\\{\\s*${k}\\s*\\}\\}`, 'g'), String(params[k]))
+          .replace(new RegExp(`\\{\\s*${k}\\s*\\}`, 'g'), String(params[k])),
       raw,
     )
   }
