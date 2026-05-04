@@ -67,10 +67,13 @@ async function loadProtocol() {
   }
 }
 
+import { useOnboardingTour } from '../composables/useOnboardingTour'
+const tour = useOnboardingTour()
 onMounted(() => {
   loadHistory()
   loadProtocol()
   ent.load()
+  tour.startIfNew('first_daily_action')
 })
 
 // group history into 7-day buckets, newest first
@@ -141,7 +144,7 @@ const isPremium = computed(() => ent.isPremium())
 <template>
   <div class="px-5 md:px-8 pt-8 pb-24 max-w-md md:max-w-3xl mx-auto space-y-6" data-test="daily-action-view">
     <!-- Section 1：今天的 action（主視覺） -->
-    <section>
+    <section data-tour="daily-action-card">
       <TodayActionCard />
     </section>
 
@@ -151,6 +154,7 @@ const isPremium = computed(() => ent.isPremium())
       @click="goPatternReport"
       class="w-full rounded-3xl bg-gradient-to-br from-lavender-100 via-lavender-50 to-cream-50 px-5 py-4 shadow-soft active:scale-[0.99] transition-transform text-left flex items-center justify-between gap-3"
       data-test="action-view-pattern-cta"
+      data-tour="daily-action-feedback"
     >
       <div class="flex items-center gap-3 flex-1 min-w-0">
         <span class="shrink-0 text-2xl">📖</span>
@@ -167,7 +171,7 @@ const isPremium = computed(() => ent.isPremium())
     </button>
 
     <!-- Section 3：過去 30 天 history（by week + helpful 統計） -->
-    <section>
+    <section data-tour="daily-action-history">
       <h2 class="font-display font-bold text-peach-500 text-lg mb-3">{{ t('action_history_title') }}</h2>
       <Spinner v-if="historyLoading" />
       <Card v-else-if="historyError" tone="cream">

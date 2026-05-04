@@ -1155,4 +1155,79 @@ export const zhTW: ToneDict = {
   pattern_report_share: '分享給朋友',
   paywall_section_plan_pick: '選一個適合妳的方案',
   paywall_privacy_promise_title: '朵朵的承諾',
+
+  // Onboarding tour / coachmark — 帶妳逛 deep RPG 七維度
+  tour_aria_label: '朵朵教學',
+  tour_btn_next: '下一步',
+  tour_btn_prev: '← 上一步',
+  tour_btn_skip: '跳過',
+  tour_btn_done: '我懂了 💛',
+  tour_btn_close: '關閉教學',
+  tour_step_progress: '{n} / {total}',
+  tour_replay_help_label: '🎓 重新看朵朵教學',
+  tour_replay_help_blurb: '想再認識一次朵朵 App 的功能？隨時可以從這裡重新看。',
+
+  // first_calendar — 6 step
+  tour_calendar_step1_title: '這是妳的倒數',
+  tour_calendar_step1_body: '朵朵幫妳推算下次經期的天數。資料越多越準，剛開始信心度可能還低，沒關係 ✨',
+  tour_calendar_step2_title: '妳的小夥伴在這',
+  tour_calendar_step2_body: '右上角是妳的寵物，點一下會帶妳去 Journey 頁，可以摸摸頭、看羈絆 / 段位 / 圖鑑。',
+  tour_calendar_step3_title: '今日成長條',
+  tour_calendar_step3_body: '寵物心情 / 連勝 / 今日任務 / 朵朵幣 — 每天記錄一點都會在這累積。',
+  tour_calendar_step4_title: 'Insight 自動報',
+  tour_calendar_step4_body: '記滿 8 週後，朵朵會主動跟妳說「我發現早睡對妳特別 work」這種小發現 💛',
+  tour_calendar_step5_title: '今天朵朵建議',
+  tour_calendar_step5_body: '每天一件量身行動。完成、給 feedback，朵朵會慢慢學會妳的節奏。',
+  tour_calendar_step6_title: '月曆視覺',
+  tour_calendar_step6_body: '不同顏色代表四個週期相位。點任一天可以看當日紀錄；連勝會有 ✨ 小亮點。',
+
+  // first_journey — 5 step
+  tour_journey_step1_title: '妳的寵物',
+  tour_journey_step1_body: '點一下寵物會摸頭，每天最多 5 次。連續記錄 bond 會升，達 soulmate 解隱藏 outfit。',
+  tour_journey_step2_title: '羈絆值',
+  tour_journey_step2_body: '記錄 / 完成行動 / 摸頭都會加 bond。bond 會解鎖更多寵物動作與專屬對話。',
+  tour_journey_step3_title: '4 個探索區',
+  tour_journey_step3_body: '段位 / 圖鑑 / 故事 — 每個都有特典，慢慢逛不用急。',
+  tour_journey_step4_title: '成就牆',
+  tour_journey_step4_body: '38 個成就分 bronze / silver / gold / legendary，點開可看解鎖條件與目前進度。',
+  tour_journey_step5_title: 'Outfit 衣櫃',
+  tour_journey_step5_body: '33 套 outfit 等妳收集。點待解的也可以「試穿預覽」看效果，知道值不值得拼 🌸',
+
+  // first_skill_path — 3 step
+  tour_skill_path_step1_title: '進化路徑',
+  tour_skill_path_step1_body: '選一條主修：備孕、養生、美感。每條都有專屬 quest 和獎勵，30 天內可以換一次。',
+  tour_skill_path_step2_title: '挑一條開始',
+  tour_skill_path_step2_body: '點任一條可以看詳情；確認後就會 lock 一陣子（避免天天換失焦）。',
+  tour_skill_path_step3_title: '完成 quest 拿獎勵',
+  tour_skill_path_step3_body: '每個 quest 都有 XP / 朵朵幣 / 限定 outfit。慢慢做就好，朵朵不會催 💛',
+
+  // first_body_dex — 3 step
+  tour_body_dex_step1_title: '身體圖鑑',
+  tour_body_dex_step1_body: '30 張身體狀態卡片，記錄不同症狀 / 心情 / 相位會慢慢蒐集到。像 pokédex 一樣 ✨',
+  tour_body_dex_step2_title: '已收集',
+  tour_body_dex_step2_body: '點亮的卡片可以點開看朵朵寫的解說。稀有度越高（彩 / 傳說），解鎖條件越特別。',
+  tour_body_dex_step3_title: '待蒐集',
+  tour_body_dex_step3_body: '灰色的還沒解。提示告訴妳大概的條件，不用刻意湊，自然記錄就會慢慢開 🌸',
+
+  // first_stories — 3 step
+  tour_story_step1_title: '我與朵朵的故事',
+  tour_story_step1_body: '25 章的成長故事，跟妳的記錄資料同步演進 — 妳是這故事的女主角。',
+  tour_story_step2_title: '已解鎖章節',
+  tour_story_step2_body: '點任一章會打開朵朵寫給妳的內容，有些章還有專屬 outfit / 成就。',
+  tour_story_step3_title: '待解章節',
+  tour_story_step3_body: '有些章用記錄條件解；急著看的章可以用朵朵幣解，但慢慢累積最有感 💛',
+
+  // first_rank — 2 step
+  tour_rank_step1_title: '節律段位',
+  tour_rank_step1_body: '6 段：石 / 奶霜 / 金 / 玫瑰 / 紫 / 靛 — 反映妳跟身體的熟悉程度，不是排名喔。',
+  tour_rank_step2_title: '段位 timeline',
+  tour_rank_step2_body: '看完整 6 段對照與哲學語。每升一段朵朵會有專屬訊息給妳。',
+
+  // first_daily_action — 3 step
+  tour_daily_action_step1_title: '今天朵朵建議',
+  tour_daily_action_step1_body: '一天一個量身行動。簡單到妳一定做得到，建議 5-15 分鐘可完成。',
+  tour_daily_action_step2_title: '給朵朵 feedback',
+  tour_daily_action_step2_body: '完成後告訴朵朵「對我有用」或「沒感覺」。朵朵越記越懂妳的身體。',
+  tour_daily_action_step3_title: '回顧過去 30 天',
+  tour_daily_action_step3_body: '看到妳這一個月做過什麼、哪些有用，朵朵會在這裡整理出妳的個人 protocol。',
 }

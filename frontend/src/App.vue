@@ -22,6 +22,7 @@ import AmbientSparkles from './components/AmbientSparkles.vue'
 import StreakToast from './components/StreakToast.vue'
 import { useStreakToast } from './composables/useStreakToast'
 import LockView from './views/Lock.vue'
+import CoachmarkOverlay from './components/CoachmarkOverlay.vue'
 
 const route = useRoute()
 const showTabBar = computed(
@@ -211,6 +212,9 @@ onUnmounted(() => {
     <DodoReplyToast />
     <StreakToast />
     <PetOnboardingModal v-if="showTabBar" />
+
+    <!-- Coachmark / onboarding tour — singleton overlay, reads useOnboardingTour() -->
+    <CoachmarkOverlay />
 
     <!-- App lock overlay：擋住 router-view，必須驗證才放行 -->
     <LockView v-if="locked" @unlocked="onUnlocked" />

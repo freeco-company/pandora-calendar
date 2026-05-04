@@ -73,7 +73,12 @@ function cancelChoose() {
   confirmPath.value = null
 }
 
-onMounted(load)
+import { useOnboardingTour } from '../composables/useOnboardingTour'
+const tour = useOnboardingTour()
+onMounted(() => {
+  load()
+  tour.startIfNew('first_skill_path')
+})
 </script>
 
 <template>
@@ -82,7 +87,7 @@ onMounted(load)
       {{ t('common_back') }}
     </button>
 
-    <header class="flex items-start justify-between gap-3">
+    <header class="flex items-start justify-between gap-3" data-tour="skill-path-intro">
       <div>
         <p class="font-zen text-xs text-stone-500 tracking-widest uppercase">
           {{ t('skill_path_eyebrow') }}
@@ -106,7 +111,7 @@ onMounted(load)
 
     <template v-else>
       <!-- path selector -->
-      <div class="grid grid-cols-3 gap-2.5" data-test="skill-path-selector">
+      <div class="grid grid-cols-3 gap-2.5" data-test="skill-path-selector" data-tour="skill-path-pick">
         <button
           v-for="p in PATHS"
           :key="p.key"
@@ -159,7 +164,7 @@ onMounted(load)
       </Card>
 
       <!-- quest list -->
-      <ul v-if="state?.path" class="space-y-2.5" data-test="skill-quest-list">
+      <ul v-if="state?.path" class="space-y-2.5" data-test="skill-quest-list" data-tour="skill-path-progress">
         <li
           v-for="q in quests"
           :key="q.key"

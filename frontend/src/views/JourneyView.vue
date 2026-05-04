@@ -14,10 +14,12 @@ import RankBadge from '../components/RankBadge.vue'
 import { usePet } from '../composables/usePet'
 import { useTone } from '../composables/useTone'
 import { useGameDepth } from '../composables/useGameDepth'
+import { useOnboardingTour } from '../composables/useOnboardingTour'
 
 const { t } = useTone()
 const router = useRouter()
 const gameDepth = useGameDepth()
+const tour = useOnboardingTour()
 const data = ref<JourneyData | null>(null)
 const achievements = ref<AchievementRow[]>([])
 const outfits = ref<OutfitRow[]>([])
@@ -88,6 +90,7 @@ async function load() {
 onMounted(() => {
   load()
   gameDepth.refreshRank().catch(() => {})
+  tour.startIfNew('first_journey')
 })
 
 function preview(code: string) {
@@ -151,7 +154,7 @@ function closeAchievement() {
 
     <template v-else-if="data">
       <!-- 寵物 + Lv 進度（外加 preview 效果）-->
-      <Card tone="cream" class="text-center space-y-3">
+      <Card tone="cream" class="text-center space-y-3" data-tour="pet-character">
         <div class="flex justify-center">
           <Character
             :species="pet.species"
@@ -209,10 +212,12 @@ function closeAchievement() {
       </Card>
 
       <!-- 寵物羈絆條 -->
-      <PetBondMeter :show-pet-head-button="true" data-test="journey-bond-meter" />
+      <div data-tour="bond-meter">
+        <PetBondMeter :show-pet-head-button="true" data-test="journey-bond-meter" />
+      </div>
 
       <!-- 段位 + game-depth quick cards -->
-      <div class="grid grid-cols-3 gap-2.5" data-test="journey-quick-links">
+      <div class="grid grid-cols-3 gap-2.5" data-test="journey-quick-links" data-tour="quick-links">
         <button
           @click="router.push('/me/rank')"
           class="rounded-2xl bg-white p-3 shadow-soft text-center active:scale-95 transition-transform"
@@ -271,7 +276,7 @@ function closeAchievement() {
       </Card>
 
       <!-- 成就（badge SVG） -->
-      <Card tone="plain" class="space-y-3">
+      <Card tone="plain" class="space-y-3" data-tour="achievements-section">
         <div class="flex items-baseline justify-between">
           <h3 class="font-display font-bold text-peach-500 text-base">{{ t('journey_section_achievements') }}</h3>
           <p class="font-zen text-[11px] text-stone-500">{{ unlockedAchievements.length }} / {{ achievements.length }}</p>
@@ -315,7 +320,7 @@ function closeAchievement() {
       </Card>
 
       <!-- Outfit 解鎖牆 — 兩段式（已解鎖 / 待解），都可點預覽 -->
-      <Card tone="plain" class="space-y-3">
+      <Card tone="plain" class="space-y-3" data-tour="outfits-section">
         <div class="flex items-baseline justify-between">
           <h3 class="font-display font-bold text-peach-500 text-base">{{ t('journey_section_outfits') }}</h3>
           <p class="font-zen text-[11px] text-stone-500">{{ unlockedOutfits.length }} / {{ outfits.length }}</p>

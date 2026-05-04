@@ -16,8 +16,10 @@ import { usePet } from '../composables/usePet'
 import { useTone } from '../composables/useTone'
 import { useRouter } from 'vue-router'
 import { usePregnancyMode } from '../composables/usePregnancyMode'
+import { useOnboardingTour } from '../composables/useOnboardingTour'
 
 const { t } = useTone()
+const tour = useOnboardingTour()
 const router = useRouter()
 const pregnancyMode = usePregnancyMode()
 
@@ -49,7 +51,12 @@ async function load() {
   }
 }
 
-onMounted(load)
+onMounted(() => {
+  load()
+  // First-visit tour for /calendar (the app's "front door"). Module singleton
+  // dedupes against later view changes in same session.
+  tour.startIfNew('first_calendar')
+})
 
 const today = new Date()
 const monthStart = computed(() => new Date(today.getFullYear(), today.getMonth(), 1))
@@ -191,7 +198,7 @@ function goPet() {
     </button>
 
     <!-- 倒數大字 header — emotional moment：font-display 大字 + tight leading -->
-    <header class="flex items-start justify-between mb-5 gap-3">
+    <header class="flex items-start justify-between mb-5 gap-3" data-tour="calendar-countdown">
       <div class="flex-1 min-w-0">
         <p class="eyebrow">{{ monthTitle }}</p>
         <template v-if="daysUntilNext !== null">
@@ -225,6 +232,7 @@ function goPet() {
         :aria-label="`${pet.nickname}, Lv ${pet.level}`"
         @click="goPet"
         data-test="header-pet"
+        data-tour="calendar-pet"
       >
         <Character
           :species="pet.species"
@@ -241,10 +249,14 @@ function goPet() {
     </header>
 
     <!-- Gamification strip: pet / streak / quest / milestone -->
-    <CalendarGamificationStrip :phase="rhythm?.phase ?? null" />
+    <div data-tour="gamification-strip">
+      <CalendarGamificationStrip :phase="rhythm?.phase ?? null" />
+    </div>
 
     <!-- 朵朵主動報「我發現 X 對妳 work」— 沒 insight 不 render -->
-    <ProtocolInsightBanner />
+    <div data-tour="protocol-banner">
+      <ProtocolInsightBanner />
+    </div>
 
     <!-- 24 節氣 active 期間 banner（沒節氣不 render）-->
     <SolarTermBanner />
@@ -252,7 +264,9 @@ function goPet() {
     <!-- 每天首訪可能彈出隨機事件（沒事件 / 已 dismiss 不 render）-->
     <RandomEventCard />
 
-    <TodayActionCard class="mb-6" :compact="true" />
+    <div data-tour="today-action">
+      <TodayActionCard class="mb-6" :compact="true" />
+    </div>
 
     <Spinner v-if="loading" :label="t('calendar_loading')" />
 
@@ -266,7 +280,7 @@ function goPet() {
     <template v-else>
       <div class="md:grid md:grid-cols-[minmax(0,1fr)_320px] md:gap-6 md:items-start">
       <div class="md:min-w-0">
-      <Card tone="plain" class="mb-4">
+      <Card tone="plain" class="mb-4" data-tour="calendar-grid">
         <div class="grid grid-cols-7 text-[11px] font-zen text-center text-stone-400 mb-3">
           <span v-for="w in [t('calendar_weekday_sun'), t('calendar_weekday_mon'), t('calendar_weekday_tue'), t('calendar_weekday_wed'), t('calendar_weekday_thu'), t('calendar_weekday_fri'), t('calendar_weekday_sat')]" :key="w">{{ w }}</span>
         </div>

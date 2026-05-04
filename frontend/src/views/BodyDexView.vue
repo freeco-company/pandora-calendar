@@ -68,7 +68,12 @@ function close() {
   detail.value = null
 }
 
-onMounted(load)
+import { useOnboardingTour } from '../composables/useOnboardingTour'
+const tour = useOnboardingTour()
+onMounted(() => {
+  load()
+  tour.startIfNew('first_body_dex')
+})
 </script>
 
 <template>
@@ -77,7 +82,7 @@ onMounted(load)
       {{ t('common_back') }}
     </button>
 
-    <header class="text-center">
+    <header class="text-center" data-tour="body-dex-intro">
       <p class="font-zen text-xs text-stone-500 tracking-widest uppercase">
         {{ t('bodydex_eyebrow') }}
       </p>
@@ -116,7 +121,7 @@ onMounted(load)
         </p>
       </Card>
 
-      <div class="grid grid-cols-3 sm:grid-cols-4 gap-2.5" data-test="bodydex-grid">
+      <div class="grid grid-cols-3 sm:grid-cols-4 gap-2.5" data-test="bodydex-grid" data-tour="body-dex-grid">
         <button
           v-for="entry in allCells"
           :key="entry.code"

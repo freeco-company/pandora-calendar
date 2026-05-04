@@ -93,7 +93,12 @@ function onClose() {
   modalOpen.value = false
 }
 
-onMounted(load)
+import { useOnboardingTour } from '../composables/useOnboardingTour'
+const tour = useOnboardingTour()
+onMounted(() => {
+  load()
+  tour.startIfNew('first_stories')
+})
 </script>
 
 <template>
@@ -102,7 +107,7 @@ onMounted(load)
       {{ t('common_back') }}
     </button>
 
-    <header class="flex items-start justify-between gap-3">
+    <header class="flex items-start justify-between gap-3" data-tour="stories-intro">
       <div>
         <p class="font-zen text-xs text-stone-500 tracking-widest uppercase">
           {{ t('story_eyebrow') }}
@@ -132,7 +137,7 @@ onMounted(load)
       :subtitle="t('story_empty_subtitle')"
     />
 
-    <div v-else class="relative" data-test="story-timeline">
+    <div v-else class="relative" data-test="story-timeline" data-tour="stories-list">
       <!-- vertical guide line -->
       <div class="absolute left-5 top-2 bottom-2 w-0.5 bg-cream-200" aria-hidden="true" />
       <ul class="space-y-3">

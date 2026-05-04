@@ -50,7 +50,12 @@ async function load() {
   }
 }
 
-onMounted(load)
+import { useOnboardingTour } from '../composables/useOnboardingTour'
+const tour = useOnboardingTour()
+onMounted(() => {
+  load()
+  tour.startIfNew('first_rank')
+})
 </script>
 
 <template>
@@ -78,7 +83,7 @@ onMounted(load)
     />
 
     <template v-else>
-      <Card tone="cream" class="text-center space-y-3" data-test="rank-hero">
+      <Card tone="cream" class="text-center space-y-3" data-test="rank-hero" data-tour="rank-current">
         <div class="flex justify-center">
           <RankBadge :state="state" :size="96" />
         </div>
@@ -107,7 +112,7 @@ onMounted(load)
       </Card>
 
       <!-- timeline -->
-      <Card tone="plain" class="space-y-2" data-test="rank-timeline">
+      <Card tone="plain" class="space-y-2" data-test="rank-timeline" data-tour="rank-tiers">
         <p class="font-display font-bold text-peach-500 text-sm">
           {{ t('rank_timeline_title') }}
         </p>

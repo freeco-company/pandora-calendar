@@ -33,8 +33,20 @@ import DodoCoinDisplay from '../components/DodoCoinDisplay.vue'
 import RankBadge from '../components/RankBadge.vue'
 import { useEconomy } from '../composables/useEconomy'
 import { useGameDepth } from '../composables/useGameDepth'
+import { useOnboardingTour } from '../composables/useOnboardingTour'
 
 const router = useRouter()
+const tour = useOnboardingTour()
+
+/**
+ * Replay the onboarding tour: clear all "seen" flags and bounce to /calendar
+ * where the first_calendar tour will auto-start. Lets users discover deep RPG
+ * features again whenever they want.
+ */
+function replayTour() {
+  tour.resetAll()
+  router.push('/calendar')
+}
 const user = getStoredUser()
 const ent = useEntitlementsStore()
 const economy = useEconomy()
@@ -1141,6 +1153,18 @@ function toggleSection(key: string) {
 
       <div v-show="openSections.help">
         <Card tone="plain" :padded="false" class="overflow-hidden" data-test="help-card">
+          <button
+            type="button"
+            data-test="link-replay-tour"
+            class="w-full flex items-center justify-between px-5 py-4 hover:bg-peach-50 transition-colors border-b border-cream-100 text-left"
+            @click="sfx.play('ui_tap'); replayTour()"
+          >
+            <span class="font-zen text-peach-500 text-sm flex items-center gap-2">
+              <span class="text-base" aria-hidden="true">🎓</span>
+              {{ t('tour_replay_help_label') }}
+            </span>
+            <span class="text-stone-400">→</span>
+          </button>
           <RouterLink
             to="/me/qna"
             data-test="link-qna"
