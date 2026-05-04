@@ -33,7 +33,7 @@ final class NoopGamificationPublisher implements GamificationPublisher
             'payload' => [
                 'event_kind' => $eventKind,
                 'user_uuid' => $user->identity_uuid,
-                'source_app' => config('gamification.app_id') ?? config('pandora.gamification.app_id', 'pandora_calendar'),
+                'source_app' => config('gamification.app_id') ?? config('pandora.gamification.app_id', 'calendar'),
                 'idempotency_key' => $idempotencyKey,
                 'context' => $context,
             ],

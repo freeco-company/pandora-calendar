@@ -28,7 +28,7 @@ final class HttpConversionPublisher implements ConversionPublisher
             'payload' => [
                 'event_kind' => $eventKind,
                 'user_uuid' => $user->identity_uuid,
-                'source_app' => config('pandora.conversion.app_id', 'pandora_calendar'),
+                'source_app' => config('pandora.conversion.app_id', 'calendar'),
                 'context' => $context,
             ],
             'occurred_at' => now(),
@@ -41,7 +41,7 @@ final class HttpConversionPublisher implements ConversionPublisher
             $res = $this->http
                 ->withHeaders([
                     'X-Internal-Secret' => $this->secret,
-                    'X-Source-App' => config('pandora.conversion.app_id', 'pandora_calendar'),
+                    'X-Source-App' => config('pandora.conversion.app_id', 'calendar'),
                 ])
                 ->timeout(8)
                 ->post("{$this->baseUrl}/internal/conversion/events", $event->payload);

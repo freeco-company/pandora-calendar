@@ -46,7 +46,7 @@ it('writes body_rhythm outbox event when cycle saved', function () {
 
     $br = OutboxEvent::where('destination', OutboxEvent::DEST_BODY_RHYTHM)->first();
     expect($br)->not->toBeNull();
-    expect($br->payload['source_app'])->toBe('pandora_calendar');
+    expect($br->payload['source_app'])->toBe('calendar');
     expect($br->payload['schema_version'])->toBe(1);
     expect($br->payload['user_uuid'])->toBe($this->user->identity_uuid);
 });

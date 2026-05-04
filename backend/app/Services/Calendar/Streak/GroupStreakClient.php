@@ -64,7 +64,7 @@ final class GroupStreakClient
             $res = $this->http
                 ->withHeaders([
                     'X-Internal-Secret' => $secret,
-                    'X-Source-App' => (string) config('gamification.app_id', 'pandora_calendar'),
+                    'X-Source-App' => (string) config('gamification.app_id', 'calendar'),
                 ])
                 ->timeout($timeout)
                 ->get($url);
