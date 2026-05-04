@@ -4,16 +4,57 @@
 | Wave 13 — Rank（節律段位）。
 | 6 段：蒼月 / 玉月 / 金月 / 朱月 / 紫月 / 玄月。
 | rank_xp 計算式（RankService）：cycles*100 + achievements*30 + days_active*1
-| narrative agent 補 description / motto。
+|
+| 文案規則（朵朵導師語氣）：
+|   - 用「妳 / 朋友 / 夥伴」，不寫「您」「會員」「用戶」
+|   - 圍繞身體節律記錄與自我覺察，不暗示療效 / 改善經痛 / 調理週期
+|   - 零商品 / 零加盟暗示；月經 App 紅線（CLAUDE.md §定位 紅線 1-3）
+|   - description ≤ 50 字、motto ≤ 20 字
 */
 
 return [
     'tiers' => [
-        ['key' => 'cang', 'label' => '蒼月', 'min_xp' => 0, 'description' => 'TODO narrative', 'motto' => 'TODO'],
-        ['key' => 'yu', 'label' => '玉月', 'min_xp' => 1000, 'description' => 'TODO narrative', 'motto' => 'TODO'],
-        ['key' => 'jin', 'label' => '金月', 'min_xp' => 2500, 'description' => 'TODO narrative', 'motto' => 'TODO'],
-        ['key' => 'zhu', 'label' => '朱月', 'min_xp' => 5000, 'description' => 'TODO narrative', 'motto' => 'TODO'],
-        ['key' => 'zi', 'label' => '紫月', 'min_xp' => 10000, 'description' => 'TODO narrative', 'motto' => 'TODO'],
-        ['key' => 'xuan', 'label' => '玄月', 'min_xp' => 20000, 'description' => 'TODO narrative', 'motto' => 'TODO'],
+        [
+            'key' => 'cang',
+            'label' => '蒼月',
+            'min_xp' => 0,
+            'description' => '剛開始記錄的妳。朵朵會陪妳一起把節律的輪廓畫出來，每天一點點，不急。',
+            'motto' => '從現在這一筆開始',
+        ],
+        [
+            'key' => 'yu',
+            'label' => '玉月',
+            'min_xp' => 1000,
+            'description' => '妳已經完整記下幾個週期，朵朵看見妳的節律慢慢成形。繼續走，每一筆都算數。',
+            'motto' => '節律，浮現中',
+        ],
+        [
+            'key' => 'jin',
+            'label' => '金月',
+            'min_xp' => 2500,
+            'description' => '妳的記錄夠厚了，朵朵能讀出妳獨有的節奏。覺察身體，是給自己最溫柔的事。',
+            'motto' => '懂自己，是一種光',
+        ],
+        [
+            'key' => 'zhu',
+            'label' => '朱月',
+            'min_xp' => 5000,
+            'description' => '長線記錄讓妳看清自己的潮汐。妳不再被身體驚訝，而是和它一起呼吸。',
+            'motto' => '與身體並肩前行',
+        ],
+        [
+            'key' => 'zi',
+            'label' => '紫月',
+            'min_xp' => 10000,
+            'description' => '紫月是少數朋友才走到的位置。妳對自己的節律已經有了專屬的語言。',
+            'motto' => '把自己活成一首詩',
+        ],
+        [
+            'key' => 'xuan',
+            'label' => '玄月',
+            'min_xp' => 20000,
+            'description' => '玄月，最深的那道月光。妳的記錄就是妳的月相史，朵朵在這裡只是陪走的夥伴。',
+            'motto' => '深處自有月光',
+        ],
     ],
 ];
