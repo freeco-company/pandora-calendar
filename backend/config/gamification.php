@@ -53,7 +53,7 @@ return [
     /*
     | source_app identifier（py-service catalog 對應 calendar.* event_kind）
     */
-    'app_id' => env('PANDORA_GAMIFICATION_APP_ID', 'pandora_calendar'),
+    'app_id' => env('PANDORA_GAMIFICATION_APP_ID', 'calendar'),
 
     /*
     | app_opened 每日上限（client side hint；最終 cap 由 py-service catalog 決定）

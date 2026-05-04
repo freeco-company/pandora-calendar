@@ -18,7 +18,7 @@ return [
     'gamification' => [
         'base_url' => env('PANDORA_GAMIFICATION_BASE_URL'),
         'secret' => env('PANDORA_GAMIFICATION_INTERNAL_SECRET'),
-        'app_id' => env('PANDORA_GAMIFICATION_APP_ID', 'pandora_calendar'),
+        'app_id' => env('PANDORA_GAMIFICATION_APP_ID', 'calendar'),
     ],
 
     /*
@@ -28,7 +28,7 @@ return [
     'conversion' => [
         'base_url' => env('PANDORA_CONVERSION_BASE_URL'),
         'secret' => env('PANDORA_CONVERSION_INTERNAL_SECRET'),
-        'app_id' => env('PANDORA_CONVERSION_APP_ID', 'pandora_calendar'),
+        'app_id' => env('PANDORA_CONVERSION_APP_ID', 'calendar'),
     ],
 
     /*

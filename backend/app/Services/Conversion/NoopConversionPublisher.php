@@ -21,7 +21,7 @@ final class NoopConversionPublisher implements ConversionPublisher
             'payload' => [
                 'event_kind' => $eventKind,
                 'user_uuid' => $user->identity_uuid,
-                'source_app' => 'pandora_calendar',
+                'source_app' => config('pandora.conversion.app_id', 'calendar'),
                 'context' => $context,
             ],
             'occurred_at' => now(),

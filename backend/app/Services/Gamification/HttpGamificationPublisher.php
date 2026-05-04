@@ -37,7 +37,7 @@ final class HttpGamificationPublisher implements GamificationPublisher
             'destination' => OutboxEvent::DEST_GAMIFICATION,
             'payload' => [
                 'pandora_user_uuid' => $user->identity_uuid,
-                'source_app' => config('gamification.app_id') ?? config('pandora.gamification.app_id', 'pandora_calendar'),
+                'source_app' => config('gamification.app_id') ?? config('pandora.gamification.app_id', 'calendar'),
                 'event_kind' => $eventKind,
                 'idempotency_key' => $idempotencyKey,
                 'occurred_at' => now()->toIso8601String(),
@@ -59,7 +59,7 @@ final class HttpGamificationPublisher implements GamificationPublisher
             $res = $this->http
                 ->withHeaders([
                     'X-Internal-Secret' => $this->secret,
-                    'X-Source-App' => config('pandora.gamification.app_id', 'pandora_calendar'),
+                    'X-Source-App' => config('pandora.gamification.app_id', 'calendar'),
                 ])
                 ->timeout(8)
                 ->post("{$this->baseUrl}/internal/gamification/events", $body);

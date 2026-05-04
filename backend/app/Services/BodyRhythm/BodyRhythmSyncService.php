@@ -30,7 +30,7 @@ class BodyRhythmSyncService
             'destination' => OutboxEvent::DEST_BODY_RHYTHM,
             'payload' => [
                 'user_uuid' => $user->identity_uuid,
-                'source_app' => 'pandora_calendar',
+                'source_app' => config('pandora.gamification.app_id', 'calendar'),
                 'schema_version' => 1,
                 'body_rhythm' => $rhythm->toArray(),
                 'updated_at' => now()->toAtomString(),
