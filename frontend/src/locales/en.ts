@@ -1115,4 +1115,15 @@ export const en: ToneDict = {
   journey_quick_rank: 'Rank',
   journey_quick_bodydex: 'Dex',
   journey_quick_stories: 'Story',
+
+  // Filled by i18n linter (regression guard)
+  community_list_subtitle_eyebrow: 'Community',
+  pattern_report_share_text: 'Dodo summed up my {month} 💛',
+  pattern_report_total_days: 'days',
+  pattern_report_unhelpful_blurb: "These didn't help much this month — try a different way next time, no pressure.",
+  pattern_report_closing_title: 'Thanks for tracking this month',
+  pattern_report_closing_blurb: 'Dodo will keep walking with you. See you next cycle.',
+  pattern_report_share: 'Share with a friend',
+  paywall_section_plan_pick: 'Pick a plan that fits you',
+  paywall_privacy_promise_title: "Dodo's promise",
 }

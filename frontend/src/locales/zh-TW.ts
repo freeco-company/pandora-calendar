@@ -1144,4 +1144,15 @@ export const zhTW: ToneDict = {
   journey_quick_rank: '段位',
   journey_quick_bodydex: '圖鑑',
   journey_quick_stories: '故事',
+
+  // 由 i18n linter 補齊（regression guard）
+  community_list_subtitle_eyebrow: '社群',
+  pattern_report_share_text: '朵朵幫我整理了 {month} 的記錄 💛',
+  pattern_report_total_days: '天',
+  pattern_report_unhelpful_blurb: '這些對妳這個月沒有特別幫助 — 換個方式試試也沒關係。',
+  pattern_report_closing_title: '謝謝妳這個月的記錄',
+  pattern_report_closing_blurb: '朵朵會繼續陪妳，下個週期再見。',
+  pattern_report_share: '分享給朋友',
+  paywall_section_plan_pick: '選一個適合妳的方案',
+  paywall_privacy_promise_title: '朵朵的承諾',
 }

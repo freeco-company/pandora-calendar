@@ -68,5 +68,8 @@ jobs:
       - name: Install
         run: npm ci
 
+      - name: Static analysis (i18n + visual lint)
+        run: npm run check:all
+
       - name: Type-check + build
         run: npm run build

@@ -39,7 +39,7 @@ const examples = computed(() => [
 const remainingLabel = computed(() => {
   if (qna.isPremium.value) return t('qna_remaining_unlimited')
   if (qna.remaining.value === null) return ''
-  return t('qna_remaining_today').replace('{n}', String(qna.remaining.value))
+  return t('qna_remaining_today', { n: qna.remaining.value })
 })
 
 async function send() {
