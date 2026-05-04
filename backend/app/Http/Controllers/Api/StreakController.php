@@ -36,6 +36,9 @@ class StreakController extends Controller
             'is_milestone' => $recorded['is_milestone'],
             'milestone_label' => $recorded['milestone_label'],
             'today_date' => $recorded['today_date'],
+            // Frontend surfaces unlocks in StreakToast reveal animation.
+            // null = no milestone fired this call (or fail-soft skipped).
+            'unlocks' => $recorded['unlocks'] ?? null,
         ]);
     }
 }

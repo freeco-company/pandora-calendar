@@ -10,9 +10,24 @@ import { api, getToken } from '../api'
  *   const { state, fetchToday } = useStreakToast()
  *   onMounted(() => { if (getToken()) fetchToday() })
  *
- * 由 StreakToast.vue 讀 `state` 顯示 toast（`is_first_today=true` 時顯示 N 天計數，
- * `is_milestone=true` 時延長秒數 + 朵朵 SVG + 導師文案）。
+ * 由 StreakToast.vue 讀 `state` 顯示 toast：
+ *   - `is_first_today=true` 普通日：3s 顯示 N 天計數
+ *   - `is_milestone=true` 里程碑日（1/3/7/14/21/30/60/100）：5s + 朵朵 SVG + 導師文案
+ *   - `is_milestone=true` + `unlocks` 有 outfit / xp_bonus：5s + reveal animation
+ *   - 21 / 100 天：fullscreen overlay variant（tap dismiss）
  */
+
+/**
+ * Streak milestone unlock payload — mirrors backend
+ * `StreakMilestoneRewardService::unlockForMilestone()` return shape.
+ */
+export interface StreakUnlocks {
+  outfit_unlocked: string | null
+  outfit_skipped: string | null
+  cards_unlocked: Array<{ code: string; label: string }>
+  xp_bonus: number
+  total_xp_after: number | null
+}
 
 export interface StreakState {
   current_streak: number
@@ -21,18 +36,32 @@ export interface StreakState {
   is_milestone: boolean
   milestone_label: string | null
   today_date: string
+  /** present when `is_milestone=true`; null on non-milestone days */
+  unlocks: StreakUnlocks | null
 }
 
 const state = ref<StreakState | null>(null)
 const visible = ref(false)
 let hideTimer: ReturnType<typeof setTimeout> | null = null
 
+/**
+ * Fullscreen overlay tiers — these days warrant a heavier celebration
+ * (大里程碑 / habit-formed point / 100-day legend) so the toast escalates
+ * to a tap-to-dismiss overlay. Other milestones use the normal slide-down.
+ */
+const FULLSCREEN_OVERLAY_TIERS: ReadonlyArray<number> = [21, 100]
+
+export function isFullscreenMilestone(streak: number): boolean {
+  return FULLSCREEN_OVERLAY_TIERS.includes(streak)
+}
+
 export function useStreakToast() {
   /**
-   * Fetch /api/streak/today — middleware 也會 attach X-Streak header；
-   * 我們直接用 response body（已經包含 is_first_today / is_milestone 判斷）。
+   * Fetch /api/streak/today — middleware also attaches X-Streak header；
+   * we read from response body since it already includes
+   * is_first_today / is_milestone / unlocks.
    *
-   * Fail-soft：streak fetch 失敗不影響 App boot。
+   * Fail-soft: streak fetch failure must not block App boot.
    */
   async function fetchToday(): Promise<void> {
     if (!getToken()) return
@@ -40,7 +69,14 @@ export function useStreakToast() {
       const { data } = await api.get<StreakState>('/streak/today')
       state.value = data
       if (data.is_first_today) {
-        showToast(data.is_milestone ? 5000 : 3000)
+        // Longer dwell when there's a real reveal (outfit / xp bonus / fullscreen)
+        const hasReveal =
+          !!data.unlocks &&
+          (data.unlocks.outfit_unlocked !== null ||
+            data.unlocks.xp_bonus > 0 ||
+            isFullscreenMilestone(data.current_streak))
+        const dwellMs = data.is_milestone ? (hasReveal ? 5000 : 5000) : 3000
+        showToast(dwellMs)
       }
     } catch (e) {
       // swallow — streak is non-critical
@@ -68,5 +104,6 @@ export function useStreakToast() {
     visible,
     fetchToday,
     dismiss,
+    isFullscreenMilestone,
   }
 }
