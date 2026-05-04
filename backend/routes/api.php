@@ -56,7 +56,13 @@ Route::prefix('v1/auth')->group(function () {
     Route::get('/oauth/{provider}/url', [AuthController::class, 'oauthUrl'])->middleware('throttle:30,1');
 });
 
-Route::middleware(['auth.platform'])->prefix('v1')->group(function () {
+// SPEC-cross-app-streak Phase 1.B — read + bump streak in one round-trip on app boot.
+// 不放在 /v1 prefix 下，對齊 meal `/api/streak/today` 路徑慣例。
+Route::middleware(['auth.platform', 'daily.streak'])->group(function () {
+    Route::get('/streak/today', [\App\Http\Controllers\Api\StreakController::class, 'today']);
+});
+
+Route::middleware(['auth.platform', 'daily.streak'])->prefix('v1')->group(function () {
     Route::get('/me', function (Request $r) {
         $u = $r->user();
 

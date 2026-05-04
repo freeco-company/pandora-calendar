@@ -3,7 +3,7 @@ import { computed, onMounted, onUnmounted, ref, watch } from 'vue'
 import { useRoute } from 'vue-router'
 import { App as CapacitorApp, type AppState } from '@capacitor/app'
 import { Capacitor } from '@capacitor/core'
-import { getToken } from './api'
+import { getToken, tokenRef } from './api'
 import { useSfx } from './lib/sound'
 import { useClickSound } from './composables/useClickSound'
 import {
@@ -19,6 +19,8 @@ import AchievementToast from './components/AchievementToast.vue'
 import DodoReplyToast from './components/DodoReplyToast.vue'
 import PetOnboardingModal from './components/PetOnboardingModal.vue'
 import AmbientSparkles from './components/AmbientSparkles.vue'
+import StreakToast from './components/StreakToast.vue'
+import { useStreakToast } from './composables/useStreakToast'
 import LockView from './views/Lock.vue'
 
 const route = useRoute()
@@ -30,6 +32,10 @@ useSfx()
 
 // === Lock state ===
 const locked = ref(false)
+
+// SPEC-cross-app-streak Phase 1.B — 每日登入 streak toast
+// App boot 後若有 token 即 fetch /api/streak/today；首次今日登入會跳 toast。
+const { fetchToday: fetchStreakToday } = useStreakToast()
 
 function refreshLockState() {
   locked.value = !!getToken() && isLockEnabled() && isLocked()
@@ -58,6 +64,18 @@ onMounted(async () => {
     markActive()
   }
   refreshLockState()
+
+  // Streak fetch — 不 await，背景跑；fail-soft（composable 自己 catch）
+  if (getToken()) {
+    void fetchStreakToday()
+  }
+
+  // 用戶從 login 流程切回有 token 時也 trigger 一次（App.vue 是 root，不會 unmount）
+  watch(tokenRef, (t, prev) => {
+    if (t && !prev) {
+      void fetchStreakToday()
+    }
+  })
 
   if (Capacitor.isNativePlatform()) {
     appStateSub = await CapacitorApp.addListener('appStateChange', handleAppStateChange)
@@ -191,6 +209,7 @@ onUnmounted(() => {
     <LevelUpModal />
     <AchievementToast />
     <DodoReplyToast />
+    <StreakToast />
     <PetOnboardingModal v-if="showTabBar" />
 
     <!-- App lock overlay：擋住 router-view，必須驗證才放行 -->

@@ -25,6 +25,8 @@ return Application::configure(basePath: dirname(__DIR__))
             'identity.webhook' => \App\Http\Middleware\VerifyIdentityWebhookSignature::class,
             // P5：婕樂纖深層商品連結 gate（母艦消費 + 訂閱 + 連用 ≥ 90 天）
             'ensure.mother_customer' => \App\Http\Middleware\EnsureMotherCustomer::class,
+            // SPEC-cross-app-streak Phase 1.B：每日登入 streak 中介層（Asia/Taipei）
+            'daily.streak' => \App\Http\Middleware\RecordDailyStreak::class,
         ]);
     })
     ->withExceptions(function (Exceptions $exceptions): void {
