@@ -38,6 +38,13 @@ class RecordDailyStreak
             return $response;
         }
 
+        // Skip on account delete path — AccountController just wiped this
+        // user's outbox + personal data; we must not write a fresh streak
+        // / outbox row immediately after that.
+        if ($request->isMethod('DELETE') && $request->is('api/v1/me')) {
+            return $response;
+        }
+
         try {
             $result = $this->service->recordLogin($user);
             $request->attributes->set('daily_streak', $result);

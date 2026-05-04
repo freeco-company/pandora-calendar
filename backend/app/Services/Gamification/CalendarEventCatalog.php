@@ -36,11 +36,20 @@ final class CalendarEventCatalog
     public const PMS_PATTERN_DETECTED = 'calendar.pms_pattern_detected';
     public const PREGNANCY_LOGGED = 'calendar.pregnancy_logged';
 
+    /**
+     * Cross-App master streak signal — fired once per first-login-of-the-day
+     * to bump py-service `group_user_daily_streaks`. Mirrors meal / jerosse
+     * `*.daily_login_streak_extended`. Without this, group streak never
+     * advances from calendar.
+     */
+    public const DAILY_LOGIN_STREAK_EXTENDED = 'calendar.daily_login_streak_extended';
+
     public const ALL = [
         self::FIRST_CYCLE, self::CYCLE_LOGGED, self::SYMPTOM_LOGGED,
         self::MOOD_LOGGED, self::APP_OPENED, self::DODO_CHECKIN,
         self::TRACK_7_DAYS, self::FULL_CYCLE_TRACKED, self::INSIGHT_READ,
         self::STREAK_30_DAYS, self::CYCLE_STREAK_3_MONTHS,
         self::PMS_PATTERN_DETECTED, self::PREGNANCY_LOGGED,
+        self::DAILY_LOGIN_STREAK_EXTENDED,
     ];
 }
