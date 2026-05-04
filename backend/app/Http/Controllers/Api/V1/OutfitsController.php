@@ -5,11 +5,14 @@ namespace App\Http\Controllers\Api\V1;
 use App\Http\Controllers\Controller;
 use App\Models\Achievement;
 use App\Services\Gamification\OutfitCatalog;
+use App\Services\Subscription\FeatureGate;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 
 class OutfitsController extends Controller
 {
+    public function __construct(private readonly FeatureGate $gate) {}
+
     public function index(Request $request): JsonResponse
     {
         $u = $request->user();
@@ -18,7 +21,8 @@ class OutfitsController extends Controller
         // streak 算（同 AchievementChecker 邏輯，簡化版）
         $streak = $this->streak($u->id);
 
-        $isPremium = ($u->subscription_tier ?? null) === 'premium';
+        // trial 期視為 Premium（freemium funnel）
+        $isPremium = $this->gate->isPremium($u);
         $level = (int) ($u->level ?? 1);
 
         $context = [
@@ -67,7 +71,7 @@ class OutfitsController extends Controller
             'level' => (int) ($u->level ?? 1),
             'streak' => $this->streak($u->id),
             'achievements' => $achievements,
-            'is_premium' => ($u->subscription_tier ?? null) === 'premium',
+            'is_premium' => $this->gate->isPremium($u),
         ];
 
         if ($data['code'] !== 'none') {

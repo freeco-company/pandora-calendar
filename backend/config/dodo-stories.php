@@ -178,15 +178,18 @@ $chapters = [
     ],
 ];
 
+// 2026-05-04 freemium 放寬：ch 1-5 全 free 自動解（unlock_cycle = 0、coin_cost = 0）
+// ch 6+ 維持既有條件（cycle 進度 OR coin spend）
 $out = [];
 foreach ($chapters as $chapter => $data) {
+    $autoFree = $chapter <= 5;
     $out[] = [
         'chapter' => $chapter,
         'title' => $data['title'],
         'summary' => $data['summary'],
         'body' => $data['body'],
-        'unlock_cycle' => max(0, $chapter - 1),
-        'coin_cost' => $chapter === 1 ? 0 : 100,
+        'unlock_cycle' => $autoFree ? 0 : max(0, $chapter - 1),
+        'coin_cost' => $autoFree ? 0 : 100,
     ];
 }
 

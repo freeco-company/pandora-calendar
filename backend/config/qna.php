@@ -8,7 +8,8 @@ $promptPath = base_path('resources/prompts/qna-system-prompt.txt');
 
 return [
     // free tier 每日問答上限（Premium 無限）
-    'free_daily_cap' => (int) env('QNA_FREE_DAILY_CAP', 3),
+    // 2026-05-04 freemium 放寬：3 → 5（Premium / trial 仍無限）
+    'free_daily_cap' => (int) env('QNA_FREE_DAILY_CAP', 5),
 
     // system prompt（外部 .txt，避免 PHP file 內 embed 違規詞描述觸發 ContentGuard）
     'system_prompt' => is_file($promptPath) ? (string) file_get_contents($promptPath) : '',

@@ -65,12 +65,11 @@ it('GET /me/stories/chapters returns chapter list', function () {
 });
 
 it('POST /me/stories/{n}/unlock returns 422 with friendly error when coins insufficient', function () {
-    // user has 0 coins → unlock chapter 2 (cost > 0) → 422
-    $res = $this->postJson('/api/v1/me/stories/2/unlock');
-    expect($res->status())->toBeIn([402, 422]); // 422 = validation-style, 402 = payment required
-    // must NOT be 500 generic error
+    // ch1-5 為 free（freemium 放寬），ch6+ 仍 coin_cost = 100
+    // user 0 coins → unlock chapter 8 (cost > 0) → 422 insufficient_balance
+    $res = $this->postJson('/api/v1/me/stories/8/unlock');
+    expect($res->status())->toBeIn([402, 422]);
     expect($res->status())->not->toBe(500);
-    // body must contain a structured reason, not just generic
     $body = $res->json();
     expect($body)->toBeArray();
 });

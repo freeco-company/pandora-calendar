@@ -23,18 +23,34 @@ class BbtController extends Controller
         private readonly FeatureGate $gate,
     ) {}
 
+    /**
+     * BBT biphasic（freemium 放寬 2026-05-04）：
+     *   - free：has_shift / shift_date / ovulation_day_estimated（基本）
+     *   - premium / trial：完整含 coverline / sample_size / quality 欄位
+     */
     public function biphasic(Request $request): JsonResponse
     {
-        if (! $this->gate->isPremium($request->user())) {
+        $user = $request->user();
+        $full = $this->analyzer->detectBiphasicShift($user->id);
+        $isPremium = $this->gate->isPremium($user);
+
+        if ($isPremium) {
             return response()->json([
-                'error' => 'premium_required',
-                'message' => 'BBT 雙相偵測是 Premium 功能。',
-                'paywall_redirect' => '/subscription',
-            ], 402);
+                'data' => $full,
+                'tier' => $this->gate->effectiveTier($user),
+            ]);
         }
 
         return response()->json([
-            'data' => $this->analyzer->detectBiphasicShift($request->user()->id),
+            'data' => [
+                'has_shift' => $full['has_shift'] ?? false,
+                'shift_date' => $full['shift_date'] ?? null,
+                'ovulation_day_estimated' => $full['ovulation_day_estimated'] ?? null,
+                'coverline' => null,
+                'sample_size' => null,
+                'locked_features' => ['coverline', 'sample_size', 'biphasic_quality_score'],
+            ],
+            'tier' => 'free',
         ]);
     }
 

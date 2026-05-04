@@ -28,6 +28,16 @@ class SubscriptionController extends Controller
         return response()->json(['data' => $entitlements->toArray()]);
     }
 
+    /**
+     * Trial 狀態 endpoint — frontend 可單獨輪詢拿剩餘天數。
+     */
+    public function trial(Request $request, \App\Services\Subscription\PremiumTrialService $trialService): JsonResponse
+    {
+        return response()->json([
+            'data' => $trialService->trialState($request->user()->id),
+        ]);
+    }
+
     public function products(): JsonResponse
     {
         return response()->json([

@@ -3,28 +3,29 @@
 namespace App\Services\Subscription;
 
 use App\Models\DodoCheckin;
-use App\Models\Subscription;
 use App\Models\User;
 use Carbon\CarbonImmutable;
-use Illuminate\Support\Facades\Cache;
 
 /**
- * 訂閱 freemium gate。
+ * Freemium gate（已重新分層 2026-05-04）
  *
- * Free tier:
- * - 經期記錄與預測（無限）
- * - 朵朵 check-in：每天 1 次
- * - 12 個月歷史
- * - 基本症狀標記
+ * Tier:
+ *   - FREE        — 完全免費（含放寬後的 90% 功能 Day 1）
+ *   - TRIAL       — onboarding 完啟動的 7 天 Premium 試用（自動，無信用卡）
+ *   - PREMIUM     — 付費訂閱中
  *
- * Premium (NT$99/月 / NT$899/年):
- * - 朵朵 check-in 無限次
- * - 多年歷史
- * - PMS 模式分析（P4 起）
- * - 孕期模式（P4 起）
- * - 跨產品同步（P3 起）
- * - week report PDF（P5 起）
- * - HealthKit / Health Connect（P5 起）
+ * isPremium() 對 trial 與 paid 都回 true（trial = Premium 全功能體驗）
+ *
+ * Free 放寬後可用：
+ *   - PMS 分析 Top 3 / BBT has_shift 基本欄位 / YearReview 基本卡 (cover/phase_dist/top_mood/closing)
+ *   - Pattern Report 最近 3 份 / Story chapter 1-5 自動解
+ *   - Body Dex 全部 / Skill Path 3 條 / Q&A 5/天
+ *
+ * Premium / Trial 才有：
+ *   - PMS Top 4-5 / BBT 精細 (coverline / shift_confidence)
+ *   - YearReview 12 卡完整 + 全歷史 / Pattern Report 全歷史
+ *   - Story chapter 6-25 / Pregnancy mode / HealthKit reflection
+ *   - 進度照雲端 sync / 朵朵 LLM 高 cap / Q&A 無限
  */
 class FeatureGate
 {
@@ -33,6 +34,14 @@ class FeatureGate
     public function isPremium(User $user): bool
     {
         return $this->entitlements->resolve($user)->isPremium();
+    }
+
+    /**
+     * 'free' | 'trial' | 'premium'
+     */
+    public function effectiveTier(User $user): string
+    {
+        return $this->entitlements->resolve($user)->tier();
     }
 
     public function entitlements(User $user): Entitlements
