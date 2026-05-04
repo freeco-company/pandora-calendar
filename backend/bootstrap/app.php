@@ -33,4 +33,15 @@ return Application::configure(basePath: dirname(__DIR__))
         // Sentry — Laravel 11+ exception handler 註冊（health-data scrubbing 在 config/sentry.php）
         // DSN 未設時 SDK noop，不影響 dev / test
         \Sentry\Laravel\Integration::handles($exceptions);
+
+        // 殺 `Route [login] not defined` — API request 一律回 JSON 401，不 redirect
+        $exceptions->render(function (\Illuminate\Auth\AuthenticationException $e, \Illuminate\Http\Request $request) {
+            if ($request->is('api/*') || $request->expectsJson()) {
+                return response()->json([
+                    'message' => 'Unauthenticated.',
+                    'error_code' => 'UNAUTHENTICATED',
+                ], 401);
+            }
+            return null;
+        });
     })->create();
