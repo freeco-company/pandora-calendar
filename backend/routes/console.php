@@ -54,3 +54,16 @@ Schedule::command('pandora:pattern-reports:generate')
     ->timezone('Asia/Taipei')
     ->withoutOverlapping()
     ->runInBackground();
+
+
+/*
+| Daily 04:30 — compliance audit (group hard rule docs/group-fp-product-compliance.md)。
+| 掃 user-generated 內容（CommunityPost / Reply / Feedback）找 A-G 紅線詞 auto-rewrite。
+| 共用 freeco/pandora-shared LegalContentSanitizer。
+*/
+Schedule::command("compliance:audit")
+    ->dailyAt("04:30")
+    ->timezone("Asia/Taipei")
+    ->withoutOverlapping()
+    ->runInBackground()
+    ->appendOutputTo(storage_path("logs/compliance-audit.log"));

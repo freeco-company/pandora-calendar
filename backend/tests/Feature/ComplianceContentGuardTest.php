@@ -57,9 +57,26 @@ it('user-facing PHP / Vue source files are clean of forbidden terms', function (
 
     expect(count($files))->toBeGreaterThan(0, 'no source files matched — glob broken?');
 
+    /**
+     * Strip code comments before risk-report so reverse-list reminders inside
+     * comments (e.g. `// 不寫療效詞 / 治療 / 排毒 ...`) don't false-positive.
+     * Only what reaches end users matters.
+     */
+    $stripComments = function (string $content): string {
+        // Block comments: /* ... */ (multi-line, including PHP doc blocks)
+        $content = preg_replace('#/\*.*?\*/#s', '', $content) ?? $content;
+        // Line comments: // ... and # ... (PHP only, end of line)
+        $content = preg_replace('#^\s*(?://|\#).*$#m', '', $content) ?? $content;
+        $content = preg_replace('#\s+(?://|\#)[^\n]*$#m', '', $content) ?? $content;
+        // Vue / HTML comments
+        $content = preg_replace('/<!--.*?-->/s', '', $content) ?? $content;
+
+        return $content;
+    };
+
     $offenders = [];
     foreach ($files as $f) {
-        $content = (string) file_get_contents($f);
+        $content = $stripComments((string) file_get_contents($f));
         $hits = $sanitizer->riskReport($content);
         if ($hits) {
             $offenders[basename($f)] = array_unique($hits);
